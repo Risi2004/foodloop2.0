@@ -1,0 +1,1094 @@
+.receipt-form {
+    display: flex;
+    padding: 14px 10px;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 90%;
+    width: 90%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.receipt-form,
+.receipt-form * {
+    box-sizing: border-box;
+}
+
+.receipt-form h1 {
+    display: flex;
+    width: auto;
+    height: 176px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    color: #0D1B14;
+    font-family: Inter;
+    font-size: 64px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 61px; /* 95.313% */
+    letter-spacing: -0.75px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 34px;
+    padding: 32px;
+    background: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 24px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.form h2 {
+    margin: 0;
+    padding: 0;
+    align-self: flex-start;
+    color: #1F4E36;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 32px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: normal;
+}
+
+.inputs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 16px;
+    width: 100%;
+    padding: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.current-loc {
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 1 1 0;
+    min-width: 0;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.point {
+    background: #eb3223;
+    border-radius: 50px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 45px;
+    height: 45px;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
+}
+
+.frame-23 {
+    background: #ffffff;
+    border-radius: 50px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.breakable {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    object-fit: cover;
+    aspect-ratio: 1;
+}
+
+.div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-start;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.current-location {
+    color: #ffffff;
+    text-align: left;
+    font-family: "Inter-Medium", sans-serif;
+    font-size: 15px;
+    line-height: 16px;
+    letter-spacing: -0.6px;
+    font-weight: 500;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.frame-193 {
+    background: #ffffff;
+    border-radius: 5px;
+    padding: 15px 10px 15px 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    box-sizing: border-box;
+}
+
+._0-8-mi-to-recipient {
+    color: rgba(6, 78, 59, 0.55);
+    text-align: left;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 700;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+._0-8-mi-to-recipient::placeholder {
+    color: rgba(6, 78, 59, 0.55);
+}
+
+.frame-194 {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 1 1 0;
+    min-width: 0;
+    position: relative;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.frame-104 {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 45px;
+    height: 45px;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
+}
+
+.people {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    object-fit: cover;
+    aspect-ratio: 1;
+}
+
+.info,
+.info * {
+    box-sizing: border-box;
+}
+
+.info {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    flex-shrink: 0;
+    position: relative;
+    width: 90%;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+.infotop {
+    display: flex;
+    padding: 10px 20px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+    width: 100%;
+    align-self: stretch;
+}
+
+.donor-information {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 376.2px;
+    position: relative;
+}
+
+.donor-information2 {
+    color: #1F4E36;
+    text-align: left;
+    font-family: "Montserrat", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: 1.2px;
+    font-weight: 800;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.sarah-jenkins {
+    color: #1F4E36;
+    text-align: left;
+    font-family: "Montserrat", sans-serif;
+    font-size: 32px;
+    line-height: 28px;
+    font-weight: 800;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.sarah-j-impact-com {
+    color: #618972;
+    text-align: left;
+    font-family: "Montserrat", sans-serif;
+    font-size: 20px;
+    line-height: 20px;
+    font-weight: 600;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.handling-organizatio {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 623.2px;
+    position: relative;
+}
+
+.handling-organizatio2 {
+    color: #1F4E36;
+    text-align: right;
+    font-family: "Montserrat", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: 1.2px;
+    font-weight: 800;
+    position: relative;
+    width: 376.2px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.community-harvest-ng {
+    color: #0d1b14;
+    text-align: right;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 32px;
+    line-height: 28px;
+    font-weight: 700;
+    position: relative;
+    width: 434px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.delivered-oct-24-2 {
+    color: #013211;
+    text-align: right;
+    font-family: "Inter-Regular", sans-serif;
+    font-size: 20px;
+    line-height: 20px;
+    font-weight: 400;
+    position: relative;
+    width: 376.2px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.info .current-loc {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.info .div {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 333px;
+    position: relative;
+}
+
+.info .current-location {
+    color: #ff0000;
+    text-align: left;
+    font-family: "Inter-Medium", sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: -0.6px;
+    font-weight: 500;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.info ._0-8-mi-to-recipient {
+    color: #064e3b;
+    text-align: left;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 700;
+    position: relative;
+    width: 333px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.cards {
+    display: flex;
+    width: 100%;
+    margin: 0 auto;
+    padding: 10px 20px;
+    justify-content: center;
+    align-items: center;
+    gap: 63px;
+    min-height: 260px;
+}
+/* removed duplicate .cards rule (merged above) */
+
+.card {
+    width: 314px;
+    height: 100%;
+    justify-content: center;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+    box-sizing: border-box;
+    align-items: flex-start;
+    border-radius: 24px;
+    background: #2E4E3F;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(31, 78, 54, 0.12);
+}
+
+.icon-wrapper {
+    display: inline-flex;
+    padding: 10px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cardtxt {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    flex: 1;
+}
+
+.cardtxt h3 {
+    color: #A5D6A7;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.cardtxt p {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: baseline;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 48px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1;
+    margin: 0;
+    gap: 8px;
+}
+
+.cardtxt p span {
+    color: #A5D6A7;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 24px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
+
+/* -----------------------------
+   Food + Driver section (inside .info)
+   Prefixed classes to avoid conflicts with existing .info styles
+------------------------------ */
+.delivery-section {
+    width: 100%;
+    /* Parent (.info) uses align-items:center; force full-width stretch */
+    align-self: stretch;
+    max-width: none;
+    padding: 10px 20px;
+    box-sizing: border-box;
+}
+
+.delivery-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.delivery-head h2 {
+    color: #0d1b14;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 32px;
+    line-height: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.delivery-head h2:first-child { text-align: left; }
+.delivery-head h2:last-child { text-align: right; }
+
+.delivery-body {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.food-card,
+.driver-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-sizing: border-box;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.food-card {
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.food-card > img {
+    border-radius: 100px;
+    width: 112px;
+    height: 112px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.food-card > section {
+    padding: 4px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+    width: 100%;
+}
+
+.food-card header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.food-card h3 {
+    color: #064e3b;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.food-card header p {
+    color: #10b981;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.food-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.food-meta img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.food-meta p {
+    color: #0d1b12;
+    font-size: 12px;
+    line-height: 16px;
+    margin: 0;
+}
+
+.food-meta span {
+    font-family: "Inter-Regular", sans-serif;
+    font-weight: 400;
+}
+.food-meta strong { font-family: "Inter-Bold", sans-serif; font-weight: 700; }
+
+.driver-card {
+    border-radius: 10px;
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.driver-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+.driver-row dl {
+    margin: 0;
+    padding: 0;
+}
+
+.driver-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.driver-badge {
+    background: #0021f5;
+    border-radius: 50px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.driver-badge__inner {
+    background: #ffffff;
+    border-radius: 50px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.driver-badge__inner img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.driver-left dl {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    align-items: flex-start;
+}
+
+.driver-row dt {
+    color: #0021f5;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: -0.6px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.driver-row dd {
+    color: #064e3b;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 520px;
+    margin: 0;
+}
+
+.driver-right {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.driver-right--stack {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 175px;
+    min-width: 0;
+}
+
+.driver-right img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+.driver-right p {
+    color: #064e3b;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.driver-vehicle-icon {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+    .receipt-form {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .receipt-form h1 {
+        font-size: 48px;
+        line-height: 48px;
+        height: auto;
+        margin-bottom: 0;
+    }
+
+    .form {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .infotop {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .donor-information,
+    .handling-organizatio {
+        width: 100%;
+    }
+
+    .handling-organizatio {
+        align-items: flex-start;
+    }
+
+    .handling-organizatio2,
+    .community-harvest-ng,
+    .delivered-oct-24-2 {
+        text-align: left;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .cards {
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .card {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .receipt-form {
+        padding: 10px;
+        width: 95%;
+    }
+
+    .receipt-form h1 {
+        font-size: 36px;
+        line-height: 40px;
+        height: auto;
+    }
+
+    .form {
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .form h2 {
+        font-size: 24px;
+    }
+
+    .inputs {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .current-loc,
+    .frame-194 {
+        width: 100%;
+        padding: 8px;
+    }
+
+    .div {
+        width: 100%;
+        flex: 1;
+    }
+
+    .frame-193 {
+        width: 100%;
+    }
+
+    ._0-8-mi-to-recipient {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .infotop {
+        padding: 10px;
+        gap: 16px;
+    }
+
+    .donor-information2,
+    .handling-organizatio2 {
+        font-size: 14px;
+    }
+
+    .sarah-jenkins,
+    .community-harvest-ng {
+        font-size: 24px;
+        line-height: 28px;
+    }
+
+    .sarah-j-impact-com,
+    .delivered-oct-24-2 {
+        font-size: 16px;
+    }
+
+    .info .div {
+        width: 100%;
+    }
+
+    .info ._0-8-mi-to-recipient {
+        width: 100%;
+    }
+
+    .cards {
+        flex-direction: column;
+        gap: 16px;
+        padding: 10px;
+    }
+
+    .card {
+        width: 100%;
+        flex: 1 1 auto;
+    }
+
+    .cardtxt h3 {
+        font-size: 18px;
+    }
+
+    .cardtxt p {
+        font-size: 36px;
+    }
+
+    .cardtxt p span {
+        font-size: 20px;
+    }
+
+    .delivery-section {
+        padding: 10px;
+    }
+
+    .delivery-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .delivery-head h2 {
+        font-size: 24px;
+        text-align: left !important;
+    }
+
+    .delivery-body {
+        flex-direction: column;
+    }
+
+    .food-card {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .food-card > img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .driver-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .driver-row dd {
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .driver-right--stack {
+        width: 100%;
+    }
+
+    .info-actions {
+        padding: 10px;
+    }
+
+    .save-btn {
+        width: 100%;
+        min-width: auto;
+        font-size: 20px;
+        padding: 12px 20px;
+        height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .receipt-form {
+        width: 100%;
+        padding: 8px;
+    }
+
+    .receipt-form h1 {
+        font-size: 28px;
+        line-height: 32px;
+    }
+
+    .form {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .form h2 {
+        font-size: 20px;
+    }
+
+    .point,
+    .frame-104 {
+        width: 40px;
+        height: 40px;
+    }
+
+    .breakable,
+    .people {
+        width: 18px;
+        height: 18px;
+    }
+
+    .current-location {
+        font-size: 13px;
+    }
+
+    .frame-193 {
+        padding: 12px 8px;
+    }
+
+    ._0-8-mi-to-recipient {
+        font-size: 13px;
+    }
+
+    .sarah-jenkins,
+    .community-harvest-ng {
+        font-size: 20px;
+        line-height: 24px;
+    }
+
+    .sarah-j-impact-com,
+    .delivered-oct-24-2 {
+        font-size: 14px;
+    }
+
+    .cardtxt h3 {
+        font-size: 16px;
+    }
+
+    .cardtxt p {
+        font-size: 32px;
+    }
+
+    .cardtxt p span {
+        font-size: 18px;
+    }
+
+    .delivery-head h2 {
+        font-size: 20px;
+    }
+
+    .food-card h3 {
+        font-size: 16px;
+    }
+
+    .food-card header p {
+        font-size: 12px;
+    }
+
+    .save-btn {
+        font-size: 18px;
+        padding: 10px 16px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .delivery-body {
+        flex-direction: column;
+    }
+    .driver-row dd {
+        max-width: 100%;
+    }
+}
+
+/* Save button bottom-right (inside .info) */
+.info-actions {
+    width: 100%;
+    padding: 10px 20px 20px;
+    display: flex;
+    justify-content: flex-end;
+    box-sizing: border-box;
+}
+
+.save-btn {
+    border: none;
+    cursor: pointer;
+    border-radius: 20px;
+    padding: 14px 28px;
+    min-width: 220px;
+    height: 64px;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 28px;
+    line-height: 20px;
+    font-weight: 700;
+    color: #0d1b14;
+    background: linear-gradient(90deg, #ffffff 0%, #13ec5b 100%);
+}
+
+.save-btn:focus-visible {
+    outline: 3px solid #16a34a;
+    outline-offset: 3px;
+}

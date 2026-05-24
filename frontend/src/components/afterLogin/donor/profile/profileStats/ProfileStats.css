@@ -1,0 +1,105 @@
+.profile-stats {
+    display: grid;
+    /* Auto-fit cards: keep at least 260px wide, wrap to next line when space is not enough */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #c8e6c9 100%);
+    /* Light gradient to match design */
+    border-radius: 20px;
+    padding: 24px;
+    position: relative;
+    color: #1a1a1a;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.stat-icon {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    font-size: 24px;
+    color: #2E7D32;
+    background: rgba(255, 255, 255, 0.5);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.stat-growth {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.stat-growth.positive {
+    color: #2E7D32;
+}
+
+.stat-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f0f0f0;
+    /* Wait, the cards in image are white/light gradient with dark text. */
+    color: white;
+    /* Actually looking closely at the image, the cards have a gradient fill that looks white-ish at top right but mostly a dark green gradient? No wait, they are light cards. */
+    /* Let's re-examine image. The stats cards: "Items Donated", "People Fed", "Methane Saved". They look like they have a white/frosted glass gradient. The text "Items Donated" is white. "2,568" is huge white text. */
+    /* Ah, the background is a smooth gradient from white/light green to dark green. */
+    margin: 0 0 8px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Correcting card style based on image inspection */
+.stat-card {
+    background: linear-gradient(180deg, #DCECCD 0%, #3a6351 40%, #1e3a2f 100%);
+    /* Top part is very light, fades quickly to dark green */
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.stat-icon {
+    color: #333;
+    /* Dark icon */
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.stat-icon .stat-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.stat-growth {
+    color: #2E7D32;
+    /* Green text on light background */
+}
+
+.stat-value {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.stat-unit {
+    font-size: 24px;
+    margin-left: 4px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* When screen gets smaller, keep 20px gap between cards */
+@media screen and (max-width: 1024px) {
+    .profile-stats {
+        gap: 20px;
+    }
+}

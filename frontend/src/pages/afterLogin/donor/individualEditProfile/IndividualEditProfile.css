@@ -1,0 +1,40 @@
+.individual-edit-profile-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+}
+
+.individual-edit-container {
+    display: flex;
+    gap: 30px;
+    width: 100%;
+    max-width: 1200px;
+    align-items: stretch;
+    /* Stretch to equal height */
+}
+
+.individual-sidebar-section {
+    width: 350px;
+    flex-shrink: 0;
+}
+
+.individual-forms-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.individual-edit-loading,
+.individual-edit-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.individual-edit-error {
+    color: #ffcdd2;
+}

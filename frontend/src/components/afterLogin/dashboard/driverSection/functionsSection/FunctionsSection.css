@@ -1,0 +1,13 @@
+.function__section p {
+    margin-bottom: 20px;
+}
+
+.function__section__s1 {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 30px;
+}
+

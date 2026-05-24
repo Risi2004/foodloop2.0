@@ -1,0 +1,240 @@
+.products-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.products-header-container h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+}
+
+.add-product-btn {
+    background: #1F4E36;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(31, 78, 54, 0.15);
+    font-family: 'Montserrat', sans-serif;
+}
+
+.add-product-btn:hover {
+    background: #163a28;
+    transform: translateY(-2px);
+}
+
+.add-product-form-card {
+    background: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+}
+
+.add-product-form-card h3 {
+    margin-bottom: 2rem;
+    color: #1F4E36;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.form-row {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: #1F4E36;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    padding: 1rem;
+    border: 1px solid #DBE6E0;
+    background: white;
+    border-radius: 12px;
+    outline: none;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    transition: all 0.2s;
+    color: #1F4E36;
+}
+
+.form-group input:focus, .form-group textarea:focus {
+    border-color: #1F4E36;
+    background: white;
+}
+
+.save-btn {
+    background: #1F4E36;
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.save-btn:hover {
+    background: #163a28;
+}
+
+.products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.product-card {
+    display: flex;
+    background: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 24px;
+    overflow: hidden;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: scale(1.01);
+}
+
+.product-card.donation-card {
+    border-left: 6px solid #f57f17;
+}
+
+.product-card.sale-card {
+    border-left: 6px solid #1F4E36;
+}
+
+.img-container {
+    width: 140px;
+    height: 140px;
+    position: relative;
+    border-right: 1px solid #DBE6E0;
+}
+
+.img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.donation-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #f57f17;
+    color: white;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.details-container {
+    padding: 1.5rem 2rem;
+    flex-grow: 1;
+}
+
+.details-container h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+    color: #1F4E36;
+    font-weight: 800;
+}
+
+.cat-desc {
+    margin: 0 0 0.75rem 0;
+    color: #618972;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.price-tag {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #1F4E36;
+}
+
+.price-tag.free {
+    color: #f57f17;
+}
+
+.actions-container {
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border-left: 1px solid #DBE6E0;
+}
+
+.action-btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+    min-width: 140px;
+    transition: all 0.2s;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.toggle-btn {
+    background: #e6eee9;
+    color: #1F4E36;
+}
+
+.toggle-btn:hover {
+    background: #DBE6E0;
+}
+
+.delete-btn {
+    background: #fff5f5;
+    color: #e53935;
+}
+
+.delete-btn:hover {
+    background: #ffebeb;
+}
+
+@media (max-width: 600px) {
+    .product-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .img-container {
+        width: 100%;
+        height: 200px;
+    }
+    .actions-container {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #f0f0f0;
+    }
+}

@@ -1,0 +1,168 @@
+.location-box {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.location-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin-top: 2px;
+}
+
+.location-content {
+    flex: 1;
+}
+
+.location-label {
+    font-size: 12px;
+    color: #666;
+    margin: 0 0 4px 0;
+    font-weight: 500;
+}
+
+.location-name {
+    font-size: 14px;
+    color: #333;
+    margin: 0 0 8px 0;
+    font-family: monospace;
+}
+
+.btn-edit-location {
+    background: #1F4E36;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-edit-location:hover {
+    background: #2d6b4a;
+}
+
+.location-edit-form {
+    margin-top: 8px;
+}
+
+.location-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.input-group label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 500;
+}
+
+.input-group input {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 100%;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #1F4E36;
+}
+
+.input-group input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.location-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-use-location {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-use-location:hover:not(:disabled) {
+    background: #45a049;
+}
+
+.btn-use-location:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-cancel,
+.btn-save {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-cancel {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.btn-cancel:hover:not(:disabled) {
+    background: #e0e0e0;
+}
+
+.btn-save {
+    background: #1F4E36;
+    color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+    background: #2d6b4a;
+}
+
+.btn-cancel:disabled,
+.btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.location-error {
+    color: #d32f2f;
+    font-size: 12px;
+    margin-top: 8px;
+}

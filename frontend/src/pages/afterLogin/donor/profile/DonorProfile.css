@@ -1,0 +1,96 @@
+.profile-page {
+    min-height: 100vh;
+    padding: 24px;
+    font-family: 'Inter', sans-serif;
+    color: white;
+}
+
+.profile-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.profile-content {
+    /* Mobile / tablet: stack sections row by row */
+    display: block;
+    width: 100%;
+    gap: 0;
+}
+
+.profile-sidebar-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.profile-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.profile-loading,
+.profile-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.profile-error {
+    color: #ffcdd2;
+}
+
+/* Responsive layout */
+
+@media screen and (max-width: 1024px) {
+    .profile-page {
+        padding: 16px;
+    }
+
+    .profile-container {
+        gap: 16px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .profile-page {
+        padding: 12px 12px 80px; /* extra bottom space above footer */
+    }
+
+    .profile-container {
+        gap: 20px;
+    }
+    .profile-sidebar-column,
+    .profile-main-column {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .profile-page {
+        padding: 8px 8px 80px;
+    }
+
+    .profile-container {
+        gap: 16px;
+    }
+}
+
+/* Desktop layout: restore two-column profile layout on larger screens */
+@media screen and (min-width: 1024px) {
+    .profile-content {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
+    }
+
+    .profile-sidebar-column,
+    .profile-main-column {
+        width: auto;
+    }
+}

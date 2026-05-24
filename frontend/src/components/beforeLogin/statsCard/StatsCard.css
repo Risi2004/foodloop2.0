@@ -1,0 +1,19 @@
+.stats__card {
+    border-radius: 20px;
+    padding: 20px;
+    margin: 10px;
+    background: linear-gradient(180deg, #1F4E36 0%, #48B47D 100%);
+    width: 15%;
+    text-align: center;
+}
+
+@media screen and (max-width:1200px) {
+    .stats__card{
+        width: 30%;
+        flex-grow: 1;
+    }
+
+    .stats__card h2{
+        font-size: 20px;
+    }
+}

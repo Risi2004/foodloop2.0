@@ -1,0 +1,6 @@
+.stats__card__page {
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    flex-wrap: wrap;
+}

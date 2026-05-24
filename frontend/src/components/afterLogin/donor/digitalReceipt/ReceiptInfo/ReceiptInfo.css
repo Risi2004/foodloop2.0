@@ -1,0 +1,119 @@
+.receipt-info-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-top: 10px;
+}
+
+.info-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #ffffff;
+    /* Wait, the background of this card is the glassmorphism card. 
+       The image shows the text as somewhat dark?
+       Ah, looking at "Donor Information" in the image. It's WHITE or very light grey.
+       "Sarah Jenkins" is Black.
+       "sarah.j@impact.com" is dark grey.
+       Similarly for Handling Organization.
+       
+       Wait, let's re-examine the image.
+       The "Donor Information" text is small and above the name.
+       The background of the bottom card seems to be white/glassy.
+       So the "Donor Information" label might be a dark grey?
+       Actually, "Donor Information" looks like a light color in the image?
+       Let's zoom in.
+       "Donor Information" is Light Grey/White.
+       "Sarah Jenkins" is Black.
+       "Handling Organization" is Light Grey/White.
+       "Community Harvest NGO" is Black.
+       
+       BUT, the background is light grey/white glass. White text on white glass won't show.
+       Maybe the background of the bottom card is NOT white glass, or the text is NOT white.
+       
+       Let's look at the top banner again. That's green.
+       The BOTTOM card (where ReceiptInfo lives) looks like a light grey card.
+       So "Donor Information" must be dark grey?
+       Let's try a dark grey for the label first.
+    */
+    color: #666;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+}
+
+.info-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 5px;
+}
+
+.info-email {
+    color: #4A5568;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.text-right {
+    text-align: right;
+    align-self: flex-end;
+}
+
+.delivery-time {
+    font-size: 14px;
+    color: #2D3748;
+    margin-bottom: 10px;
+}
+
+.location-badge {
+    display: flex;
+    align-items: center;
+    background-color: transparent;
+    /* Or maybe a very light tint? */
+    margin-top: 5px;
+    gap: 10px;
+}
+
+.icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: white;
+    border: 2px solid #E53E3E;
+    /* Red border */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #E53E3E;
+    font-size: 14px;
+}
+
+.icon-box .location-icon-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.location-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.location-label {
+    font-size: 10px;
+    color: #E53E3E;
+    font-weight: 700;
+}
+
+.location-detail {
+    font-size: 12px;
+    color: #0d3826;
+    /* Dark green/teal text */
+    font-weight: 700;
+}

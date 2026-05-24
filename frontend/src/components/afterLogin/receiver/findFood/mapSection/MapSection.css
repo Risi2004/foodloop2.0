@@ -1,0 +1,186 @@
+.map-container-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    position: relative;
+    border-radius: 0 !important;
+    overflow: hidden;
+}
+
+.map-container-wrapper .leaflet-container {
+    border-radius: 0 !important;
+}
+
+.leaflet-map {
+    height: 100%;
+    width: 100%;
+    min-height: 300px;
+    z-index: 0;
+    border-radius: 0 !important;
+}
+
+/* Mobile/tablet: ensure map has explicit height so Leaflet renders when section is below the fold */
+@media (max-width: 900px) {
+    .map-container-wrapper {
+        min-height: calc(100vh - 60px);
+        height: 100%;
+    }
+
+    .leaflet-map {
+        min-height: calc(100vh - 60px);
+    }
+}
+
+/* Custom Marker CSS */
+.custom-map-marker {
+    background: transparent;
+    border: none;
+}
+
+.marker-pin {
+    width: 48px;
+    height: 48px;
+    background: #1b4332;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: -20px 0 0 -24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.marker-pin::after {
+    content: '';
+    width: 24px;
+    height: 24px;
+    margin: 8px 0 0 8px;
+    /* Adjustment needed due to rotation */
+    background: #fff;
+    position: absolute;
+    border-radius: 50%;
+}
+
+.marker-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    transform: rotate(45deg);
+    /* Counter rotate image */
+    z-index: 2;
+    border: 2px solid white;
+    object-fit: cover;
+}
+
+/* Current Location Overlay */
+.current-location-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    /* Above map */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 250px;
+}
+
+.location-icon {
+    font-size: 1.5rem;
+}
+
+.location-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.location-text .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1b4332;
+}
+
+.location-text .value {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.location-action-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #1b4332;
+    background: #e8f5e9;
+    border: 1px solid #1b4332;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.location-action-btn:hover:not(:disabled) {
+    background: #c8e6c9;
+}
+
+.location-action-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.location-error {
+    font-size: 0.75rem;
+    color: #c62828;
+    margin-top: 4px;
+}
+
+/* Map Controls – + and - zoom buttons (always visible above map) */
+.map-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1500;
+    pointer-events: auto;
+}
+
+/* PC view: leave gap on the right of the zoom icons */
+@media (min-width: 901px) {
+    .map-controls {
+        right: 48px;
+    }
+}
+
+.control-btn {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(180deg, #013211 0%, #029834 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.control-btn:hover {
+    opacity: 0.9;
+}

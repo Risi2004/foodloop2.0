@@ -1,0 +1,54 @@
+.donation-chat-icon-button-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+}
+
+.donation-chat-icon-button {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #1F4E36 0%, #48B47D 100%);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(31, 78, 54, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.donation-chat-icon-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(31, 78, 54, 0.5);
+}
+
+.donation-chat-icon-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 78, 54, 0.4);
+}
+
+.donation-chat-icon-button__icon {
+  width: 28px;
+  height: 28px;
+}
+
+.donation-chat-icon-button__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+}

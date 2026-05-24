@@ -1,0 +1,57 @@
+.find-food-page {
+    display: grid;
+    grid-template-columns: 480px 1fr;
+    margin: 30px 48px 30px 30px;
+    height: calc(100vh - 60px);
+    width: calc(100% - 78px);
+    max-width: calc(100% - 78px);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.sidebar-section {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 10;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.map-section {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    margin: 30px;
+    border-radius: 0;
+}
+
+/* Tablet & small screens: one page – list on top (full viewport), scroll down for map (full viewport) */
+@media (max-width: 900px) {
+    .find-food-page {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    /* List: fills whole page at top */
+    .sidebar-section {
+        width: 100%;
+        min-height: 100vh;
+        height: auto;
+        overflow: auto;
+        box-shadow: none;
+    }
+
+    /* Map: fills whole page when you scroll down */
+    .map-section {
+        width: calc(100% - 60px);
+        height: calc(100vh - 60px);
+        min-height: calc(100vh - 60px);
+        margin: 30px;
+        position: relative;
+    }
+}

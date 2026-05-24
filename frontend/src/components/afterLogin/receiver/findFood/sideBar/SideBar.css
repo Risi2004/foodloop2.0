@@ -1,0 +1,105 @@
+.sidebar-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    /* Light greenish grey background from image */
+}
+
+.sidebar-header {
+    margin-bottom: 20px;
+}
+
+.sidebar-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 16px;
+}
+
+.search-bar-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.search-bar-container .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border-radius: 24px;
+    border: none;
+    background: white;
+    font-size: 0.95rem;
+    color: #1b4332;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.filter-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: none;
+    background: white;
+    color: #1b4332;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chip.active {
+    background: white;
+    /* Design looks white even for active, or maybe light grey? Keeping white as per image */
+    border: 1px solid #cce3de;
+}
+
+.chip:hover {
+    background: #f5fcf9;
+}
+
+.filter-btn .filter-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.food-list {
+    flex: 0 1 auto;
+    max-height: 420px; /* ~2 cards visible at a time */
+    overflow-y: auto;
+    padding-right: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.food-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.food-list {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}

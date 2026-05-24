@@ -1,0 +1,110 @@
+.profile-header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-info {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+}
+
+.profile-avatar-container {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid white;
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-name {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Inline edit button (replaces verified donor badge) */
+.inline-edit-link {
+    text-decoration: none;
+}
+
+.inline-edit-btn {
+    padding: 6px 14px;
+    font-size: 14px;
+}
+
+.profile-type {
+    color: #4CAF50;
+    font-weight: 600;
+    margin: 0;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+.profile-meta,
+.profile-location-row {
+    color: #E0E0E0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.profile-location-row .location-icon-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.profile-actions {
+    display: none; /* hide side actions; only inline edit button is used */
+}
+
+.edit-btn {
+    background: white;
+    color: #333;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.edit-btn:hover {
+    background: #f0f0f0;
+}
+
+.new-donation-btn {
+    display: none;
+}
+
+.new-donation-btn:hover {
+    background: #27ae60;
+}

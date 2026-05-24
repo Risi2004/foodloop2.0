@@ -1,0 +1,12 @@
+.review__management__page {
+    display: flex;
+    background-color: #10221C;
+}
+
+@media screen and (max-width:1300px){
+
+    .review__management__page {
+        display: block;
+    }
+
+}

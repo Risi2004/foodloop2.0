@@ -1,0 +1,135 @@
+.notificationPanel {
+  /* Uses: common-glass-card common-glass-card--light */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.notificationPanel__sectionHeader {
+  color: #0d1b12;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 18px;
+  line-height: 22.5px;
+  letter-spacing: -0.27px;
+  font-weight: 700;
+  position: relative;
+  align-self: stretch;
+  height: 21.6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.notificationPanel__item {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 10px 20px 10px 20px;
+  /* Uses: common-flex-column common-flex-column--center */
+  gap: 8px;
+  align-self: stretch;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.notificationPanel__itemHeader {
+  /* Uses: common-flex-row common-flex-row--space-between */
+  align-items: flex-start;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.notificationPanel__itemTitle {
+  color: #13ec5b;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  position: relative;
+  width: 231.5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.notificationPanel__itemTime {
+  color: #13ec5b;
+  text-align: left;
+  font-family: "Inter-Medium", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  position: relative;
+  width: 62.66px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.notificationPanel__itemDescription {
+  color: #0b8634;
+  text-align: left;
+  font-family: "Inter-Regular", sans-serif;
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 400;
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.notificationPanel__itemActions {
+  /* Uses: common-flex-row */
+  gap: 16px;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.notificationPanel__action {
+  text-align: center;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notificationPanel__action--primary {
+  color: #013211;
+  width: 77.86px;
+}
+
+.notificationPanel__action--secondary {
+  color: #13ec5b;
+  width: 54.36px;
+}
+
+.notificationPanel__loading,
+.notificationPanel__empty {
+  color: #0d1b12;
+  font-family: "Inter-Regular", sans-serif;
+  font-size: 14px;
+  padding: 12px 0;
+  align-self: stretch;
+  text-align: center;
+}
+
+.notificationPanel__error {
+  align-self: stretch;
+  text-align: center;
+}

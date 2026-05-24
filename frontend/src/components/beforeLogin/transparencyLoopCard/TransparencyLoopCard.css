@@ -1,0 +1,63 @@
+.transparency__loop__card {
+    border-radius: 20px;
+    background: linear-gradient(141deg, #1F4E36 51.71%, #48B47D 77.73%);
+    box-shadow: 7px 9px 4px 0 rgba(0, 0, 0, 0.25);
+    color: white;
+    padding: 20px;
+    height: 350px;
+    text-align: center;
+    position: relative;
+    width: 18%;
+    flex-grow: 1;
+}
+
+.transparency__loop__card h1 {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    background: none !important;
+}
+
+.transparency__loop__card img {
+    border-radius: 40px;
+    background: #013211;
+    padding: 15px;
+    border: 6px white solid;
+}
+
+.transparency__loop__card h4 {
+    border-radius: 10px;
+    background: #48B47D;
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    position: absolute;
+    top: 60%;
+    left: 10%;
+    width: 80%;
+}
+
+.transparency__loop__card p {
+    position: absolute;
+    top: 82%;
+}
+
+@media screen and (max-width: 1280px) {
+
+    .transparency__loop__card {
+        width: 35%;
+        flex-grow: 1;
+    }
+
+    .transparency__loop__card h1 {
+        font-size: 25px;
+    }
+
+    .transparency__loop__card h4 {
+        font-size: 14px;
+    }
+
+    .transparency__loop__card p {
+        font-size: 12px;
+    }
+
+}

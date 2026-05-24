@@ -1,0 +1,56 @@
+.tracking-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.donation-summary-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.donation-image-circle {
+    width: 60px;
+    height: 60px;
+}
+
+.donation-image-circle img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.donation-details h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    color: #1a1a1a;
+}
+
+.claimed-text {
+    margin: 0 0 5px 0;
+    font-size: 12px;
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+.availability {
+    font-size: 12px;
+    color: #444;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.availability .icon-img.availability-dot {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
+    flex-shrink: 0;
+}

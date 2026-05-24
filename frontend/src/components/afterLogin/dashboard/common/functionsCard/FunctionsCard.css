@@ -1,0 +1,46 @@
+.functions__card {
+    border-radius: 24px;
+    background: linear-gradient(180deg, #FFF 0%, #1F4E36 100%);
+    padding: 20px;
+    width: 30%;
+    flex-grow: 1;
+    height: 200px;
+}
+
+.functions__card img {
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.40);
+    padding: 5px;
+}
+
+.functions__card h2 {
+    text-align: left;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.functions__card p {
+    color: white;
+    text-align: left;
+}
+
+@media screen and (max-width:750px) {
+
+    .functions__card{
+        width: 50%;
+    }
+
+}
+
+@media screen and (max-width:1300px) {
+
+
+    .functions__card h2{
+        font-size: 18px;
+    }
+
+    .functions__card P{
+        font-size: 12px;
+    }
+
+}

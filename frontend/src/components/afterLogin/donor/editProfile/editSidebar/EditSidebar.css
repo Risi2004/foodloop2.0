@@ -1,0 +1,243 @@
+.edit-sidebar-card {
+    background: #547864;
+    /* Dark Green Card */
+    border-radius: 20px;
+    padding: 40px 24px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    height: 600px;
+    /* Fixed height visually in design */
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edit-title {
+    color: #4CAF50;
+    /* Bright Green Title */
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 16px 0;
+}
+
+.edit-subtitle {
+    font-size: 14px;
+    color: #e0e0e0;
+    line-height: 1.5;
+    margin-bottom: 40px;
+    padding: 0 10px;
+}
+
+.avatar-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.avatar-circle-wrapper {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+.avatar-circle {
+    width: 120px;
+    height: 120px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #fff;
+    overflow: hidden;
+}
+
+.avatar-circle .avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-icon {
+    width: 80px;
+    height: 80px;
+    color: #2E4E3F;
+}
+
+.camera-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #32CD32;
+    border: 2px solid #547864;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.camera-btn-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    object-fit: contain;
+}
+
+.active-donor-badge {
+    background: #32CD32;
+    color: #003300;
+    display: inline-block;
+    padding: 4px 16px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0 auto 16px;
+}
+
+.business-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    color: #1a2e22;
+    /* Very Dark Text for Name */
+}
+
+.member-since {
+    font-size: 12px;
+    color: #e0e0e0;
+    margin: 0 0 40px 0;
+    opacity: 0.8;
+}
+
+.change-password-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 24px;
+    border-radius: 30px;
+    color: #1a2e22;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 auto;
+    width: fit-content;
+    font-size: 14px;
+}
+
+.lock-icon-img {
+    width: 18px;
+    height: 18px;
+    display: block;
+    object-fit: contain;
+}
+
+/* Change Password modal */
+.edit-sidebar-password-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.edit-sidebar-password-modal {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 28px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(31, 78, 54, 0.2);
+}
+
+.edit-sidebar-password-modal__title {
+    color: #1F4E36;
+    font-size: 22px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+}
+
+.edit-sidebar-password-modal__hint {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0 0 20px 0;
+}
+
+.edit-sidebar-password-modal__field {
+    margin-bottom: 16px;
+}
+
+.edit-sidebar-password-modal__field label {
+    display: block;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.edit-sidebar-password-modal__field input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-sidebar-password-modal__field input:focus {
+    outline: none;
+    border-color: #13EC5B;
+}
+
+.edit-sidebar-password-modal__error {
+    color: #c53030;
+    font-size: 13px;
+    margin: 0 0 12px 0;
+}
+
+.edit-sidebar-password-modal__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.edit-sidebar-password-modal__cancel {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.edit-sidebar-password-modal__save {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #1F4E36 0%, #48B47D 100%);
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.edit-sidebar-password-modal__save:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

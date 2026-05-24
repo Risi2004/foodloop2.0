@@ -1,0 +1,417 @@
+.driver__profile__page {
+    margin: 30px;
+}
+
+.driver__profile__s1 {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    margin-bottom: 30px;
+}
+
+.driver__profile__s1__sub1 {
+    border-radius: 20px;
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.3);
+    padding: 20px;
+    width: 60%;
+}
+
+.driver__profile__s1__sub1 {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    gap: 20px;
+}
+
+.driver__profile__s1__sub1__sub h1 {
+    font-size: 50px;
+    background: linear-gradient(90deg, #00FF5B 0%, #FFF 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.driver__profile__s1__sub1__sub p {
+    color: white;
+    margin-bottom: 10px;
+}
+
+.driver__profile__s1__sub1 button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #FFF 0%, #13EC5B 100%);
+    font-weight: bolder;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.driver__profile__s1__sub2 {
+    width: 37%;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.driver__profile__s1__sub2__sub1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.driver__profile__s1__sub2__sub1 h5 {
+    color: white;
+}
+
+.driver__profile__s1__sub2__sub2 {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 10px;
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.driver__profile__s1__sub2__sub2 img {
+    background-color: #DCFCE7;
+    padding: 10px;
+    border-radius: 40px;
+}
+
+.driver__profile__s2 {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.driver__profile__s2__sub1 {
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.3);
+    width: 31%;
+}
+
+.driver__profile__s2__sub1__sub1__sub {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    justify-content: center;
+}
+
+.driver__profile__s2__sub1__sub1 h2,
+.driver__profile__s2__sub1__sub1 h3,
+.driver__profile__s2__sub1__sub1 p {
+    color: white;
+}
+
+.driver__profile__s2__sub1__sub1 h3 {
+    margin-bottom: 10px;
+}
+
+.driver__profile__s2__sub1__sub1 p {
+    margin-bottom: 20px;
+}
+
+.driver__profile__s2__sub1__sub1 {
+    border-radius: 20px;
+    background: linear-gradient(180deg, #1F4E36 0%, #48B47D 100%);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.driver__profile__s2__sub1__sub2__sub1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.driver__profile__s2__sub1__sub2 {
+    border-radius: 20px;
+    background: linear-gradient(180deg, #1F4E36 0%, #48B47D 100%);
+    padding: 20px;
+    color: white;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.driver__profile__s2__sub1__sub2__sub2 {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    align-items: center;
+    text-align: center;
+}
+
+.driver__profile__s2__sub1__sub2__sub2__sub img {
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.3);
+    padding: 10px;
+    border-radius: 40px;
+}
+
+.driver__profile__s2__sub1__sub2__sub2 {
+    padding: 10px;
+}
+
+.driver__profile__s2__sub1__badges {
+    border-radius: 20px;
+    background: linear-gradient(180deg, #1F4E36 0%, #48B47D 100%);
+    padding: 20px;
+    color: white;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.driver__profile__s2__sub1__badges__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.driver__profile__s2__sub1__badges__icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.driver__profile__s2__sub1__badges__icon-placeholder {
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.driver__profile__s2__sub1__badges__label {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: white;
+    text-transform: uppercase;
+}
+
+.driver__profile__s2__sub1__badges__loading h2 {
+    color: white;
+    margin: 0 0 10px 0;
+    font-size: 1.25rem;
+}
+
+.driver__profile__s2__sub1__badges__loading p {
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.driver__profile__s2__sub2 {
+    width: 65%;
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.3);
+    padding: 20px;
+    border-radius: 20px;
+}
+
+.driver__profile__s2__sub2__sub1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.driver__profile__s2__sub2__sub1__sub {
+    border-radius: 20px;
+    padding: 20px;
+    background: linear-gradient(180deg, #FFF 0%, #1F4E36 100%);
+    width: 30%;
+    margin-bottom: 20px;
+}
+
+.driver__profile__s2__sub2__sub1__sub__sub1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.driver__profile__s2__sub2__sub1__sub__sub2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    margin-top: 10px;
+}
+
+.driver__profile__s2__sub2__sub1__sub h1 {
+    margin-top: 10px;
+}
+
+.driver__profile__s2__sub2__sub2__sub1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.driver__profile__s2__sub2__sub2__sub1 p {
+    color: white;
+}
+
+.driver__profile__s2__sub2__sub2__sub2 {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+}
+
+.driver__profile__s2__sub2__sub2__sub2 .delivery__card {
+    width: 40%;
+    flex-wrap: wrap;
+
+}
+
+
+
+.driver__profile__s2__sub1__sub3 {
+    border-radius: 20px;
+    background: white;
+    padding: 20px;
+}
+
+.driver__profile__s2__sub1__sub3__sub1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.driver__profile__s2__sub1__sub3__sub1 h3 {
+    font-size: 18px;
+    color: black;
+    margin: 0;
+    font-weight: 800;
+}
+
+.driver__profile__s2__sub1__sub3__sub1__badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #FFF8E1;
+    padding: 5px 10px;
+    border-radius: 10px;
+    border: 1px solid #FFD54F;
+    color: #FF6F00;
+    font-weight: bold;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.driver__profile__s2__sub1__sub3__sub1__badge img {
+    width: 15px;
+    height: 15px;
+}
+
+.driver__profile__s2__sub1__sub3__sub2 {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.driver__profile__s2__sub1__sub3__sub2>img {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #FFD700;
+    border-radius: 50%;
+    padding: 5px;
+}
+
+.driver__profile__s2__sub1__sub3__sub2__sub {
+    width: 100%;
+}
+
+.driver__profile__s2__sub1__sub3__sub2__sub__text {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.driver__profile__s2__sub1__sub3__sub2__sub__bar {
+    width: 100%;
+    height: 10px;
+    background-color: #E0E0E0;
+    border: 1px solid #CCC;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.driver__profile__s2__sub1__sub3__sub2__sub__bar__fill {
+    height: 100%;
+    background-color: #00FF5B;
+    width: 80%;
+}
+
+.driver__profile__s2__sub1__sub3__p {
+    color: #333;
+    font-size: 13px;
+    text-align: left;
+    font-weight: 500;
+    margin: 0;
+}
+
+@media screen and (max-width: 1000px) {
+    .driver__profile__s1 {
+        display: block;
+    }
+
+    .driver__profile__s1__sub1 {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .driver__profile__s1__sub2 {
+        width: 100%;
+    }
+
+    .driver__profile__s2 {
+        display: block;
+    }
+
+    .driver__profile__s2__sub1 {
+        width: 100%;
+    }
+
+    .driver__profile__s2__sub2 {
+        width: 100%;
+        margin-top: 20px;
+    }
+}
+
+@media screen and (max-width:750px) {
+
+    .driver__profile__s2__sub2__sub1 {
+        display: block;
+    }
+
+    .driver__profile__s2__sub2__sub1__sub {
+        width: 100%;
+    }
+
+    .driver__profile__s2__sub2__sub2__sub2 {
+        display: block;
+    }
+}

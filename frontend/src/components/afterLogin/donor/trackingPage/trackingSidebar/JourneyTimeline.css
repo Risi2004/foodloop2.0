@@ -1,0 +1,130 @@
+.journey-timeline-card {
+    background: white;
+    /* Or transparent/gradient if matching image exactly */
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
+    border-radius: 16px;
+    padding: 20px;
+    /* Expand to fill space */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background Arrow Graph Effect */
+.journey-timeline-card::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: -20px;
+    width: 200px;
+    height: 200px;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 90 L40 60 L60 70 L90 10' fill='none' stroke='rgba(76,175,80,0.2)' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat;
+    background-size: contain;
+    pointer-events: none;
+}
+
+.timeline-title {
+    font-size: 14px;
+    margin: 0 0 20px 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    position: relative;
+    padding-left: 10px;
+}
+
+.timeline-line {
+    position: absolute;
+    left: 28px;
+    /* Center of markers */
+    top: 20px;
+    bottom: 20px;
+    width: 2px;
+    background: #e0e0e0;
+    z-index: 0;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+.timeline-marker {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    border: 3px solid #f0f0f0;
+    flex-shrink: 0;
+}
+
+.timeline-marker.green {
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+.timeline-marker.blue {
+    border-color: #2196f3;
+    color: #2196f3;
+    background: #e3f2fd;
+}
+
+.timeline-marker.red {
+    border-color: #ff9800;
+    color: #ff9800;
+}
+
+.timeline-marker .icon-img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.timeline-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.status-label.green {
+    color: #4CAF50;
+}
+
+.status-label.blue {
+    color: #1565c0;
+}
+
+.status-label.gray {
+    color: #9e9e9e;
+}
+
+.status-desc {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+}
+
+.time-stamp {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+}

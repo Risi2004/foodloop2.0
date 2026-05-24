@@ -1,0 +1,88 @@
+.vendor-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background: transparent;
+}
+
+.vendor-main-content {
+    flex-grow: 1;
+    padding: 3rem;
+    overflow-y: auto;
+}
+
+.vendor-header {
+    margin-bottom: 3rem;
+}
+
+.vendor-header h1 {
+    font-size: 2.5rem;
+    color: white;
+    margin-bottom: 0.5rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.vendor-header p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.vendor-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.vendor-stat-card {
+    padding: 2.5rem 2rem;
+    border-radius: 24px;
+    background: linear-gradient(180deg, #DCECCD 0%, #3a6351 40%, #1e3a2f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(31, 78, 54, 0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.vendor-stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.vendor-stat-card h3 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+    color: white;
+}
+
+.vendor-stat-card p {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #A5D6A7;
+    margin: 0;
+}
+
+/* Stat card color overrides removed for unified dark gradient contrast */
+
+.vendor-recent-section h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1.5rem;
+}
+
+.activity-placeholder {
+    background: #F6F8F7;
+    border: 1px dashed #DBE6E0;
+    border-radius: 24px;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #618972;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(31, 78, 54, 0.04);
+}

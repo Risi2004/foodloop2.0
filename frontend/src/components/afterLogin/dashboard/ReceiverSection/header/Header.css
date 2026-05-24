@@ -1,0 +1,126 @@
+.header {
+    position: relative;
+    margin-top: 0px;
+}
+
+.header__s1 {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    bottom: 3%;
+    right: 2%;
+}
+
+.header__image2 {
+    width: 100%;
+}
+
+.header__image1 {
+    width: 35%;
+}
+
+.header__s1__caption {
+    padding: 20px;
+    text-align: left;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.46);
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.header__s1__caption h1 {
+    background: linear-gradient(183deg, rgba(0, 0, 0, 0.25) 2.14%, #1F4E36 107.03%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 60px;
+}
+
+.header__s1__caption p {
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+.header__s1__btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    border-radius: 12px;
+    background: #1F4E36;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.00);
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.header__s1__btn2 {
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.40);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.00);
+    border: none;
+    cursor: pointer;
+}
+
+.header__s1__btn2 p{
+    text-align: center;
+    padding: 10px;
+}
+
+.header__s1__btns {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+
+}
+
+.header__s1__btn p,
+.header__s1__btn2 p {
+    font-size: 18px;
+    margin: 0;
+}
+
+.header__s1__btn2 p {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+@media screen and (max-width:1300px) {
+    .header__image1 {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .header__s1__caption h1 {
+        font-size: 35px;
+    }
+
+    .header__s1__caption p {
+        font-size: 14px;
+    }
+
+    .header__s1__btn p,
+    .header__s1__btn2 p {
+        font-size: 14px;
+    }
+
+    .header__s1__caption {
+        width: 100%;
+        margin: 10px;
+    }
+
+    .header__s1__btns {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .header__image2 {
+        height: 500px;
+        object-fit: cover;
+    }
+}

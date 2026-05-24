@@ -1,0 +1,82 @@
+/* Same card styling as DriverDetails/Food on pickup page */
+.delivery__card {
+    background-color: rgba(255, 255, 255, 1);
+    padding: 20px;
+    border-radius: 30px;
+    padding-left: 40px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.delivery__card__s1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.delivery__card__s1 h4 {
+    font-weight: bolder;
+}
+
+.delivery__card__s1 h5 {
+    color: #4C9A66;
+    border-radius: 50px;
+    background: #F0F9F2;
+    padding: 10px;
+}
+
+.delivery__card p {
+    color: #4C9A66;
+}
+
+.delivery__card__s2 {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px
+}
+
+.delivery__card__s2 p {
+    color: #EF4444;
+}
+
+.delivery__card button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    background: #3B6D4C;
+    width: 90%;
+    cursor: pointer;
+}
+
+.delivery__card button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.delivery__card button p {
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+}
+
+.delivery__earnings-badge {
+    background: #f0f9f2;
+    color: #166534;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 800;
+    border: 1px solid #dcfce7;
+}
+
+.delivery__earnings-badge.earned {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}

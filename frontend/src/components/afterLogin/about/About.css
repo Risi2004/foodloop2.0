@@ -1,0 +1,429 @@
+/* Global reset for the component */
+.about {
+  width: 100%;
+  max-width: 1440px;
+  /* Standard desktop max-width */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  padding-bottom: 50px;
+  position: relative;
+}
+
+.about * {
+  box-sizing: border-box;
+}
+
+/* Header Section */
+.head {
+  width: 90%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0px 12px 40px rgba(0, 0, 0, 0.18);
+  border-radius: 56px;
+  padding: 60px 20px;
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  text-align: center;
+}
+
+.story-badge {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  padding: 12px 24px;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+.story-badge__label {
+  color: #ffffff;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.hero-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.hero-title,
+.hero-title--accent {
+  font-family: "Inter-Bold", sans-serif;
+  font-size: clamp(40px, 6vw, 96px);
+  /* Responsive font size */
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -2px;
+  text-align: center;
+}
+
+.hero-title {
+  color: #ffffff;
+}
+
+.hero-title--accent {
+  background: linear-gradient(90deg, #1f4e36 0%, #48b47d 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-description {
+  color: #0d1b12;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: clamp(16px, 2vw, 24px);
+  line-height: 1.4;
+  font-weight: 700;
+  max-width: 800px;
+  text-align: center;
+}
+
+/* Idea Section */
+.idea {
+  width: 100%;
+  max-width: 1200px;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.section-title {
+  text-align: center;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.2;
+  font-weight: 700;
+  max-width: 900px;
+}
+
+.section-title__text {
+  color: black;
+}
+
+.section-title__accent {
+  color: black;
+}
+
+.section-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 40px;
+  flex-wrap: wrap;
+  /* Allow wrapping on smaller screens */
+}
+
+.content-block {
+  flex: 1;
+  min-width: 300px;
+  /* Ensure readability */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.subsection-title {
+  color: #0d5d27;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.body-text,
+.body-text--secondary {
+  color: black;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.stat-card {
+  background: radial-gradient(closest-side, #48b47d 0%, #1f4e36 100%);
+  border-radius: 50%;
+  border: 4px dashed #ffffff;
+  width: 350px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  margin: 0 auto;
+  /* Center on mobile wrap */
+}
+
+.stat-card__number {
+  color: #ffffff;
+  font-family: "Inter-ExtraBoldItalic", sans-serif;
+  font-size: 80px;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+}
+
+.stat-card__label,
+.stat-card__value {
+  color: #13ec5b;
+  font-family: "Inter-Bold", sans-serif;
+  text-align: center;
+  font-weight: 700;
+}
+
+.stat-card__label {
+  font-size: 20px;
+}
+
+.stat-card__value {
+  font-size: 24px;
+}
+
+/* Journey Section */
+.journy {
+  width: 100%;
+  padding: 40px 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+/* Timeline Line - Using a pseudo-element on the container relative to the rows */
+.journy::before {
+  content: "";
+  position: absolute;
+  top: 150px;
+  /* Start below title */
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  background: linear-gradient(180deg, rgba(72, 180, 125, 0.9) 0%, rgba(31, 78, 54, 0.9) 100%);
+  border-radius: 4px;
+  z-index: 0;
+}
+
+.journey-container,
+.section-header {
+  position: relative;
+  /* Reset absolute */
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Hide original vector if using CSS line, or style it to be hidden */
+.vector-2 {
+  display: none;
+}
+
+.section-header__title {
+  background: linear-gradient(90deg, #029834 0%, #013211 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  border: 3px dotted #029834;
+  border-radius: 50px;
+  padding: 10px 40px;
+  background-color: rgba(255, 255, 255, 0.8);
+  /* Readability over line */
+  z-index: 2;
+  text-align: center;
+}
+
+.journey-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 1200px;
+  z-index: 1;
+  position: relative;
+  padding: 0 20px;
+}
+
+.impact-card {
+  background: white;
+  /* implicit from design */
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 450px;
+  /* Constrain width */
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.impact-card__title {
+  color: #0d1b12;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.impact-card__description {
+  color: #4b5563;
+  font-family: "Inter-Medium", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metric-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-icon img {
+  width: 24px;
+  height: 24px;
+}
+
+.metric-label {
+  color: #6b7280;
+  font-family: "Inter-Medium", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.icon-circle {
+  background: #ffffff;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  /* Sit on top of line */
+  flex-shrink: 0;
+}
+
+.icon-circle img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.feature-image {
+  border-radius: 20px;
+  width: 100%;
+  max-width: 450px;
+  height: 250px;
+  object-fit: cover;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Alternate rows direction for zigzag effect if desired, or keep consistent */
+/* The design shows strict: Left(Text) - Center(Icon) - Right(Image) */
+/* Then Next row: Left(Image) - Center(Icon) - Right(Text) */
+/* We need to enforce this order or rely on HTML order. */
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+
+  .hero-title,
+  .hero-title--accent {
+    font-size: 60px;
+  }
+
+  .journey-row {
+    gap: 20px;
+  }
+
+  .impact-card,
+  .feature-image {
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* Hide the central line on mobile as stack breaks it */
+  .journy::before {
+    display: none;
+  }
+
+  .head {
+    border-radius: 30px;
+    padding: 40px 15px;
+  }
+
+  .stat-card {
+    width: 280px;
+    height: 280px;
+  }
+
+  .stat-card__number {
+    font-size: 60px;
+  }
+
+  /* Stack journey rows vertically */
+  .journey-row {
+    flex-direction: column;
+    gap: 30px;
+    padding-bottom: 40px;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+    /* Separator instead of vertical line */
+  }
+
+  /* Reorder items so Text is always top or bottom? Or keep visual order? */
+  /* Usually text first is better on mobile */
+  /* If HTML is: Text - Icon - Image, it stacks Text, Icon, Image. */
+  /* If HTML is: Image - Icon - Text, it stacks Image, Icon, Text. */
+  /* We might want consistent Text -> Image or Image -> Text. */
+  /* For now, just stacking naturally. */
+
+  .icon-circle {
+    /* Maybe hide icon circle on mobile or place it nicely? */
+    transform: scale(0.8);
+  }
+
+  .impact-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .feature-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+  }
+}

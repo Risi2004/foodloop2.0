@@ -1,0 +1,107 @@
+.tracking-page {
+    padding: 30px 50px;
+    min-height: 100vh;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.tracking-header {
+    margin-bottom: 25px;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 0;
+}
+
+.back-btn:hover {
+    color: white;
+}
+
+.header-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 5px 0;
+    color: #4CAF50;
+    /* Green accent matching design title */
+    color: #00ff7f;
+    /* Brighter green for title against dark bg */
+}
+
+.tracking-id {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+.tracking-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 30px;
+    height: auto;
+    min-height: calc(100vh - 150px);
+    align-items: start;
+}
+
+.map-section {
+    flex: 1.5;
+    /* Takes up more space */
+    min-width: 0;
+    /* Fix for flex item overflow */
+    flex-basis: 50%;
+    /* Ensure it has a base width */
+    background: #e0e0e0;
+    border-radius: 20px;
+    overflow: hidden;
+    position: sticky;
+    top: 30px;
+    height: calc(100vh - 60px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    /* Standard width for sidebar handled by grid */
+}
+
+@media (max-width: 1000px) {
+    .tracking-layout {
+        display: block;
+        height: auto;
+    }
+
+    .map-section {
+        display: block;
+        width: 100%;
+        position: relative;
+        top: 0;
+        height: 50vh;
+        min-height: 400px;
+        margin-bottom: 24px;
+    }
+
+    .sidebar-section {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+    }
+}

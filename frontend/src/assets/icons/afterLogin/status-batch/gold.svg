@@ -1,0 +1,20 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<rect width="96" height="96" rx="48" fill="#FEF3C7"/>
+<rect x="14" y="14" width="68" height="68" rx="34" fill="url(#paint0_linear_40_895)"/>
+<rect x="14" y="14" width="68" height="68" rx="34" stroke="url(#paint1_linear_40_895)" stroke-width="8"/>
+<rect x="23" y="23" width="50" height="50" fill="url(#pattern0_40_895)"/>
+<defs>
+<pattern id="pattern0_40_895" patternContentUnits="objectBoundingBox" width="1" height="1">
+<use xlink:href="#image0_40_895" transform="scale(0.0333333)"/>
+</pattern>
+<linearGradient id="paint0_linear_40_895" x1="48" y1="18" x2="48" y2="78" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFF700"/>
+<stop offset="1" stop-color="#999400"/>
+</linearGradient>
+<linearGradient id="paint1_linear_40_895" x1="18" y1="93" x2="96.5" y2="18" gradientUnits="userSpaceOnUse">
+<stop stop-color="#999400"/>
+<stop offset="1" stop-color="#333100"/>
+</linearGradient>
+<image id="image0_40_895" width="30" height="30" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABrElEQVR4nOWVu07DMBSG8wioQrAj4BEYUIsEZSyqmmNzeTNKmSgMdGJloLAzU7GDCoiLRLthWz9yEqWXJCS2y9QjWWqsnPP5fD11PW9uA4p1oBigWDveQ30Bkj0F+5Lx3BqS9qN3+wAvjWrTRVT7MpmEo0VIeg1eEOTH+4JqYTF6Bw6XM6FBPnsL83ljlO/vjfIbS+nJgurRSy+TJ2bt6MRX+cbobNIYPRcylq08u4CVYlflTopdlOcqFpwlAObKeUmrBvhq8Kw/pys+j3I7RtC/lP+L4unQmsY7AvgGFLUg2T0kDSPADxSdQlA1MtK3UjwdeiLjDkJ92Uuyj8JTnBfxNJssQTU3KA7Wx7oovnRONIB2YMWujaHxohs7qKBqohhoM9sOLyeV+9s23Z4kwbycDaZKStfH5mBJvTSFYwdLfZ78runBAswG7mA2sOl4OIOOv23AjzMA98zBilrOU62oaQ4W/q7zVAu+YwzWAcW61heIpDvPNgB/pdCfQxL66XRl6gD8LUj6MoNSxZtFAP4aJLstAO46d5p9f1MzuNX07zxcvWDPdpC8eYlfc+RZuMdFRcEAAAAASUVORK5CYII="/>
+</defs>
+</svg>

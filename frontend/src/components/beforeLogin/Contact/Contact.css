@@ -1,0 +1,116 @@
+.contact {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 30px;
+}
+
+.contact__s1 h1 {
+    margin-bottom: 20px;
+}
+
+.contact__s1__sub1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    color: #026924;
+    width: fit-content;
+    padding: 20px;
+    border-radius: 50px;
+    background: rgba(19, 236, 91, 0.10);
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.contact__s1__sub2__sub {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.contact__s1__sub2__sub img {
+    padding: 10px;
+    border-radius: 10px;
+    background: #1F4E36;
+}
+
+.contact__s1__sub2__sub {
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.contact__s2 {
+    border-radius: 20px;
+    background: linear-gradient(137deg, #013211 25.62%, #029834 93.99%);
+    padding: 40px;
+    color: white;
+}
+
+.contact__s2__sub1 {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+#name,
+#email,
+#contactNo,
+#subject,
+#message {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+}
+
+#message {
+    height: 200px;
+    resize: none;
+}
+
+.contact__s2__sub2 {
+    margin-bottom: 50px;
+}
+
+.contact__s2__sub__sub input,
+.contact__s2__sub1 input,
+.contact__s2__sub2 input,
+.contact__s2__sub2 textarea {
+    border-radius: 10px;
+    background: #FFF;
+}
+
+.contact__s2__sub__sub input:focus,
+.contact__s2__sub input:focus,
+.contact__s2__sub textarea:focus,
+.contact__s2__sub2 input:focus,
+.contact__s2__sub2 textarea:focus {
+    outline: none;
+}
+
+.contact__s2 button {
+    border-radius: 20px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.41) 0%, rgba(153, 153, 153, 0.41) 100%);
+    padding: 20px;
+    width: 100%;
+    border: none;
+    font-weight: bolder;
+    cursor: pointer;
+}
+
+@media screen and (max-width:1000px) {
+
+    .contact {
+        display: block;
+    }
+
+    .contact__s2__sub1 {
+        display: block;
+    }
+
+    .contact__s2__sub__sub {
+        margin-bottom: 50px;
+    }
+}

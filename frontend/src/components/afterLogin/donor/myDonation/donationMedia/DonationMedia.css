@@ -1,0 +1,488 @@
+.donation-media-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    flex: 1;
+    min-width: 320px;
+    width: 100%;
+    perspective: 1000px;
+    /* Enable 3D perspective */
+}
+
+.donation-media-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.upload-hint {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: center;
+    font-weight: 500;
+}
+
+.upload-error {
+    margin: 0;
+    font-size: 13px;
+    color: #f87171;
+    text-align: center;
+    font-weight: 600;
+}
+
+.mobile-frame {
+    width: 100%;
+    max-width: 100%;
+    min-width: 360px;
+    flex-shrink: 0;
+    /* Wider: use full column width */
+    height: 640px;
+    /* Shorter height so width looks proportional */
+    background: #dadeda;
+    /* Phone bezel color */
+    border-radius: 48px;
+    padding: 16px;
+    box-shadow:
+        -30px 30px 60px rgba(0, 0, 0, 0.25),
+        /* Deep shadow */
+        inset 0 4px 8px rgba(255, 255, 255, 0.5),
+        /* Highlight */
+        inset 0 -4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transform: rotate(-5deg) rotateY(10deg);
+    /* Tilt and slight 3D rotation */
+    transition: transform 0.4s ease;
+    border: 4px solid #ced3ce;
+}
+
+
+/* Screen area */
+.mobile-screen {
+    background: #000;
+    border-radius: 36px;
+    height: 85%;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+    border: 4px solid #1a1a1a;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.mobile-screen-content {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+.upload-hint-screen {
+    flex-shrink: 0;
+    padding: 10px 12px 12px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.upload-hint-screen .upload-hint,
+.upload-hint-screen .upload-error {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.upload-hint-screen .upload-hint {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.upload-hint-screen .upload-error {
+    color: #f87171;
+    font-weight: 600;
+}
+
+.upload-hint-screen .upload-error:last-child {
+    margin-bottom: 0;
+}
+
+.camera-view {
+    width: 100%;
+    height: 100%;
+    background-image: url('https://images.unsplash.com/photo-1595855709940-fae372671549?q=80&w=2670&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.camera-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    /* Subtle darkening */
+    z-index: 1;
+}
+
+.camera-view.has-image::before {
+    display: none;
+}
+
+.upload-zone {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px dashed rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+    /* Darker semi-transparent bg */
+    backdrop-filter: blur(8px);
+    width: 140px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+
+.upload-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 1;
+}
+
+.upload-zone p {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Image Preview */
+.image-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 12px;
+}
+
+.remove-image-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+
+.remove-image-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* AI Loading Overlay - absolute so it does not affect parent width */
+.ai-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    animation: fadeIn 0.3s ease-in;
+    box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.loading-content {
+    text-align: center;
+    color: white;
+    padding: 30px;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24px;
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+}
+
+.spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 4px solid transparent;
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-ring:nth-child(1) {
+    width: 80px;
+    height: 80px;
+    animation-delay: 0s;
+}
+
+.spinner-ring:nth-child(2) {
+    width: 60px;
+    height: 60px;
+    border-top-color: #34d399;
+    animation-delay: -0.15s;
+    top: 10px;
+    left: 10px;
+}
+
+.spinner-ring:nth-child(3) {
+    width: 40px;
+    height: 40px;
+    border-top-color: #6ee7b7;
+    animation-delay: -0.3s;
+    top: 20px;
+    left: 20px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.loading-text p {
+    font-size: 14px;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+}
+
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Upload status (fallback) */
+.upload-status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 3;
+    backdrop-filter: blur(4px);
+}
+
+.mobile-controls {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+.media-btn {
+    box-sizing: border-box;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+    padding: 0;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+
+.gallery-btn {
+    color: #4b5563;
+    cursor: pointer;
+
+}
+
+.camera-btn {
+    color: #10b981;
+    cursor: pointer;
+}
+
+/* Same green circular background as receiver/driver profile camera button */
+.media-btn.camera-btn {
+    background: #32CD32;
+    border: 2px solid #547864;
+}
+
+.media-btn-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    object-fit: contain;
+}
+
+/* Desktop: hide camera button, show only file upload */
+@media screen and (min-width: 1025px) {
+    .mobile-controls .camera-btn {
+        display: none;
+    }
+
+}
+
+/* Tablet and mobile: camera straight right to file upload, force horizontal alignment */
+@media screen and (max-width: 1224px) {
+    .mobile-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-items: center;
+        width: 100%;
+        gap: 20px;
+        padding: 20px 24px 24px;
+        min-height: 50px;
+    }
+
+    .mobile-controls .camera-btn {
+        display: flex;
+    }
+
+    .mobile-controls .media-btn {
+        align-self: center;
+        justify-self: center;
+    }
+
+    .mobile-frame {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 1100px) {
+    .mobile-frame {
+        transform: none;
+        margin: 20px auto;
+        height: 720px;
+        width: 95%;
+        max-width: 520px;
+    }
+
+}
+
+@media screen and (max-width: 480px) {
+    .mobile-frame {
+        width: 100%;
+        max-width: 400px;
+        height: 600px;
+        transform: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+}

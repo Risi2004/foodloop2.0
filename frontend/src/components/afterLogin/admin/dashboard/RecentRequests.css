@@ -1,0 +1,178 @@
+.recent-requests-container {
+    width: 100%;
+    margin-top: 32px;
+    background: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.requests-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.requests-header h3 {
+    color: #1F4E36;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.view-all-btn {
+    background: transparent;
+    border: none;
+    color: #73A13F;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.view-all-btn:hover {
+    color: #1F4E36;
+    text-decoration: underline;
+    transform: translateY(-1px);
+}
+
+.recent-requests-error {
+    color: #C62828;
+    font-size: 0.9rem;
+    margin: 0 0 12px 0;
+    background: #FFEBEE;
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.recent-requests-empty {
+    text-align: center;
+    color: #618972;
+    padding: 24px !important;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.requests-table-container {
+    overflow-x: auto;
+}
+
+.requests-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #2E4E3F;
+}
+
+.requests-table th {
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #1F4E36;
+    padding-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #DBE6E0;
+}
+
+.requests-table td {
+    padding: 20px 0;
+    vertical-align: middle;
+    border-bottom: 1px solid #EBF1EE;
+}
+
+.requests-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* User Info Column */
+.user-info,
+.role-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1F4E36;
+}
+
+.user-email,
+.role-org {
+    font-size: 0.85rem;
+    color: #618972;
+    margin-top: 4px;
+}
+
+.role-type {
+    font-weight: 700;
+    color: #1F4E36;
+}
+
+/* Date Column */
+.date-cell {
+    color: #73A13F;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* Status / Actions Column */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.th-status {
+    text-align: right !important;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 800;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.action-btn.approve {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.action-btn.approve:hover {
+    background: #c8e6c9;
+}
+
+.action-btn.reject {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+.action-btn.reject:hover {
+    background: #ffcdd2;
+}
+
+@media (max-width: 600px) {
+    .requests-table th,
+    .requests-table td {
+        padding: 12px 6px;
+    }
+
+    .user-name {
+        font-size: 0.9rem;
+    }
+}

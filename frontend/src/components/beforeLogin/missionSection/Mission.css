@@ -1,0 +1,121 @@
+.mission {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.mission__s1 {
+    border-radius: 20px;
+    background: radial-gradient(94.55% 87.61% at 84.57% 19.5%, #48B47D 0%, #1F4E36 100%);
+    box-shadow: 0 9px 4px 0 rgba(0, 0, 0, 0.25);
+    color: white;
+    padding: 20px;
+}
+
+.mission__s1__sub1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mission__s1__sub1 img {
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(19, 236, 91, 0.20);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.00);
+}
+
+.mission__s1__sub1 h1 {
+    font-size: 40px;
+    color: white;
+    text-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+}
+
+.mission__s1__sub2 h1 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.mission__s1__sub2__sub2__sub {
+    display: flex;
+    align-items: start;
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+.mission__s1__sub2__sub2__sub img {
+    border-radius: 50px;
+    background: rgba(19, 236, 91, 0.20);
+    padding: 10px;
+}
+
+.join__us {
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: -7px 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.join__us span h1 {
+    background: linear-gradient(90deg, #1F4E36 0%, #48B47D 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0px;
+}
+
+.join__us h1 {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.join__us p {
+    margin-bottom: 20px;
+}
+
+.join__us__btn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.join__us__btn1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 12px;
+    background: #102216;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.00);
+    padding: 20px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.join__us__btn1:hover,
+.join__us__btn1:visited {
+    color: white;
+}
+
+.join__us__btn2 {
+    border-radius: 10px;
+    background: linear-gradient(90deg, #1F4E36 0%, #48B47D 100%);
+    padding: 20px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.join__us__btn2:hover,
+.join__us__btn2:visited {
+    color: white;
+}
+
+@media screen and (max-width: 768px) {
+    
+}

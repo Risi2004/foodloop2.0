@@ -1,0 +1,173 @@
+.food-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #f0f0f0;
+}
+
+.card-badge.verified {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #d4f8d4;
+    color: #2e7d32;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.card-badge-text {
+    line-height: 1;
+}
+
+.card-badge.delivery-fee {
+    position: absolute;
+    top: 40px; /* Offset from verified badge */
+    left: 12px;
+    background: #fff7ed;
+    color: #c2410c;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    z-index: 10;
+    border: 1px solid #ffedd5;
+}
+
+.claim-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #1b4332;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.card-content {
+    display: flex;
+    margin-top: 24px;
+    /* Space for absolute headers */
+    gap: 16px;
+}
+
+.card-image-container {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+}
+
+.card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    /* Circular image as per design */
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1b4332;
+    margin: 0;
+}
+
+.card-meta {
+    font-size: 0.75rem;
+    color: #1b4332;
+    /* Using the dark green theme color */
+    margin: 0;
+    opacity: 0.8;
+}
+
+.card-meta.highlight {
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.card-qty {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.card-impact-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    min-width: 80px;
+    border-left: 1px solid #e0e0e0;
+    padding-left: 12px;
+}
+
+.impact-box {
+    text-align: right;
+}
+
+.impact-label {
+    display: block;
+    font-size: 0.65rem;
+    color: #2e7d32;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.impact-value .number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2e7d32;
+    line-height: 1;
+}
+
+.impact-value .unit {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.storage-type {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #333;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.storage-type-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}

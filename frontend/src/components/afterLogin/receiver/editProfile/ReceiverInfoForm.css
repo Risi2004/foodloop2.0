@@ -1,0 +1,114 @@
+.receiver-info-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    color: #fff;
+}
+
+.receiver-info-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    color: #fff;
+    font-weight: 700;
+}
+
+.receiver-info-header-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    object-fit: contain;
+}
+
+.receiver-info-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.receiver-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.receiver-form-grid .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+}
+
+.receiver-form-grid .form-group input,
+.receiver-form-grid .form-group textarea,
+.receiver-form-grid .form-group select {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 14px;
+    color: #fff;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.receiver-form-grid .form-group input::placeholder,
+.receiver-form-grid .form-group textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.receiver-form-grid .form-group select {
+    cursor: pointer;
+}
+
+.receiver-form-grid .form-group select option {
+    background: #333;
+    color: #fff;
+}
+
+.receiver-form-grid .form-group textarea {
+    height: 100px;
+    resize: none;
+}
+
+.receiver-form-grid .full-width {
+    grid-column: span 2;
+}
+
+.receiver-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.receiver-form-actions .cancel-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+}
+
+.receiver-form-actions .save-btn {
+    background: linear-gradient(90deg, #1F4E36 0%, #48B47D 100%);
+    color: #fff;
+    border: none;
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.receiver-form-actions .save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

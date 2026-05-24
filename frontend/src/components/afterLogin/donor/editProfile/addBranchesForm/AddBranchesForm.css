@@ -1,0 +1,102 @@
+.add-branches-card {
+    background: #d4e0d9;
+    /* Lighter/whitish-green card */
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.branch-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    color: #2c4c3b;
+    border-bottom: 1px solid #c0d1c7;
+    padding-bottom: 12px;
+}
+
+.branch-section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.existing-branches {
+    margin-bottom: 20px;
+}
+
+.branch-item {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid #b0c4b9;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.branch-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: #333;
+    font-weight: 800;
+}
+
+.branch-details p {
+    margin: 0;
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.remove-branch-btn {
+    background: #3e5a48;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.file-upload-section {
+    margin-bottom: 24px;
+}
+
+.file-upload-section label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2c4c3b;
+    margin-bottom: 8px;
+}
+
+.file-drop-zone {
+    border: 2px dashed #666;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.upload-text {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+}
+
+.add-file-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #2c4c3b;
+    background: none;
+    border: none;
+    cursor: pointer;
+}

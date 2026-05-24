@@ -1,0 +1,86 @@
+.myclaims-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90%;
+  margin: 0 auto;
+  gap: 20px;
+}
+
+.intransit {
+  background-image:
+    linear-gradient(to left,
+      rgba(14, 73, 34, 0.35),
+      rgba(11, 60, 27, 0.715)),
+    url("/src/assets/07-live-delivery.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 20px;
+  padding: 20px 30px 20px 30px;
+  height: 265px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  align-self: stretch;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.looking,
+.complited {
+  background: #F6F8F7;
+  border: 1px solid #DBE6E0;
+  border-radius: 20px;
+  padding: 20px 30px 20px 30px;
+  height: 265px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  align-self: stretch;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.active-donations,
+.active-donations *,
+.top,
+.top *,
+.fed,
+.fed * {
+  box-sizing: border-box;
+}
+
+.active-donations {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: 21.6px;
+  color: #1F4E36;
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 28px;
+  text-align: left;
+}
+
+.looking .active-donations {
+  color: #1F4E36;
+}
+
+.donation-cards {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  align-self: stretch;
+}

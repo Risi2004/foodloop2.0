@@ -1,0 +1,140 @@
+.my__pickups {
+    margin: 30px;
+    display: flex;
+    align-items: flex-start;
+    /* Changed from center to align top */
+    justify-content: center;
+    gap: 30px;
+}
+
+.my__pickups__s1 {
+    color: #1F4E36;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background-color: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    padding: 24px;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.my__pickups__s1 h1 {
+    margin-bottom: 20px;
+    color: #1F4E36;
+    font-weight: 800;
+}
+
+.my__pickups__s1__sub {
+    border-radius: 20px;
+    background: white;
+    border: 1px solid #DBE6E0;
+    padding: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+    color: #1F4E36;
+}
+
+.my__pickups__s1__sub1 h5,
+.my__pickups__s1__sub h1 {
+    color: #1F4E36;
+    font-weight: 800;
+}
+
+.my__pickups__s1__sub2 {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.my__pickups__s2 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.my__pickups__s2__sub1 {
+    background-color: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    padding: 24px;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.my__pickups__s2__sub1__cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.my__pickups__s2__sub1__cards>div {
+    flex: 1 1 300px;
+    min-width: 0;
+}
+
+.my__pickups__s2__sub1 h1 {
+    color: #1F4E36;
+    margin: 0;
+    margin-bottom: 20px;
+    font-weight: 800;
+}
+
+.my__pickups__s2__sub2 {
+    background-color: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    padding: 24px;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.my__pickups__s2__sub2 h1 {
+    margin-bottom: 20px;
+    color: #1F4E36;
+    font-weight: 800;
+}
+
+.my__pickups__s2__sub2__sub {
+    display: flex;
+    align-items: stretch;
+    justify-content: start;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.my__pickups__s2__sub2__sub>div {
+    flex: 1 1 300px;
+    min-width: 0;
+}
+
+/* Responsive Media Queries */
+@media screen and (max-width: 1000px) {
+    .my__pickups {
+        flex-direction: column;
+        align-items: stretch;
+        /* Stretch children to full width */
+    }
+
+    .my__pickups__s1 {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .my__pickups__s2 {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 750px) {
+    .my__pickups {
+        margin: 15px;
+        gap: 20px;
+    }
+
+    .my__pickups__s2__sub2__sub {
+        flex-direction: column;
+        /* Stack cards vertically on mobile */
+        width: 100%;
+    }
+}

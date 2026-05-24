@@ -1,0 +1,81 @@
+.status__card__section {
+    margin: 30px;
+    text-align: center;
+}
+
+.status__card__section p {
+    margin-bottom: 30px;
+}
+
+.status__card img,
+.status__card h1,
+.status__card p {
+    margin-bottom: 10px;
+}
+
+.status__card p {
+    color: #618972;
+}
+
+.status__cards {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.status__card {
+    border-radius: 40px;
+    border: 1px solid #DBE6E0;
+    background: #F6F8F7;
+    width: 30%;
+    padding: 20px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.status__card__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.status__card__points p {
+    color: black;
+}
+
+.status__card__points {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+@media screen and (max-width:1000px) {
+
+    .status__card__points {
+        font-size: 13px;
+    }
+
+    .status__card {
+        width: 40%;
+        flex-grow: 0;
+    }
+}
+
+@media screen and (max-width:700px) {
+
+    .status__cards {
+        display: block;
+    }
+
+    .status__card {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}

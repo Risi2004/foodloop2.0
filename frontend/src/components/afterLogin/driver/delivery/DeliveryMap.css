@@ -1,0 +1,207 @@
+.delivery-map-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #e0e0e0;
+}
+
+/* Fixed overlay layer – stays in place when map is panned; does not block map interaction */
+.delivery-map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.delivery-map-overlay > * {
+    pointer-events: auto;
+}
+
+/* Map layer – fills container so full map (including bottom) is visible */
+.delivery-map-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    height: 100%;
+    min-height: 600px;
+}
+
+.delivery-map-layer .leaflet-map {
+    height: 100% !important;
+    width: 100% !important;
+    min-height: 600px !important;
+}
+
+/* Ensure Leaflet container fills the parent so tiles render */
+.delivery-map-container .leaflet-container {
+    height: 100% !important;
+    width: 100% !important;
+    min-height: 600px !important;
+    z-index: 1;
+}
+
+/* LocationBox is now a separate component, so we don't need these styles here */
+/* They are in LocationBox.css */
+
+.location-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.location-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.location-name {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+
+/* Map marker pins – same style as donor and receiver dashboard maps */
+.custom-pin {
+    background: transparent;
+    border: none;
+}
+
+.pin-outer {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+    color: white;
+}
+
+.pin-outer:hover {
+    transform: scale(1.15);
+    z-index: 10000;
+}
+
+/* Green pin – donor (same as receiver dashboard donor) */
+.pin-pickup {
+    background-color: #2ECC71;
+}
+
+/* Red pin – receiver (same as donor dashboard receiver) */
+.pin-pickup-red {
+    background-color: #E74C3C;
+}
+
+/* Blue pin – driver */
+.pin-driver {
+    background-color: #2196F3;
+}
+
+.pin-inner-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* Zoom controls */
+.custom-zoom-buttons {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 1000;
+}
+
+.custom-zoom-buttons button {
+    width: 36px;
+    height: 36px;
+    background: #1F4E36;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.custom-zoom-buttons button:hover {
+    background: #163a28;
+}
+
+.distance-info-box {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.distance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.distance-item:last-child {
+    border-bottom: none;
+}
+
+.distance-item.total {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 2px solid #1F4E36;
+    border-bottom: none;
+    font-weight: bold;
+}
+
+.distance-label {
+    font-size: 13px;
+    color: #666;
+}
+
+.distance-value {
+    font-size: 14px;
+    color: #1F4E36;
+    font-weight: 600;
+}
+
+.distance-item.total .distance-value {
+    font-size: 16px;
+    color: #1F4E36;
+}
+
+.distance-warning {
+    margin-top: 8px;
+    padding: 8px;
+    background: #fff3cd;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #856404;
+}

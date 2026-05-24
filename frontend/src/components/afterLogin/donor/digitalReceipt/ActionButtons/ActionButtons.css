@@ -1,0 +1,45 @@
+.action-buttons-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-secondary {
+    background-color: white;
+    color: #1a1a1a;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+}
+
+.btn-secondary .action-btn-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #A8F0CB 0%, #2ECC71 100%);
+    /* Green gradient */
+    color: #1a1a1a;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+}

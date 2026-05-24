@@ -1,0 +1,103 @@
+.driver-info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+}
+
+.icon-box.blue {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.icon-box.blue-outline {
+    border: 2px solid #e3f2fd;
+    color: #1976d2;
+}
+
+.icon-box .icon-img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.info-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-content .label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1976d2;
+    text-transform: uppercase;
+}
+
+.info-content .value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+}
+
+.driver-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.driver-profile img,
+.driver-profile .driver-profile-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #e8f5e9;
+}
+
+.driver-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #333;
+}
+
+.vehicle-number .label {
+    display: block;
+    font-size: 10px;
+    color: #1976d2;
+    font-weight: 700;
+    text-align: right;
+}
+
+.vehicle-number .value {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    text-align: right;
+}
+
+.divider {
+    height: 1px;
+    background: #f0f0f0;
+    width: 100%;
+}

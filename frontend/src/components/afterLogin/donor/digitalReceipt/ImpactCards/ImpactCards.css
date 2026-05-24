@@ -1,0 +1,77 @@
+.impact-cards-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.impact-card {
+    flex: 1;
+    background: linear-gradient(180deg, #FFFFFF 0%, #d8e2de 50%, #1f4a36 100%);
+    /* 
+       The cards have a very specific gradient. 
+       Top is white/light.
+       Bottom is dark green.
+    */
+    background: linear-gradient(to bottom, #f0f4f3 0%, #e0e8e5 30%, #1a4131 100%);
+    border-radius: 15px;
+    padding: 20px;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    position: relative;
+    color: white;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.card-icon-box {
+    width: 32px;
+    height: 32px;
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #1a4131;
+    font-size: 14px;
+}
+
+.card-icon-box .impact-card-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.card-badge {
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #1a4131;
+    /* Green text */
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.card-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.card-unit {
+    font-size: 18px;
+    margin-left: 2px;
+}

@@ -1,0 +1,39 @@
+.donor__status__batch {
+    margin: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.donor__status__batch__card {
+    border-radius: 40px;
+    border: 1px solid #DBE6E0;
+    background: #F6F8F7;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    height: 350px;
+}
+
+.donor__status__batch__card img, .donor__status__batch__card h1, .donor__status__batch__card p{
+    margin-bottom: 10px;
+}
+
+.donor__status__heading{
+    text-align: center;
+}
+
+.donor__status__batch__card__points{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.donor__status__batch__card__points__section{
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}

@@ -1,0 +1,321 @@
+.donation-cards {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    align-self: stretch;
+}
+
+.donation-card {
+    display: flex;
+    width: 424px;
+    padding: 10px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+    background: #FFF;
+}
+
+.top {
+    padding: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.div-flex {
+    flex-shrink: 0;
+    width: 97.22px;
+    height: 23px;
+    position: relative;
+}
+
+.span-bg-emerald-100 {
+    background: #d1fae5;
+    width: 94.93px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.span-bg-blue-100 {
+    background: #dbeafe;
+    width: 97.22px;
+}
+
+.span-size-1-5 {
+    background: #3b82f6;
+}
+
+.span-bg-orange-100 {
+    background: #fef3c7;
+    width: 140px;
+}
+
+.span-size-1-5,
+.span-size-1-5-orange {
+    border-radius: 9999px;
+    width: 6px;
+    height: 6px;
+    position: absolute;
+    left: 12px;
+    top: 8.5px;
+}
+
+.span-bg-emerald-100,
+.span-bg-blue-100,
+.span-bg-orange-100 {
+    border-radius: 9999px;
+    padding: 4px 12px 4px 12px;
+    height: 23px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+
+.span-size-1-5-orange {
+    background: #f97316;
+}
+
+.in-transit,
+.in-transit-orange {
+    text-align: left;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 10px;
+    line-height: 15px;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    position: absolute;
+    left: 22px;
+    top: 4.8px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.in-transit {
+    color: #1d4ed8;
+    width: 63.23px;
+}
+
+.in-transit-orange {
+    color: #c2410c;
+    width: 110px;
+}
+
+.check-circle {
+    color: #047857;
+    text-align: center;
+    font-family: "MaterialIcons-Regular", sans-serif;
+    font-size: 14px;
+    line-height: 14px;
+    font-weight: 400;
+    position: relative;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.complited .tool {
+    background: rgba(6, 78, 59, 0.44);
+    border-radius: 5px;
+}
+
+.receipt,
+.swap,
+.organic-food {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    object-fit: cover;
+    aspect-ratio: 1;
+}
+
+.tool,
+.edit {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.tool {
+    gap: 8px;
+}
+
+.edit {
+    border-radius: 8px;
+    padding: 6px;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.supplied,
+.supplied2 {
+    color: #047857;
+    text-align: left;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 10px;
+    line-height: 15px;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    position: relative;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.supplied {
+    width: 72px;
+}
+
+.supplied2 {
+    width: 87px;
+}
+
+.fed {
+    padding: 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.img {
+    background: linear-gradient(to left,
+            rgba(0, 0, 0, 0.25),
+            rgba(0, 0, 0, 0.25));
+    border-radius: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 112px;
+    height: 112px;
+    position: relative;
+    object-fit: cover;
+}
+
+.detail {
+    padding: 4px 10px 4px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    width: 278px;
+    position: relative;
+    height: fit-content;
+}
+
+.name {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    align-items: flex-start;
+    justify-content: center;
+    align-self: stretch;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.bag-of-fuji-apples {
+    color: #064e3b;
+    text-align: left;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 700;
+    position: relative;
+    width: 360.4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.listed-2-mins-ago {
+    color: #10b981;
+    text-align: left;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 700;
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.wight {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    align-self: stretch;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.wight2 {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.organic-food {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    object-fit: cover;
+    aspect-ratio: 1;
+}
+
+._5-kg-available {
+    color: #0d1b12;
+    text-align: left;
+    font-family: "-", sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 400;
+    position: relative;
+    width: 87px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+._5-kg-available-span {
+    font-family: "Inter-Bold", sans-serif;
+    font-weight: 700;
+}
+
+._5-kg-available-span2 {
+    font-family: "Inter-Regular", sans-serif;
+}

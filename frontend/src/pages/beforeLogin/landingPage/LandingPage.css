@@ -1,0 +1,41 @@
+.landing__page .navbar {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 10;
+}
+
+.landing__page .header__image {
+    position: relative;
+    top: 0;
+}
+
+.landing__page .stats__card__page {
+    position: relative;
+    top: auto;
+    margin-top: 20px;
+}
+
+.landing__page .contact{
+    margin: 30px;
+}
+
+@media screen and (max-width: 1000px) {
+
+    .landing__page .header__image {
+        top: 0;
+        margin-top: 0;
+    }
+
+    .landing__page .responsive__navbar {
+        position: relative;
+        top: auto;
+    }
+
+    .landing__page .stats__card__page {
+        position: relative;
+        top: auto;
+        margin-top: 20px;
+    }
+}

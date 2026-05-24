@@ -1,0 +1,12 @@
+.admin__messages__page {
+    background-color: #10221C;
+    display: flex;
+}
+
+@media screen and (max-width:1300px) {
+
+    .admin__messages__page{
+        display: block;
+    }
+
+}

@@ -1,0 +1,117 @@
+.review__section {
+    padding: 80px 40px;
+    background: linear-gradient(180deg, #1e5631 0%, #3a9e66 100%);
+    position: relative;
+    overflow: hidden;
+    height: 800px;
+    display: flex;
+    flex-direction: column;
+}
+
+.review__header {
+    text-align: center;
+    margin-bottom: 50px;
+    position: relative;
+    z-index: 10;
+}
+
+.review__header h1 {
+    font-size: 3.5rem;
+    color: #8FD1A8;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.review__header p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.review__scroll-container {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+.review__column {
+    width: 500px;
+    max-width: 45%;
+    position: relative;
+}
+
+.review__column--mobile {
+    display: none;
+}
+
+.review__track {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+@keyframes scrollUp {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+@keyframes scrollDown {
+    0% {
+        transform: translateY(-50%);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.track-up {
+    animation: scrollUp 90s linear infinite;
+}
+
+.track-down {
+    animation: scrollDown 90s linear infinite;
+}
+
+.review__column:hover .track-up,
+.review__column:hover .track-down {
+    animation-play-state: paused;
+}
+
+@media (max-width: 768px) {
+    .review__scroll-container {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .review__column--left,
+    .review__column--right {
+        display: none;
+    }
+
+    .review__column--mobile {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+    }
+
+    .review__header h1 {
+        font-size: 2.5rem;
+    }
+
+    .track-down {
+        animation-name: scrollUp;
+    }
+}

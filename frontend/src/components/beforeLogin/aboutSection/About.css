@@ -1,0 +1,42 @@
+.about__us {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.about__us__s1 {
+    text-align: center;
+}
+
+.about__us__s1 h1 {
+    font-size: 45px;
+    font-weight: 700;
+    color: #333333;
+}
+
+.about__us__s1 h1 span {
+    background: linear-gradient(90deg, #013211 0%, #0B8634 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.about__us__s1 p {
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-bottom: 20px;
+}
+
+.about__us__s2 {
+    display: flex;
+    justify-content: space-around;
+    align-items: start;
+    margin-left: 30px;
+    margin-right: 30px;
+    gap: 20px;
+}
+
+@media screen and (max-width: 768px) {
+    .about__us__s2 {
+        display: block;
+    }
+}

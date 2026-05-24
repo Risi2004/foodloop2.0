@@ -1,0 +1,552 @@
+.signup__page {
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    background: linear-gradient(180deg, #1F4E36 0%, #FFFFFF 100%);
+    overflow: hidden;
+}
+
+.signup__container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.signup__page .error-message {
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.signup__image__section {
+    flex: 1;
+
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+.side__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image__overlay {
+    position: absolute;
+    bottom: 50px;
+    left: 40px;
+    right: 40px;
+}
+
+.quote__box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    padding: 20px;
+    gap: 1.5rem;
+}
+
+.image__quote__title {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 0;
+    text-align: left;
+    background: linear-gradient(90deg, #FFF 0%, #13EC5B 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.image__quote__subtitle {
+    font-size: 1.1rem;
+    max-width: 90%;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+    text-align: left;
+    margin-bottom: 0;
+    color: #4C9A66;
+}
+
+.active__donors {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 8px 20px;
+    border-radius: 50px;
+    width: fit-content;
+    color: white;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.avatars {
+    display: flex;
+}
+
+.avatar {
+    width: 30px;
+    height: 30px;
+    background: #ccc;
+    border-radius: 50%;
+    border: 2px solid white;
+    margin-right: -10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+
+
+.signup__form__section {
+    flex: 1;
+    min-height: 0;
+    max-width: 650px;
+    padding: 40px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #F6F8F7;
+    border-left: 1px solid #DBE6E0;
+}
+
+.signup__form__section::-webkit-scrollbar {
+    display: none;
+}
+
+.signup__title {
+    font-size: 2rem;
+    color: #1F4E36;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+
+.profile__upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.profile__circle {
+    width: 80px;
+    height: 80px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    overflow: hidden;
+    color: #000;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    transition: opacity 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.profile__circle:hover {
+    opacity: 0.9;
+}
+
+.profile__circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile__circle img.default__icon {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.profile__label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #000;
+}
+
+
+
+
+.role__toggle__container,
+.sub__toggle__container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+}
+
+.role__label,
+.sub__toggle__label {
+    font-weight: 800;
+    color: #1F4E36;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    z-index: 5;
+}
+
+.role__toggle,
+.sub__toggle,
+.vehicle__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    background: #1F4E36;
+    z-index: 2;
+}
+
+.role__btn,
+.sub__btn,
+.veh__btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.role__btn,
+.sub__btn {
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 600;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.role__btn.active,
+.sub__btn.active {
+    color: #A5D6A7;
+    font-weight: 700;
+}
+
+
+.veh__btn img {
+    filter: brightness(0) invert(1) opacity(0.7);
+    height: 24px;
+    width: auto;
+    transition: all 0.2s;
+}
+
+.veh__btn.active img {
+    filter: brightness(0) invert(1) opacity(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+    transform: scale(1.15);
+}
+
+
+
+
+.role__toggle__container,
+.sub__toggle__container {
+    flex-direction: row;
+    width: 100%;
+    max-width: 620px;
+    border: 1px solid #DBE6E0;
+    border-radius: 50px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    height: 55px;
+    overflow: visible;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.role__toggle button,
+.vehicle__toggle button,
+.sub__toggle button {
+    padding: 10px;
+}
+
+.role__label,
+.sub__toggle__label {
+
+    width: auto;
+    padding: 0 40px 0 45px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    font-size: 1.1rem;
+    border-radius: 0;
+    flex-shrink: 0;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 0;
+
+}
+
+.role__toggle,
+.sub__toggle,
+.vehicle__toggle {
+    flex-grow: 1;
+    height: calc(100% + 2px);
+    margin: -1px -1px -1px 0;
+    border-radius: 50px;
+    background: #1F4E36;
+    box-shadow: -6px 0 12px rgba(0, 0, 0, 0.15);
+    padding: 0 20px;
+    z-index: 2;
+    min-width: 50%;
+}
+
+
+.role__btn,
+.sub__btn,
+.veh__btn {
+    min-width: 0;
+
+    padding: 0 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+
+
+
+
+
+@media (max-width: 900px) {
+    .signup__form__section {
+        max-width: 100%;
+        padding: 20px;
+        flex: none;
+        min-height: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .role__toggle__container,
+    .sub__toggle__container {
+        flex-direction: column;
+
+        max-width: 400px;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        height: auto;
+        overflow: visible;
+
+    }
+
+    .role__label,
+    .sub__toggle__label {
+        width: 100%;
+        padding: 15px 25px;
+        background: white;
+        border: 1px solid #1b5e20;
+        border-radius: 50px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        justify-content: flex-start;
+        font-size: 1.1rem;
+        z-index: 5;
+        position: relative;
+        max-width: 100%;
+
+    }
+
+    .role__toggle,
+    .sub__toggle,
+    .vehicle__toggle {
+
+        width: 95%;
+
+        margin: 0 auto;
+
+        margin-top: -35px;
+
+
+        padding-top: 50px;
+
+        padding-bottom: 15px;
+        padding-left: 10px;
+        padding-right: 10px;
+
+        border-radius: 40px;
+
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        border-bottom-left-radius: 30px;
+        border-bottom-right-radius: 30px;
+
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        height: auto;
+        min-width: 0;
+
+
+        z-index: 1;
+
+        position: relative;
+    }
+}
+
+
+
+.form__fields {
+    width: 100%;
+    max-width: 500px;
+}
+
+.input__group {
+    margin-bottom: 1.2rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.input__group.half {
+    width: 48%;
+
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.input__group label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: #1F4E36;
+}
+
+.input__group input,
+.input__group select {
+    padding: 12px;
+    border: 1px solid #DBE6E0;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    color: #1F4E36;
+    font-weight: 600;
+}
+
+.input__group input:focus,
+.input__group select:focus {
+    border-color: #1F4E36;
+}
+
+
+.border__group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.border__group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.file__hint {
+    display: block;
+    font-size: 0.8rem;
+    color: #618972;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.file__drop {
+    border: 2px dashed #1F4E36;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+}
+
+.file__drop span {
+    font-size: 0.8rem;
+    color: #618972;
+    font-weight: 600;
+}
+
+.add__file__btn {
+    background: transparent;
+    border: none;
+    color: #1F4E36;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+
+
+.create__account__btn {
+    width: 100%;
+    max-width: 500px;
+    padding: 15px;
+    border-radius: 14px;
+    background: #1F4E36;
+    color: white;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(31, 78, 54, 0.15);
+    transition: all 0.2s;
+}
+
+.create__account__btn:hover:not(:disabled) {
+    background-color: #163a28;
+    transform: translateY(-2px);
+}
+
+.create__account__btn:disabled {
+    background: #618972;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.signup__footer p {
+    font-size: 0.9rem;
+    color: #618972;
+    font-weight: 600;
+}
+
+.signup__footer a {
+    color: #1F4E36;
+    font-weight: 800;
+    text-decoration: none;
+    margin-left: 5px;
+    transition: color 0.2s;
+}
+
+.signup__footer a:hover {
+    color: #73A13F;
+}

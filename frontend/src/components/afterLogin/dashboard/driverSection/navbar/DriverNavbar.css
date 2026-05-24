@@ -1,0 +1,377 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    z-index: 100;
+    position: relative;
+}
+
+.navbar__s1 {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.navbar__s1 img {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.navbar__s1__sub {
+    text-align: center;
+}
+
+.navbar__s1__sub__part1 {
+    color: #1F4E36;
+}
+
+.navbar__s1__sub__part2 {
+    color: #73A13F;
+}
+
+.navbar__s1__sub p {
+    color: #1F4E36;
+    font-weight: bold;
+    padding-right: 5px;
+}
+
+.navbar__s2 {
+    display: flex;
+    border-radius: 33px;
+    gap: 40px;
+    background-color: transparent;
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar__s2 a {
+    text-decoration: none;
+    font-weight: bold;
+    color: white;
+    font-size: 18px;
+}
+
+.navbar__s3 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
+}
+
+.navbar__notification-wrap {
+    position: relative;
+    display: inline-flex;
+    text-decoration: none;
+}
+
+.navbar__notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.navbar__s3__img1 {
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50px;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.navbar__s3__sub {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.40);
+    padding: 5px;
+    cursor: pointer;
+}
+
+.navbar__profile-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.navbar__badge {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.navbar__badge-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+}
+
+.navbar__s3__img2 {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.navbar__s3__profile__popup {
+    z-index: 1100;
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 16%;
+    min-width: 200px;
+    box-sizing: border-box;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.15);
+}
+
+.navbar__s1,
+.navbar__s2 {
+    height: 60px;
+    padding: 15px;
+}
+
+.responsive__navbar {
+    display: none;
+    position: relative;
+}
+
+.responsive__navbar__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: flex-end;
+    z-index: 2000;
+}
+
+/* When responsive menu is open, main content gets margin-right so it doesn't sit under popup */
+body.driver-navbar-menu-open .delivery {
+    margin-right: 320px;
+    max-width: calc(100% - 320px);
+    box-sizing: border-box;
+}
+
+.responsive__navbar__popup {
+    z-index: 2100;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 75%;
+    max-width: 320px;
+    box-sizing: border-box;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding-top: 20px;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.responsive__navbar__popup a,
+.navbar__s3__profile__popup a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: black;
+    text-decoration: none;
+}
+
+.responsive__navbar__popup a button,
+.navbar__s3__profile__popup a button {
+    padding: 15px;
+    border-radius: 33px;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(180deg, #1F4E36 0%, #48B47D 100%);
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.responsive__navbar__popup p,
+.navbar__s3__profile__popup p {
+    cursor: pointer;
+    text-align: right;
+    font-size: 28px;
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+.navbar__popup__action {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 20px;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.navbar__delete-account-btn,
+.navbar__popup__action .navbar__delete-account-btn,
+.responsive__navbar__popup .navbar__delete-account-btn,
+.navbar__s3__profile__popup .navbar__delete-account-btn {
+    padding: 15px;
+    border-radius: 33px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: none;
+    cursor: pointer;
+    background: #dc2626 !important;
+    color: white !important;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.navbar__delete-account-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.navbar__delete-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.navbar__delete-modal {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.navbar__delete-modal h3 {
+    margin: 0 0 12px 0;
+    font-size: 20px;
+    color: #1a1a1a;
+}
+
+.navbar__delete-modal p {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    color: #333;
+    text-align: left;
+    cursor: default;
+}
+
+.navbar__delete-modal__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.navbar__delete-modal__actions .navbar__delete-account-btn {
+    flex: 1;
+}
+
+.navbar__delete-modal__cancel {
+    padding: 15px 20px;
+    border-radius: 33px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #333;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.navbar__delete-modal__cancel:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+@media screen and (max-width: 1250px) {
+    .navbar {
+        display: none;
+    }
+
+    .responsive__navbar {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 30px;
+        background-color: transparent;
+        border: 1px solid white;
+        border-radius: 30px;
+        margin-top: 5px;
+        margin-left: 15px;
+        margin-right: 15px;
+        margin-bottom: 5px;
+    }
+
+    .responsive__navbar__s1 img {
+        width: 50px;
+        cursor: pointer;
+    }
+
+    .responsive__navbar__s2 {
+        text-align: center;
+    }
+
+    .responsive__navbar__s2__part1 {
+        color: white;
+    }
+
+    .responsive__navbar__s2__part2 {
+        color: #13EC5B;
+    }
+
+    .responsive__navbar__s2 p {
+        color: white;
+    }
+
+    .responsive__navbar__s3 img {
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+    }
+
+    .responsive__navbar__s3 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+    }
+}

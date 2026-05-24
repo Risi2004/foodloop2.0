@@ -1,0 +1,114 @@
+.vendor-sidebar {
+    width: 300px;
+    background: #2E4E3F;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 3rem 1.5rem;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.vendor-sidebar__header {
+    margin-bottom: 3.5rem;
+    padding: 0 0.5rem;
+}
+
+.vendor-sidebar__header h2 {
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.vendor-sidebar__header p {
+    color: #A5D6A7;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.vendor-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-grow: 1;
+}
+
+.vendor-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 1.15rem 1.5rem;
+    border-radius: 16px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.vendor-nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: white;
+    transform: translateX(5px);
+}
+
+.vendor-nav-item.active {
+    background: #A5D6A7;
+    color: #1F4E36;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.vendor-nav-item.active:hover {
+    transform: none;
+    background: #A5D6A7;
+    color: #1F4E36;
+}
+
+.vendor-sidebar__footer {
+    margin-top: auto;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.5rem;
+    border-radius: 20px;
+    color: white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.info-card h4 {
+    margin-bottom: 0.75rem;
+    color: #A5D6A7;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.info-card p {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+@media (max-width: 992px) {
+    .vendor-sidebar {
+        width: 80px;
+        padding: 2rem 1rem;
+        align-items: center;
+    }
+    .vendor-sidebar__header, .vendor-sidebar__nav span, .vendor-sidebar__footer {
+        display: none;
+    }
+    .vendor-nav-item {
+        padding: 1rem;
+        justify-content: center;
+    }
+}

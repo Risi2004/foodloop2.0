@@ -1,0 +1,103 @@
+.success-banner {
+    background: linear-gradient(135deg, #4A7C6A 0%, #6B9586 100%);
+    border-radius: 20px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    color: white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    min-height: 250px;
+    justify-content: center;
+    /* Center content mostly */
+}
+
+.success-icon-container {
+    flex-shrink: 0;
+}
+
+.success-icon-circle {
+    width: 120px;
+    height: 120px;
+    background-color: #5EDA68;
+    /* Bright Green */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 60px;
+    color: #1a4d2e;
+    box-shadow: 0 0 0 15px rgba(94, 218, 104, 0.2);
+    /* Outer ring effect */
+}
+
+.success-text-content {
+    text-align: center;
+}
+
+.success-text-content h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #1a2e25;
+    /* Dark text for contrast as per design? No, design shows Dark Text on the banner? 
+    Wait, looking at the image: 
+    "Donation Successfully Completed" is Dark Green/Black.
+    Background of the banner is a gradient Green.
+    Let's adjust colors.
+    */
+    color: #11261f;
+}
+
+.success-text-content p {
+    font-size: 18px;
+    color: white;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.success-status-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Semi-transparent */
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Adjust layout to match image where icon is left and text is center-ish */
+.success-banner {
+    justify-content: flex-start;
+    padding-left: 80px;
+}
+
+.success-text-content {
+    text-align: center;
+    width: 100%;
+    padding-right: 180px;
+    /* Balance the icon width to center text */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .success-banner {
+        flex-direction: column;
+        padding: 30px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .success-text-content {
+        padding-right: 0;
+    }
+
+    .success-icon-circle {
+        margin-bottom: 20px;
+    }
+}

@@ -1,0 +1,17 @@
+.add-product-page-container {
+    width: 100%;
+    margin-top: 2rem;
+}
+
+.add-product-content {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+@media (max-width: 1200px) {
+    .add-product-content {
+        flex-direction: column;
+        align-items: center;
+    }
+}

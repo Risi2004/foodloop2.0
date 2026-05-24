@@ -1,0 +1,95 @@
+.personal-info-card {
+    background: #b8c9c1;
+    /* Lighter background for the form area */
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    /* Fill the height */
+    display: flex;
+    flex-direction: column;
+}
+
+.personal-info-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    color: #2c4c3b;
+    font-weight: 700;
+}
+
+.personal-info-header .icon {
+    font-size: 18px;
+    color: #4CAF50;
+}
+
+.personal-info-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.personal-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: auto;
+    /* Push actions to bottom if space allows */
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2c4c3b;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: none;
+    background: white;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-group textarea {
+    height: 100px;
+    resize: none;
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+.form-actions-bottom {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.cancel-btn {
+    background: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #333;
+}
+
+.save-btn {
+    background: #3e8e63;
+    color: white;
+    border: none;
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}

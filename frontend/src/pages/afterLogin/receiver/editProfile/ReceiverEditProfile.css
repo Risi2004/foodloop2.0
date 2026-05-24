@@ -1,0 +1,40 @@
+.receiver-edit-profile-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+}
+
+.receiver-edit-container {
+    display: flex;
+    gap: 30px;
+    width: 100%;
+    max-width: 1200px;
+    align-items: flex-start;
+}
+
+.receiver-edit-sidebar-section {
+    width: 350px;
+    flex-shrink: 0;
+}
+
+.receiver-edit-forms-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.receiver-edit-loading,
+.receiver-edit-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.receiver-edit-error {
+    color: #ffcdd2;
+}

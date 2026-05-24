@@ -1,0 +1,245 @@
+.termsPage {
+    width: 100%;
+    min-height: 100vh;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.termsPage__container {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Back Button */
+.termsPage__backBar {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.termsPage__backButton {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 10px 0;
+    transition: opacity 0.3s ease;
+}
+
+.termsPage__backButton:hover {
+    opacity: 0.8;
+}
+
+.termsPage__backIcon {
+    width: 24px;
+    height: 24px;
+}
+
+.termsPage__backText {
+    color: #ffffff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Main Card (Glassmorphism) */
+.termsPage__card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(17, 24, 20, 0.51) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 30px;
+    padding: 60px 80px;
+    color: #ffffff;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+/* Header */
+.termsPage__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+}
+
+.termsPage__title {
+    color: #0d1b10;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+.termsPage__updatedAt {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.termsPage__intro {
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 850px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Section Common Styles */
+.termsPage__section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.termsPage__sectionTitle {
+    color: #0d1b10;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.termsPage__sectionText {
+    font-size: 16px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+/* Highlight List (Green Box) */
+.termsPage__highlightList {
+    background-color: rgba(106, 162, 133, 0.6);
+    /* Semi-transparent green */
+    border-radius: 15px;
+    padding: 25px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.termsPage__highlightItem {
+    list-style: none;
+    /* Removed default bullets to potentially use custom or none if plain text prefered */
+    color: #0d1b10;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Restore bullets if needed, but the image list looks clean. 
+   If bullets are needed, I'll add them back. Image seems to imply distinct lines. 
+   Users often prefer bullet points for lists. Let's add simple disc. */
+.termsPage__highlightList li {
+    list-style-type: disc;
+    list-style-position: inside;
+}
+
+
+/* Obligations */
+.termsPage__obligationsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.termsPage__obligationCard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.termsPage__obligationTitle {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    opacity: 0.95;
+    /* Indent or marker? Image shows "For Donors" aligned with text. */
+}
+
+.termsPage__obligationText {
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+
+/* Footer Section */
+.termsPage__contactFooter {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+}
+
+.termsPage__contactHeading {
+    color: #0d1b10;
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.termsPage__contactSubtitle {
+    color: rgba(13, 27, 16, 0.7);
+    font-size: 14px;
+    margin: 0;
+}
+
+.termsPage__contactEmail {
+    color: #0d1b10;
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: none;
+    margin-top: 5px;
+    transition: color 0.3s;
+}
+
+.termsPage__contactEmail:hover {
+    color: #1F4E36;
+}
+
+/* Responsiveness */
+@media screen and (max-width: 768px) {
+    .termsPage__card {
+        padding: 40px 20px;
+    }
+
+    .termsPage__title {
+        font-size: 32px;
+    }
+
+    .termsPage__sectionTitle {
+        font-size: 20px;
+    }
+
+    .termsPage__intro,
+    .termsPage__sectionText,
+    .termsPage__highlightItem,
+    .termsPage__obligationText {
+        font-size: 14px;
+    }
+
+    .termsPage__highlightList {
+        padding: 20px;
+    }
+
+    /* Ensure padding for body is smaller on mobile to use more space */
+    .termsPage {
+        padding: 20px 10px;
+    }
+}

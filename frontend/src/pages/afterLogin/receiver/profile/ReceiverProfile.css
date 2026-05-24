@@ -1,0 +1,620 @@
+.receiverProfile {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+}
+
+.receiverProfile__container {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.receiverProfile__loading,
+.receiverProfile__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.receiverProfile__error {
+  color: #ffcdd2;
+}
+
+.receiverProfile__noClaims {
+  text-align: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+/* Common Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  /* More subtle for dark theme */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 24px;
+  overflow: hidden;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.text-green {
+  color: #13ec5b;
+}
+
+/* --- Top Section --- */
+.receiverProfile__topSection {
+  width: 100%;
+}
+
+/* ID Card - full width */
+.receiverProfile__idCard {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  padding: 30px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.receiverProfile__avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.receiverProfile__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.receiverProfile__idDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.receiverProfile__name {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #13EC5B 0%, #FFFFFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.receiverProfile__type {
+  font-size: 18px;
+  font-weight: 700;
+  color: #13ec5b;
+}
+
+.receiverProfile__tagline {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 450px;
+  line-height: 1.5;
+  margin: 5px 0 10px 0;
+}
+
+.receiverProfile__editBtn {
+  margin-top: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 300px;
+  height: 40px;
+  background: linear-gradient(90deg, #FFFFFF 0%, #13EC5B 100%);
+  border-radius: 8px;
+  color: black;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.receiverProfile__editBtn:hover{
+  color: black;
+}
+
+/* --- Main Grid Layout --- */
+.receiverProfile__mainGrid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 25px;
+  align-items: stretch;
+}
+
+/* Sidebar Styling */
+.receiverProfile__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.receiverProfile__infoBox,
+.receiverProfile__membersBox {
+  background: linear-gradient(180deg, #24573D 0%, #5CB480 100%);
+  /* Adjusted green gradient */
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.receiverProfile__sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.receiverProfile__sectionHeader img {
+  width: 24px;
+  height: 24px;
+  opacity: 0.9;
+}
+
+.receiverProfile__sectionHeader h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.receiverProfile__infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.receiverProfile__infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receiverProfile__infoItem label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  opacity: 0.9;
+}
+
+.receiverProfile__infoItem span,
+.receiverProfile__infoItem a {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+.receiverProfile__contactDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.receiverProfile__map {
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.receiverProfile__map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  filter: none;
+}
+
+/* Member List */
+.receiverProfile__memberList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.receiverProfile__member {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(0, 0, 0, 0.1);
+  /* Subtle box for member */
+  padding: 10px;
+  border-radius: 50px;
+  /* Pillow shape for row? Design shows plain list, using transparent */
+  background: transparent;
+  padding: 0;
+}
+
+.member-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.receiverProfile__memberInfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.member-name {
+  color: #13ec5b;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.member-role {
+  font-size: 11px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.member-subrole {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Main Content Area --- */
+.receiverProfile__contentArea {
+  /* Large glass container for right side */
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-top: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Stats Row */
+.receiverProfile__statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.statss-card {
+  background: linear-gradient(180deg, #FFF 0%, #1F4E36 100%);
+  border-radius: 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: flex-start;
+  min-height: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statss-card h5 {
+  color: #0F172A;
+  font-size: 12px;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.stats-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.stats-value span:first-child {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.stats-trend {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card small {
+  font-size: 11px;
+  color: #13ec5b;
+  margin-top: 10px;
+  font-weight: 600;
+  display: block;
+}
+
+/* About Section */
+.receiverProfile__aboutSection {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 4px;
+}
+
+.receiverProfile__aboutSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.receiverProfile__aboutSection .section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.receiverProfile__aboutEditLink {
+  font-size: 14px;
+  font-weight: 600;
+  color: #13ec5b;
+  text-decoration: none;
+}
+
+.receiverProfile__aboutEditLink:hover,
+.receiverProfile__aboutEditLink:focus {
+  color: #13ec5b;
+  text-decoration: underline;
+}
+
+.receiverProfile__aboutSection p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+}
+
+.receiverProfile__aboutContent p + p {
+  margin-top: 12px;
+}
+
+.receiverProfile__addAboutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #ffffff 0%, #13ec5b 100%);
+  border-radius: 8px;
+  color: #0d1b12;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.receiverProfile__addAboutBtn:hover,
+.receiverProfile__addAboutBtn:focus {
+  color: #0d1b12;
+}
+
+/* Donations Table */
+.receiverProfile__donationsSection {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.donations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.donations-header h4 {
+  margin: 0;
+  color: #0d1b12;
+  /* Dark Heading similar to stats top? Image shows black text "Recent Received Donations" on light-ish bg? Actually the section bg looks light grey in the image. */
+  /* Wait, in the image the Recent Donations section has a different background than the dark green.
+   It looks like a semi-transparent *white* overlay. */
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.donations-header a {
+  color: #e0e0e0;
+  /* Light text on dark bg? Or dark on light? */
+  /* If the bg is light, text should be dark. Let's adjust opacity of background to be lighter */
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+/* Override for donations section to match the "light card" look in image? 
+   Actually, looking closely, the "Recent Received Donations" part has a different background than the dark green.
+   It looks like a semi-transparent *white* overlay. */
+.receiverProfile__donationsSection {
+  background: rgba(255, 255, 255, 0.15);
+  /* More visible glass */
+}
+
+.donations-header h4 {
+  color: #000;
+}
+
+/* Actually looks like dark text */
+
+.donations-table-wrapper {
+  overflow-x: auto;
+}
+
+.donations-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.donations-table th {
+  text-align: left;
+  color: #1F2937;
+  /* Dark text for headers */
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0 10px;
+}
+
+.donations-table td {
+  padding: 10px;
+  vertical-align: middle;
+  font-size: 13px;
+  color: #000;
+  font-weight: 500;
+}
+
+.donations-table td.text-date {
+  color: #10B981;
+  /* Green date */
+  font-weight: 700;
+}
+
+/* Tags */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tag::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.tag-purple {
+  background: #C7D2FE;
+  color: #312E81;
+}
+
+.tag-purple::before {
+  background: #4338CA;
+}
+
+.tag-orange {
+  background: #FECACA;
+  color: #7F1D1D;
+}
+
+.tag-orange::before {
+  background: #EF4444;
+}
+
+.tag-green {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.tag-green::before {
+  background: #10B981;
+}
+
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .receiverProfile__topSection {
+    grid-template-columns: 1fr;
+  }
+
+  .receiverProfile__mainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiverProfile__sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .receiverProfile__infoBox,
+  .receiverProfile__membersBox {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .receiverProfile__statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .receiverProfile {
+    padding: 10px;
+  }
+
+  .receiverProfile__idCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .receiverProfile__name {
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .receiverProfile__type,
+  .receiverProfile__tagline {
+    text-align: center;
+  }
+
+  .receiverProfile__editBtn {
+    margin: 10px auto;
+    width: 100%;
+  }
+
+  .receiverProfile__badgeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiverProfile__sidebar {
+    flex-direction: column;
+  }
+
+  .receiverProfile__statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .donations-table th,
+  .donations-table td {
+    font-size: 12px;
+    padding: 8px 5px;
+  }
+}

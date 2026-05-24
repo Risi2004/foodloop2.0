@@ -1,0 +1,113 @@
+.recent-donations-section {
+    background: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 20px;
+    padding: 24px;
+    flex: 1;
+    color: #1F4E36;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1F4E36;
+}
+
+.view-all-btn {
+    background: none;
+    border: none;
+    color: #73A13F;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.donations-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 16px;
+}
+
+.donations-table th {
+    text-align: left;
+    font-size: 12px;
+    color: #1F4E36;
+    text-transform: uppercase;
+    font-weight: 800;
+    padding-bottom: 8px;
+}
+
+.donations-table td {
+    font-size: 14px;
+    padding: 8px 0;
+    color: #374151;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #374151;
+}
+
+.item-date {
+    color: #73A13F;
+    font-weight: 700;
+}
+
+.item-quantity {
+    font-weight: 700;
+    color: #374151;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-dot {
+    font-size: 16px;
+    line-height: 0;
+    margin-bottom: 2px;
+}
+
+.status-completed {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.status-transit {
+    background: #E3F2FD;
+    color: #1976D2;
+    /* Actually in design it looks purple-ish? "In Transit" is Blue/Purple background. Let's use a nice periwinkle/blue */
+    background: #c5cae9;
+    color: #304FFE;
+}
+
+.status-pending {
+    background: #FFEBEE;
+    color: #D32F2F;
+    /* "Pending" is red/pink */
+    background: #ffcdd2;
+    color: #b71c1c;
+}
+
+.no-donations {
+    text-align: center;
+    padding: 24px;
+    color: #666;
+    font-size: 14px;
+}

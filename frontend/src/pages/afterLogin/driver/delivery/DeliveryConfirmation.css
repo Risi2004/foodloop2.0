@@ -1,0 +1,254 @@
+/* Same layout as driver/pickup and driver/delivery: map left, stacked cards right */
+.delivery-confirmation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 20px;
+    min-height: calc(100vh - 140px);
+    box-sizing: border-box;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    margin: 30px;
+}
+
+/* Left: Map (~60%) */
+.delivery-confirmation__s1 {
+    flex: 0 0 calc(60% - 0.75rem);
+    height: 600px;
+    min-height: 500px;
+    max-height: 70vh;
+    border-radius: 1rem;
+    overflow: hidden;
+    position: relative; /* for demo button and zoom controls */
+}
+
+/* Right: Stacked cards (~40%) */
+.delivery-confirmation__s2 {
+    flex: 0 0 calc(40% - 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+/* Card panel - same as DriverDetails/Food on pickup and delivery page */
+.delivery-confirmation__panel {
+    padding: 24px;
+    background-color: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.delivery-confirmation__panel h2 {
+    margin: 0 0 16px 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1F4E36;
+}
+
+.delivery-confirmation__panel p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #618972;
+    font-weight: 600;
+}
+
+.delivery-confirmation__panel p:last-child {
+    margin-bottom: 0;
+}
+
+/* Zoom controls - same style as pickup page, bottom right of map */
+.custom-zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1000;
+}
+
+.zoom-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: #1F4E36;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: transform 0.1s;
+}
+
+.zoom-btn:active {
+    transform: scale(0.95);
+}
+
+/* Demo mode toggle - keep above map */
+.demo-mode-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.demo-mode-toggle:not(:disabled) {
+    background: #1F4E36;
+    color: white;
+}
+
+.demo-mode-toggle:disabled {
+    background: #618972;
+    color: white;
+    cursor: wait;
+    opacity: 0.8;
+}
+
+.demo-mode-toggle.demo-mode-active {
+    background: #f59e0b;
+}
+
+.delivery-confirmation__demo-status {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    z-index: 1000;
+    padding: 10px 16px;
+    background: rgba(245, 158, 11, 0.95);
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delivery-confirmation__demo-status span:last-child {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.delivery-confirmation__google-maps-link {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: inline-block;
+    padding: 10px 16px;
+    background: #1F4E36;
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.2s;
+}
+
+.delivery-confirmation__google-maps-link:hover,
+.delivery-confirmation__google-maps-link:focus {
+    color: white;
+}
+
+/* Confirm delivery button - same as pickup/delivery */
+.delivery-confirmation__btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: #1F4E36;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(31, 78, 54, 0.15);
+}
+
+.delivery-confirmation__btn:hover:not(:disabled) {
+    background: #163a28;
+    transform: translateY(-2px);
+}
+
+.delivery-confirmation__btn:disabled {
+    background: #618972;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.delivery-confirmation__warning {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.delivery-confirmation__success {
+    text-align: center;
+    padding: 20px;
+}
+
+.delivery-confirmation__success-title {
+    color: #10b981;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.delivery-confirmation__success-text {
+    color: #618972;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Responsive - same breakpoint as pickup/delivery */
+@media (max-width: 900px) {
+    .delivery-confirmation {
+        margin: 16px;
+        padding: 16px;
+    }
+
+    .delivery-confirmation__s1,
+    .delivery-confirmation__s2 {
+        flex: 1 1 100%;
+    }
+
+    .delivery-confirmation__s1 {
+        height: min(420px, 60vh);
+    }
+}
+
+@media (max-width: 480px) {
+    .delivery-confirmation {
+        margin: 8px;
+        padding: 12px;
+        border-radius: 20px;
+    }
+
+    .delivery-confirmation__s1 {
+        height: min(360px, 55vh);
+    }
+}
