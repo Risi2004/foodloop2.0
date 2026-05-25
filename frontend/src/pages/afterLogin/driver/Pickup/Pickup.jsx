@@ -13,6 +13,8 @@ import Food from "../../../../components/afterLogin/driver/pickup/Food/Food";
 import LiveJourney from "../../../../components/afterLogin/driver/pickup/liveJourney/LiveJourney";
 import ChatIconButton from "../../../../components/afterLogin/donationChat/ChatIconButton";
 import { confirmPickup, getDonationTracking, getDriverStatistics } from '../../../../services/donationApi';
+import MapTileLayer from '../../../../components/shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../components/shared/map/MapInvalidateSize';
 import { startLocationTracking, stopLocationTracking } from '../../../../services/locationService';
 import { updateDriverLocation, startDemo, stopDemo } from '../../../../services/api';
 import { generateRouteWaypoints, simulateMovement, stopSimulation } from '../../../../services/demoModeService';
@@ -522,6 +524,8 @@ function Pickup() {
                         zoomControl={false}
                         key="pickup-map"
                     >
+                        <MapTileLayer />
+                        <MapInvalidateSize />
                         <Marker position={pickupLocation} icon={donorIcon}>
                             <Popup>
                                 <strong>Pickup Location</strong><br/>

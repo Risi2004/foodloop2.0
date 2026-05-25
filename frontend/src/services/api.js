@@ -1,109 +1,179 @@
-/**
- * Offline stubs — no network. getCurrentUser role follows the URL path for sensible UI.
- */
+import { getAuthHeaders } from '../utils/auth';
 
-function pathRole() {
-  if (typeof window === 'undefined') return 'Donor';
-  const p = window.location.pathname || '';
-  if (p.startsWith('/admin')) return 'Admin';
-  if (p.startsWith('/receiver')) return 'Receiver';
-  if (p.startsWith('/driver')) return 'Driver';
-  if (p.startsWith('/donor')) return 'Donor';
-  return 'Donor';
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+async function parseResponse(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data.message || 'Request failed');
+    error.response = { data, status: response.status };
+    throw error;
+  }
+  return data;
 }
 
-function placeholderUser() {
-  const role = pathRole();
-  const base = {
-    id: 'offline',
-    _id: 'offline',
-    email: 'offline@local',
-    role,
-    profileImageUrl: null,
-  };
-  if (role === 'Donor') {
-    return { ...base, donorType: 'Individual', username: 'Demo Donor' };
-  }
-  if (role === 'Receiver') {
-    return { ...base, receiverName: 'Demo Receiver' };
-  }
-  if (role === 'Driver') {
-    return {
-      ...base,
-      driverName: 'Demo Driver',
-      driverLatitude: 6.9271,
-      driverLongitude: 79.8612,
-    };
-  }
-  return base;
+function buildUrl(path) {
+  const base = API_BASE.replace(/\/$/, '');
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return base ? `${base}${p}` : p;
 }
 
-export const signup = async () => ({ success: true, message: 'Offline mode' });
-
-export const verifySignupOtp = async () => ({ success: true });
-
-export const resendSignupOtp = async () => ({ success: true });
-
-export const checkEmailExists = async () => ({ exists: false });
-
-export const checkContactNoExists = async () => ({ exists: false });
-
-export const login = async () => {
-  const err = new Error('Offline mode: use the address bar to open role pages (e.g. /donor/dashboard).');
-  err.response = { data: { message: err.message } };
-  throw err;
+export const signup = async (formData) => {
+  const response = await fetch(buildUrl('/api/auth/signup'), {
+    method: 'POST',
+    body: formData,
+  });
+  return parseResponse(response);
 };
 
-export const requestPasswordReset = async () => ({
+export const verifySignupOtp = async (email, otp) => {
+  const response = await fetch(buildUrl('/api/auth/verify-otp'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp }),
+  });
+  return parseResponse(response);
+};
+
+export const resendSignupOtp = async (email) => {
+  const response = await fetch(buildUrl('/api/auth/resend-otp'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return parseResponse(response);
+};
+
+export const checkEmailExists = async (email) => {
+  const params = new URLSearchParams({ email: email.trim() });
+  const response = await fetch(buildUrl(`/api/auth/check-email?${params}`));
+  return parseResponse(response);
+};
+
+export const checkContactNoExists = async (contactNo) => {
+  const params = new URLSearchParams({ contactNo: contactNo.replace(/\s/g, '') });
+  const response = await fetch(buildUrl(`/api/auth/check-contact?${params}`));
+  return parseResponse(response);
+};
+
+export const login = async (email, password) => {
+  const response = await fetch(buildUrl('/api/auth/login'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  return parseResponse(response);
+};
+
+export const getCurrentUser = async () => {
+  const response = await fetch(buildUrl('/api/auth/me'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
+export const requestPasswordReset = async (email) => {
+  const response = await fetch(buildUrl('/api/auth/forgot-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  });
+  return parseResponse(response);
+};
+
+export const verifyResetOtp = async (email, otp) => {
+  const response = await fetch(buildUrl('/api/auth/verify-reset-otp'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase(), otp: otp.trim() }),
+  });
+  return parseResponse(response);
+};
+
+export const resendResetOtp = async (email) => {
+  const response = await fetch(buildUrl('/api/auth/resend-reset-otp'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  });
+  return parseResponse(response);
+};
+
+export const resetPassword = async (email, password, retypePassword) => {
+  const response = await fetch(buildUrl('/api/auth/reset-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: email.trim().toLowerCase(),
+      password,
+      retypePassword,
+    }),
+  });
+  return parseResponse(response);
+};
+
+export const changePassword = async () => ({
   success: true,
-  message: 'Offline mode',
+  message: 'Change password is not configured yet.',
 });
 
-export const resetPassword = async () => ({ success: true });
+export const getAdminStats = async () => {
+  const response = await fetch(buildUrl('/api/admin/stats'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const changePassword = async () => ({ success: true });
+export const getPendingUsers = async () => {
+  const response = await fetch(buildUrl('/api/admin/pending-users'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const getAdminStats = async () => ({
-  success: true,
-  stats: {
-    donors: 0,
-    drivers: 0,
-    receivers: 0,
-  },
-});
+export const updateUserStatus = async (userId, status) => {
+  const response = await fetch(buildUrl(`/api/admin/users/${userId}/status`), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+  });
+  return parseResponse(response);
+};
 
-export const getPendingUsers = async () => ({ success: true, users: [] });
-
-export const updateUserStatus = async () => ({ success: true });
-
-export const getAllUsers = async () => ({ success: true, users: [] });
-
-export const getCurrentUser = async () => ({
-  success: true,
-  user: placeholderUser(),
-});
+export const getAllUsers = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.role) params.set('role', filters.role);
+  if (filters.status) params.set('status', filters.status);
+  const qs = params.toString();
+  const path = qs ? `/api/admin/users?${qs}` : '/api/admin/users';
+  const response = await fetch(buildUrl(path), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
 export const deleteAccount = async () => ({ success: true });
 
-export const uploadProfileImage = async () => ({
-  success: true,
-  user: placeholderUser(),
-});
+export const uploadProfileImage = async () => {
+  const me = await getCurrentUser();
+  return { success: true, user: me.user };
+};
 
-export const updateDonorProfile = async (profile) => ({
-  success: true,
-  user: { ...placeholderUser(), ...profile },
-});
+export const updateDonorProfile = async (profile) => {
+  const me = await getCurrentUser();
+  return { success: true, user: { ...me.user, ...profile } };
+};
 
-export const updateReceiverProfile = async (profile) => ({
-  success: true,
-  user: { ...placeholderUser(), ...profile },
-});
+export const updateReceiverProfile = async (profile) => {
+  const me = await getCurrentUser();
+  return { success: true, user: { ...me.user, ...profile } };
+};
 
-export const updateDriverProfile = async (profile) => ({
-  success: true,
-  user: { ...placeholderUser(), ...profile },
-});
+export const updateDriverProfile = async (profile) => {
+  const me = await getCurrentUser();
+  return { success: true, user: { ...me.user, ...profile } };
+};
 
 export const updateDriverLocation = async () => ({ success: true });
 

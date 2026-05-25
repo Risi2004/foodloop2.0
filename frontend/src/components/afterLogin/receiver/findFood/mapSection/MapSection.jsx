@@ -3,6 +3,8 @@ import 'leaflet/dist/leaflet.css';
 import './MapSection.css';
 import L from 'leaflet';
 import { useEffect, useRef } from 'react';
+import MapTileLayer from '../../../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 
 // Fix for default marker icons in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -155,7 +157,9 @@ const MapSection = ({ items, receiverPosition, receiverAddress, onSelectLocation
 
     return (
         <div className="map-container-wrapper" ref={mapWrapperRef}>
-            <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} className="leaflet-map" zoomControl={false}>
+            <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} className="leaflet-map" zoomControl={false} style={{ height: '100%', width: '100%' }}>
+                <MapTileLayer />
+                <MapInvalidateSize />
                 <MapResizeWhenVisible wrapperRef={mapWrapperRef} />
                 <MapController items={items} receiverPosition={receiverPosition} />
                 <ZoomButtons />

@@ -4,6 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './Map.css';
 import { getMapLocations } from '../../../services/mapApi';
+import MapTileLayer from '../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../shared/map/MapInvalidateSize';
 
 
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -118,7 +120,9 @@ function Map() {
                     {error && !loading && (
                         <div className="map__error">Unable to load locations</div>
                     )}
-                    <MapContainer center={position} zoom={13} scrollWheelZoom={false} zoomControl={false}>
+                    <MapContainer center={position} zoom={13} scrollWheelZoom={false} zoomControl={false} style={{ height: '100%', width: '100%' }}>
+                        <MapTileLayer />
+                        <MapInvalidateSize />
                         <MapController setMapInstance={setMapInstance} />
                         {locations.donors.map((d, i) => (
                             <Marker key={`donor-${i}`} position={[d.lat, d.lng]} icon={donorIcon}>

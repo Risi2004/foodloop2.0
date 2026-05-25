@@ -4,6 +4,8 @@ import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './LocationMapModal.css';
+import MapTileLayer from '../../../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 
 // Fix for default marker icons in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -164,7 +166,10 @@ const LocationMapModal = ({ isOpen, onClose, onConfirm, defaultAddress, defaultL
                                 zoom={zoom}
                                 scrollWheelZoom={true}
                                 className="location-map"
+                                style={{ height: '100%', width: '100%' }}
                             >
+                                <MapTileLayer />
+                                <MapInvalidateSize />
                                 <MapCenterController center={center} zoom={zoom} />
                                 <MapClickHandler onMapClick={handleMapClick} />
                                 

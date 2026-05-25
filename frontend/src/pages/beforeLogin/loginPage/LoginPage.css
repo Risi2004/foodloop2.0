@@ -317,6 +317,42 @@
     font-weight: 500;
 }
 
+.login__pending-approval {
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 152, 0, 0.45);
+    text-align: left;
+}
+
+.login__pending-approval__title {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #8a5a00;
+}
+
+.login__pending-approval__body {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #5c4a1a;
+    font-weight: 500;
+}
+
+.login__error-banner {
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 @media (max-width: 900px) {
     .login__container {
         flex-direction: column;

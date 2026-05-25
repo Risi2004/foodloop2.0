@@ -13,6 +13,8 @@ import { startLocationTracking, stopLocationTracking } from '../../../../service
 import ChatIconButton from '../../../../components/afterLogin/donationChat/ChatIconButton';
 import { getUser } from '../../../../utils/auth';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
+import MapTileLayer from '../../../../components/shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../components/shared/map/MapInvalidateSize';
 import { updateDriverLocation, startDemo, stopDemo } from '../../../../services/api';
 import { generateRouteWaypoints, simulateMovement, stopSimulation } from '../../../../services/demoModeService';
 
@@ -457,6 +459,8 @@ function DeliveryConfirmation() {
                         zoomControl={false}
                         key="delivery-map"
                     >
+                        <MapTileLayer />
+                        <MapInvalidateSize />
                         {donationData?.receiver && (
                             <Marker position={receiverLocation} icon={receiverIcon}>
                                 <Popup>

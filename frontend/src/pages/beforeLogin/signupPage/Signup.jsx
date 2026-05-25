@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { signup, checkEmailExists, checkContactNoExists } from '../../../services/api';
+import {
+    validateSignupField,
+    EMAIL_DUPLICATE_MSG,
+    CONTACT_DUPLICATE_MSG,
+    isValidEmail,
+    isValidContactNo,
+    normalizeEmail,
+    getContactDigits,
+    buildContactNo,
+} from '../../../utils/signupValidation';
+import { VENUE_TYPE_OPTIONS, VENUE_TYPE_REQUIRED_MSG } from '../../../constants/venueTypes';
 import './Signup.css';
+
+const DUPLICATE_CHECK_DEBOUNCE_MS = 400;
 
 import donorImg from '../../../assets/images/sign-up/donor.svg';
 import donorBusinessImg from '../../../assets/images/sign-up/donor-business.svg';
@@ -25,6 +38,8 @@ function SignupPage() {
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
 
+    const [customerIncomeLevel, setCustomerIncomeLevel] = useState('');
+
     const [formData, setFormData] = useState({
         username: '',
         businessName: '',
@@ -42,81 +57,190 @@ function SignupPage() {
         addressProofFile: null,
         nicFile: null,
         licenseFile: null,
+        gramaNiladhariLetter: null,
         isStartup: false,
         startupDetails: '',
+        venueType: '',
     });
 
     const isBusiness = ['restaurant', 'supermarket', 'business'].includes(roleType);
 
-    // Validation patterns
-    const NAME_REGEX = /^[a-zA-Z\s]+$/;
-    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const CONTACT_REGEX = /^\d{10}$/;
-    const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()\-_+=])[A-Za-z\d@$!%*?&#^()\-_+=]{8,}$/;
-    const VEHICLE_NUMBER_REGEX = /^[a-zA-Z0-9\s]+$/;
+    const needsAdminApprovalNotice =
+        ['receiver', 'driver', 'restaurant', 'supermarket', 'business', 'individual'].includes(roleType) ||
+        (roleType === 'customer' && customerIncomeLevel === 'low');
 
-    const validateField = (fieldId, value) => {
-        const trimmed = typeof value === 'string' ? value.trim() : '';
-        switch (fieldId) {
-            case 'username':
-            case 'receiverName':
-            case 'driverName':
-            case 'businessName':
-                if (!trimmed) return 'Name is required';
-                if (!NAME_REGEX.test(trimmed)) return 'Name must contain only letters and spaces';
-                return null;
-            case 'email':
-                if (!trimmed) return 'Email is required';
-                if (!EMAIL_REGEX.test(trimmed)) return 'Please enter a valid email address';
-                return null;
-            case 'contactNo':
-                if (!trimmed) return 'Contact number is required';
-                if (!CONTACT_REGEX.test(trimmed.replace(/\s/g, ''))) return 'Contact number must be exactly 10 digits';
-                return null;
-            case 'vehicleNumber':
-                if (!trimmed) return 'Vehicle number is required';
-                if (!VEHICLE_NUMBER_REGEX.test(trimmed)) return 'Vehicle number can contain only letters, numbers and spaces';
-                return null;
-            case 'password':
-                if (!value) return 'Password is required';
-                if (roleType === 'individual' || roleType === 'customer') {
-                    if (!PASSWORD_REGEX.test(value)) return 'Password must be at least 8 chars with uppercase, lowercase, numbers, symbols';
-                } else {
-                    if (value.length < 6) return 'Password must be at least 6 characters';
-                }
-                return null;
-            case 'retypePassword':
-                if (!value) return 'Retype password is required';
-                if (formData.password !== value) return 'Passwords do not match';
-                return null;
-            default:
-                return null;
+    const emailDebounceRef = useRef(null);
+    const contactDebounceRef = useRef(null);
+    const emailCheckIdRef = useRef(0);
+    const contactCheckIdRef = useRef(0);
+
+    const validationContext = useCallback(
+        () => ({ roleType, password: formData.password }),
+        [roleType, formData.password]
+    );
+
+    const validateField = (fieldId, value) =>
+        validateSignupField(fieldId, value, validationContext());
+
+    const runDuplicateCheck = async (fieldId, value, checkIdRef) => {
+        const checkId = ++checkIdRef.current;
+        try {
+            if (fieldId === 'email') {
+                const email = normalizeEmail(value);
+                const { exists } = await checkEmailExists(email);
+                if (checkId !== checkIdRef.current) return;
+                setErrors((prev) => {
+                    if (exists) return { ...prev, email: EMAIL_DUPLICATE_MSG };
+                    if (prev.email === EMAIL_DUPLICATE_MSG) {
+                        const next = { ...prev };
+                        delete next.email;
+                        return next;
+                    }
+                    return prev;
+                });
+            } else if (fieldId === 'contactNo') {
+                const { exists } = await checkContactNoExists(value.replace(/\s/g, ''));
+                if (checkId !== checkIdRef.current) return;
+                setErrors((prev) => {
+                    if (exists) return { ...prev, contactNo: CONTACT_DUPLICATE_MSG };
+                    if (prev.contactNo === CONTACT_DUPLICATE_MSG) {
+                        const next = { ...prev };
+                        delete next.contactNo;
+                        return next;
+                    }
+                    return prev;
+                });
+            }
+        } catch {
+            if (checkId !== checkIdRef.current) return;
         }
     };
 
+    const scheduleDuplicateCheck = (fieldId, value) => {
+        if (fieldId === 'email') {
+            clearTimeout(emailDebounceRef.current);
+            if (!isValidEmail(value)) return;
+            emailDebounceRef.current = setTimeout(
+                () => runDuplicateCheck('email', value, emailCheckIdRef),
+                DUPLICATE_CHECK_DEBOUNCE_MS
+            );
+        } else if (fieldId === 'contactNo') {
+            clearTimeout(contactDebounceRef.current);
+            const contact = value.replace(/\s/g, '');
+            if (!isValidContactNo(contact)) return;
+            contactDebounceRef.current = setTimeout(
+                () => runDuplicateCheck('contactNo', contact, contactCheckIdRef),
+                DUPLICATE_CHECK_DEBOUNCE_MS
+            );
+        }
+    };
+
+    const handleContactChange = (e) => {
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 9);
+        const fullContact = buildContactNo(digits);
+
+        setFormData((prev) => ({ ...prev, contactNo: fullContact }));
+
+        const error = validateSignupField('contactNo', fullContact, validationContext());
+        setErrors((errPrev) => ({ ...errPrev, contactNo: error || undefined }));
+
+        contactCheckIdRef.current += 1;
+        scheduleDuplicateCheck('contactNo', fullContact);
+    };
+
+    const handleContactBlur = async () => {
+        const fullContact = buildContactNo(getContactDigits(formData.contactNo));
+        const error = validateField('contactNo', fullContact);
+        setErrors((prev) => ({ ...prev, contactNo: error || undefined }));
+
+        if (!error && isValidContactNo(fullContact)) {
+            await runDuplicateCheck('contactNo', fullContact, contactCheckIdRef);
+        }
+    };
+
+    const renderContactNoField = () => (
+        <div className="input__group">
+            <label htmlFor="contactNoDigits">Contact No</label>
+            <div className="contact-input-row">
+                <span className="contact-prefix" aria-hidden="true">
+                    +94
+                </span>
+                <input
+                    type="tel"
+                    id="contactNoDigits"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    placeholder="771234567"
+                    maxLength={9}
+                    value={getContactDigits(formData.contactNo)}
+                    onChange={handleContactChange}
+                    onBlur={handleContactBlur}
+                />
+            </div>
+            {errors.contactNo && <span className="error-message">{errors.contactNo}</span>}
+        </div>
+    );
+
+    const LIVE_VALIDATE_FIELDS = new Set([
+        'email',
+        'password',
+        'retypePassword',
+        'username',
+        'receiverName',
+        'driverName',
+        'businessName',
+        'vehicleNumber',
+    ]);
+
     const handleInputChange = (e) => {
         const { id, value, type, checked } = e.target;
-        setFormData({ ...formData, [id]: type === 'checkbox' ? checked : value });
+        const nextValue = type === 'checkbox' ? checked : value;
+
+        setFormData((prev) => {
+            const next = { ...prev, [id]: nextValue };
+            if (LIVE_VALIDATE_FIELDS.has(id)) {
+                const error = validateSignupField(id, nextValue, {
+                    roleType,
+                    password: id === 'retypePassword' ? prev.password : next.password,
+                });
+                setErrors((errPrev) => ({ ...errPrev, [id]: error || undefined }));
+            }
+            if (id === 'password' && prev.retypePassword) {
+                const retypeErr = validateSignupField('retypePassword', prev.retypePassword, {
+                    roleType,
+                    password: nextValue,
+                });
+                setErrors((errPrev) => ({ ...errPrev, retypePassword: retypeErr || undefined }));
+            }
+            return next;
+        });
+
+        if (id === 'email') {
+            emailCheckIdRef.current += 1;
+            scheduleDuplicateCheck('email', nextValue);
+        }
     };
 
     const handleBlur = async (e) => {
         const fieldId = e.target.id;
         const value = e.target.value;
         const error = validateField(fieldId, value);
-        
+
         setErrors((prev) => ({ ...prev, [fieldId]: error || undefined }));
-        
+
         if (!error && value?.trim()) {
-            if (fieldId === 'email') {
-                const { exists } = await checkEmailExists(value);
-                if (exists) setErrors((prev) => ({ ...prev, email: 'This email is already registered.' }));
-            }
-            if (fieldId === 'contactNo') {
-                const { exists } = await checkContactNoExists(value);
-                if (exists) setErrors((prev) => ({ ...prev, contactNo: 'This contact number is already registered.' }));
+            if (fieldId === 'email' && isValidEmail(value)) {
+                await runDuplicateCheck('email', value, emailCheckIdRef);
             }
         }
     };
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(emailDebounceRef.current);
+            clearTimeout(contactDebounceRef.current);
+        };
+    }, []);
 
     const handleFileChange = (e, key) => {
         const file = e.target.files[0];
@@ -194,6 +318,15 @@ function SignupPage() {
         if (retypeErr) newErrors.retypePassword = retypeErr;
         if (!formData.address?.trim()) newErrors.address = 'Address is required';
 
+        if (roleType === 'customer') {
+            if (!customerIncomeLevel) {
+                newErrors.customerIncomeLevel = 'Please select your income level';
+            }
+            if (customerIncomeLevel === 'low' && !formData.gramaNiladhariLetter) {
+                newErrors.gramaNiladhariLetter = 'Grama Niladhari letter is required for low income registration';
+            }
+        }
+
         if (roleType === 'individual' || roleType === 'customer') {
             const usernameErr = validateField('username', formData.username);
             if (usernameErr) newErrors.username = usernameErr;
@@ -203,6 +336,9 @@ function SignupPage() {
                 if (!formData.startupDetails?.trim()) newErrors.startupDetails = 'Startup details are required';
             }
         } else if (isBusiness) {
+            if (roleType === 'restaurant' && !formData.venueType) {
+                newErrors.venueType = VENUE_TYPE_REQUIRED_MSG;
+            }
             const bizErr = validateField('businessName', formData.businessName);
             if (bizErr) newErrors.businessName = bizErr;
             if (!formData.businessRegFile) newErrors.businessRegFile = 'Business registration file is required';
@@ -225,10 +361,19 @@ function SignupPage() {
         return newErrors;
     };
 
-    const validationErrors = getValidationErrors();
-    const isFormValid = Object.keys(validationErrors).length === 0 && !errors.profileImage;
-    const hasDisplayErrors = Object.values(errors).some(Boolean);
-    const submitDisabled = loading || !isFormValid || hasDisplayErrors;
+    const getSubmitBlockers = () => {
+        const blockers = { ...getValidationErrors() };
+        Object.entries(errors).forEach(([key, message]) => {
+            if (message) blockers[key] = blockers[key] || message;
+        });
+        return blockers;
+    };
+
+    const submitBlockers = getSubmitBlockers();
+    const submitDisabled = loading || Object.keys(submitBlockers).length > 0;
+    const submitDisabledReason = loading
+        ? 'Please wait while your account is being created.'
+        : Object.values(submitBlockers).join(' • ');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -258,6 +403,13 @@ function SignupPage() {
                 submitFormData.append('profileImage', profileImageFile);
             }
 
+            if (roleType === 'customer') {
+                submitFormData.append('customerIncomeLevel', customerIncomeLevel);
+                if (customerIncomeLevel === 'low' && formData.gramaNiladhariLetter) {
+                    submitFormData.append('gramaNiladhariLetter', formData.gramaNiladhariLetter);
+                }
+            }
+
             if (roleType === 'individual' || roleType === 'customer') {
                 submitFormData.append('username', formData.username);
                 if (roleType === 'individual' && formData.isStartup) {
@@ -267,6 +419,9 @@ function SignupPage() {
                 }
             } else if (isBusiness) {
                 submitFormData.append('businessName', formData.businessName);
+                if (roleType === 'restaurant') {
+                    submitFormData.append('venueType', formData.venueType);
+                }
                 if (formData.businessRegFile) submitFormData.append('businessRegFile', formData.businessRegFile);
                 if (formData.addressProofFile) submitFormData.append('addressProofFile', formData.addressProofFile);
             } else if (roleType === 'receiver') {
@@ -341,6 +496,12 @@ function SignupPage() {
 
                     <h1 className="signup__title">{getTitle()}</h1>
 
+                    {needsAdminApprovalNotice && (
+                        <p className="signup__approval-notice">
+                            <strong>Administrator review required.</strong> After you verify your email, a FoodLoop admin must approve your account, after that you can sign in.
+                        </p>
+                    )}
+
                     <div className="profile__upload">
                         <label htmlFor="profile-upload" className="profile__circle">
                             {profileImage ? (
@@ -375,6 +536,53 @@ function SignupPage() {
 
                     <div className="form__fields">
                         
+                        {roleType === 'customer' && (
+                            <div className="income__tier__section">
+                                <label className="income__tier__label">Income level</label>
+                                <p className="income__tier__hint">Choose the option that applies to you. Low-income customers must upload a Grama Niladhari certificate.</p>
+                                <div className="income__tier__options">
+                                    <button
+                                        type="button"
+                                        className={`income__tier__card ${customerIncomeLevel === 'normal' ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setCustomerIncomeLevel('normal');
+                                            setErrors((prev) => ({ ...prev, customerIncomeLevel: undefined, gramaNiladhariLetter: undefined }));
+                                            setFormData((prev) => ({ ...prev, gramaNiladhariLetter: null }));
+                                        }}
+                                    >
+                                        <strong>Normal income</strong>
+                                        <span>Standard marketplace access</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`income__tier__card ${customerIncomeLevel === 'low' ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setCustomerIncomeLevel('low');
+                                            setErrors((prev) => ({ ...prev, customerIncomeLevel: undefined }));
+                                        }}
+                                    >
+                                        <strong>Low income</strong>
+                                        <span>Subsidized access — GN letter required</span>
+                                    </button>
+                                </div>
+                                {errors.customerIncomeLevel && (
+                                    <span className="error-message">{errors.customerIncomeLevel}</span>
+                                )}
+                                {customerIncomeLevel === 'low' && (
+                                    <div className="input__group border__group">
+                                        <label>Grama Niladhari letter</label>
+                                        <span className="file__hint">Upload PDF only (max 10 MB)</span>
+                                        <div className="file__drop" onClick={() => triggerFileUpload('gn-letter-file')}>
+                                            <span>{formData.gramaNiladhariLetter ? formData.gramaNiladhariLetter.name : 'Import or Drag File'}</span>
+                                            <button className="add__file__btn" type="button">Add File</button>
+                                        </div>
+                                        <input type="file" id="gn-letter-file" accept="application/pdf" hidden onChange={(e) => handleFileChange(e, 'gramaNiladhariLetter')} />
+                                        {errors.gramaNiladhariLetter && <span className="error-message">{errors.gramaNiladhariLetter}</span>}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {(roleType === 'individual' || roleType === 'customer') && (
                             <>
                                 <div className="input__group">
@@ -408,9 +616,7 @@ function SignupPage() {
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
-                                    <label htmlFor="contactNo">Contact No</label>
-                                    <input type="text" id="contactNo" placeholder="Eg: 0771234567" value={formData.contactNo} onChange={handleInputChange} onBlur={handleBlur} />
-                                    {errors.contactNo && <span className="error-message">{errors.contactNo}</span>}
+                                    {renderContactNoField()}
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
@@ -422,6 +628,30 @@ function SignupPage() {
 
                         {isBusiness && (
                             <>
+                                {roleType === 'restaurant' && (
+                                    <div className="venue__type__section">
+                                        <label className="venue__type__label">Restaurant / Wedding Hall</label>
+                                        <p className="venue__type__hint">Select the type that best describes your business.</p>
+                                        <div className="venue__type__options">
+                                            {VENUE_TYPE_OPTIONS.map((option) => (
+                                                <button
+                                                    key={option.value}
+                                                    type="button"
+                                                    className={`venue__type__card ${formData.venueType === option.value ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setFormData((prev) => ({ ...prev, venueType: option.value }));
+                                                        setErrors((prev) => ({ ...prev, venueType: undefined }));
+                                                    }}
+                                                >
+                                                    <strong>{option.label}</strong>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {errors.venueType && (
+                                            <span className="error-message">{errors.venueType}</span>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="input__group">
                                     <label htmlFor="businessName">Business Name</label>
                                     <input type="text" id="businessName" placeholder="Eg: Green Veggies" value={formData.businessName} onChange={handleInputChange} onBlur={handleBlur} />
@@ -453,9 +683,7 @@ function SignupPage() {
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
-                                    <label htmlFor="contactNo">Contact No</label>
-                                    <input type="text" id="contactNo" placeholder="Eg: 0771234567" value={formData.contactNo} onChange={handleInputChange} onBlur={handleBlur} />
-                                    {errors.contactNo && <span className="error-message">{errors.contactNo}</span>}
+                                    {renderContactNoField()}
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
@@ -500,9 +728,7 @@ function SignupPage() {
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
-                                    <label htmlFor="contactNo">Contact No</label>
-                                    <input type="text" id="contactNo" placeholder="Eg: 0771234567" value={formData.contactNo} onChange={handleInputChange} onBlur={handleBlur} />
-                                    {errors.contactNo && <span className="error-message">{errors.contactNo}</span>}
+                                    {renderContactNoField()}
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
@@ -562,9 +788,7 @@ function SignupPage() {
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
-                                    <label htmlFor="contactNo">Contact No</label>
-                                    <input type="text" id="contactNo" placeholder="Eg: 0771234567" value={formData.contactNo} onChange={handleInputChange} onBlur={handleBlur} />
-                                    {errors.contactNo && <span className="error-message">{errors.contactNo}</span>}
+                                    {renderContactNoField()}
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
@@ -577,7 +801,7 @@ function SignupPage() {
                         <div className="row">
                             <div className="input__group half">
                                 <label htmlFor="password">Password</label>
-                                <input type="password" id="password" placeholder="*******" value={formData.password} onChange={handleInputChange} onBlur={handleBlur} />
+                                <input type="password" id="password" placeholder="Letters, numbers & symbols (8+)" value={formData.password} onChange={handleInputChange} onBlur={handleBlur} />
                                 {errors.password && <span className="error-message">{errors.password}</span>}
                             </div>
                             <div className="input__group half">
@@ -600,13 +824,20 @@ function SignupPage() {
                         </div>
                     )}
 
-                    <button 
-                        className="create__account__btn" 
-                        onClick={handleSubmit}
-                        disabled={submitDisabled}
+                    <div
+                        className={`create-account-btn-wrap${submitDisabled ? ' is-disabled' : ''}`}
+                        title={submitDisabled && submitDisabledReason ? submitDisabledReason : undefined}
                     >
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                    </button>
+                        <button
+                            type="button"
+                            className="create__account__btn"
+                            onClick={handleSubmit}
+                            disabled={submitDisabled}
+                            aria-disabled={submitDisabled}
+                        >
+                            {loading ? 'Creating Account...' : 'Create Account'}
+                        </button>
+                    </div>
 
                     <div className="signup__footer">
                         <p>Already have an account? <Link to="/login">Sign In</Link></p>

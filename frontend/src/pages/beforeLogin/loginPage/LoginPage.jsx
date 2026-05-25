@@ -2,13 +2,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../../../services/api';
-import { setToken, setUser } from '../../../utils/auth';
+import { setToken, setUser, getDashboardPath } from '../../../utils/auth';
 import './LoginPage.css';
 import loginImage from '../../../assets/images/login/login.svg';
 import eye from "../../../assets/icons/login/eye-icon.svg"
 import receive from "../../../assets/icons/login/receive.svg"
 
 const DEACTIVATED_MESSAGE = 'Your account has been deactivated. Contact an administrator to reactivate.';
+
+const PENDING_APPROVAL_TITLE = 'Account pending administrator approval';
+const PENDING_APPROVAL_BODY =
+    'Your email is verified, but you cannot sign in yet. A FoodLoop administrator must review and approve your registration first. Please check back after approval, or contact support if you have been waiting more than a few business days.';
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -19,6 +23,11 @@ function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [generalError, setGeneralError] = useState('');
+    const [showPendingApproval, setShowPendingApproval] = useState(
+        () =>
+            location.state?.pendingApproval === true ||
+            new URLSearchParams(location.search).get('pendingApproval') === '1'
+    );
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -28,6 +37,7 @@ function LoginPage() {
         e.preventDefault();
         setErrors({});
         setGeneralError('');
+        setShowPendingApproval(false);
 
         // Basic validation
         if (!email.trim()) {
@@ -49,23 +59,7 @@ function LoginPage() {
                 setToken(response.token);
                 setUser(response.user);
 
-                // Redirect based on user role
-                const role = response.user.role.toLowerCase();
-                if (role === 'donor') {
-                    navigate('/donor/dashboard');
-                } else if (role === 'receiver') {
-                    navigate('/receiver/dashboard');
-                } else if (role === 'driver') {
-                    navigate('/driver/dashboard');
-                } else if (role === 'admin') {
-                    navigate('/admin/dashboard');
-                } else if (role === 'customer') {
-                    navigate('/customer/marketplace');
-                } else if (['restaurant', 'supermarket', 'business', 'individual'].includes(role)) {
-                    navigate('/vendor/dashboard');
-                } else {
-                    navigate('/');
-                }
+                navigate(getDashboardPath(response.user.role));
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -73,10 +67,12 @@ function LoginPage() {
             // Handle API errors
             if (error.response && error.response.data) {
                 const errorData = error.response.data;
-                
-                // Check for status-related errors (pending/rejected)
-                if (errorData.message) {
-                    setGeneralError(errorData.message);
+
+                if (errorData.code === 'PENDING_ADMIN_APPROVAL') {
+                    setShowPendingApproval(true);
+                    setGeneralError('');
+                } else if (errorData.message) {
+                    setGeneralError(errorData.details || errorData.message);
                 }
                 
                 // Handle field-specific errors
@@ -127,18 +123,15 @@ function LoginPage() {
                                 {DEACTIVATED_MESSAGE}
                             </div>
                         )}
-                        {/* General Error Message */}
-                        {generalError && (
-                            <div className="error-message" style={{ 
-                                color: '#ff6b6b', 
-                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                                padding: '12px',
-                                borderRadius: '8px',
-                                marginBottom: '1rem',
-                                textAlign: 'center',
-                                fontSize: '0.9rem',
-                                fontWeight: '600'
-                            }}>
+                        {showPendingApproval && (
+                            <div className="login__pending-approval" role="alert">
+                                <p className="login__pending-approval__title">{PENDING_APPROVAL_TITLE}</p>
+                                <p className="login__pending-approval__body">{PENDING_APPROVAL_BODY}</p>
+                            </div>
+                        )}
+
+                        {generalError && !showPendingApproval && (
+                            <div className="login__error-banner" role="alert">
                                 {generalError}
                             </div>
                         )}

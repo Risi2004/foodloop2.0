@@ -458,6 +458,50 @@
     border-color: #1F4E36;
 }
 
+.contact-input-row {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.contact-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border: 1px solid #DBE6E0;
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    background: #f0f4f2;
+    color: #1F4E36;
+    font-size: 0.9rem;
+    font-weight: 700;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.contact-input-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #DBE6E0;
+    border-radius: 0 12px 12px 0;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    color: #1F4E36;
+    font-weight: 600;
+}
+
+.contact-input-row input:focus {
+    border-color: #1F4E36;
+}
+
+.contact-input-row:focus-within .contact-prefix {
+    border-color: #1F4E36;
+}
+
 
 .border__group {
     position: relative;
@@ -526,6 +570,19 @@
     transform: translateY(-2px);
 }
 
+.create-account-btn-wrap {
+    width: 100%;
+    max-width: 500px;
+}
+
+.create-account-btn-wrap.is-disabled {
+    cursor: help;
+}
+
+.create-account-btn-wrap.is-disabled .create__account__btn {
+    pointer-events: none;
+}
+
 .create__account__btn:disabled {
     background: #618972;
     color: rgba(255, 255, 255, 0.6);
@@ -549,4 +606,118 @@
 
 .signup__footer a:hover {
     color: #73A13F;
+}
+
+.income__tier__section {
+    width: 100%;
+    margin-bottom: 1.25rem;
+}
+
+.income__tier__label {
+    display: block;
+    font-weight: 700;
+    color: #1F4E36;
+    margin-bottom: 0.35rem;
+}
+
+.income__tier__hint {
+    font-size: 0.85rem;
+    color: #618972;
+    margin: 0 0 0.75rem;
+    line-height: 1.4;
+}
+
+.income__tier__options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.income__tier__card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 14px;
+    border: 2px solid #d0e6d8;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.income__tier__card strong {
+    color: #1F4E36;
+    font-size: 0.95rem;
+}
+
+.income__tier__card span {
+    font-size: 0.8rem;
+    color: #618972;
+}
+
+.income__tier__card.active {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.venue__type__section {
+    width: 100%;
+    margin-bottom: 1.25rem;
+}
+
+.venue__type__label {
+    display: block;
+    font-weight: 700;
+    color: #1F4E36;
+    margin-bottom: 0.35rem;
+}
+
+.venue__type__hint {
+    font-size: 0.85rem;
+    color: #618972;
+    margin: 0 0 0.75rem;
+    line-height: 1.4;
+}
+
+.venue__type__options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.venue__type__card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+    border: 2px solid #d0e6d8;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.venue__type__card strong {
+    color: #1F4E36;
+    font-size: 0.95rem;
+}
+
+.venue__type__card.active {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.signup__approval-notice {
+    width: 100%;
+    margin: 0 0 1rem;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(76, 175, 80, 0.12);
+    color: #1F4E36;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    text-align: left;
 }

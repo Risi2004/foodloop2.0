@@ -2,28 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './RecentRequests.css';
 import { updateUserStatus } from '../../../../services/api';
-
-function getDisplayName(user) {
-    if (!user) return '—';
-    if (user.role === 'Donor') {
-        if (user.donorType === 'Business' && user.businessName) return user.businessName;
-        return user.username || user.email || 'Donor';
-    }
-    if (user.role === 'Receiver') return user.receiverName || user.email || 'Receiver';
-    if (user.role === 'Driver') return user.driverName || user.email || 'Driver';
-    return user.email || '—';
-}
-
-function getOrganization(user) {
-    if (!user) return '';
-    if (user.role === 'Donor') {
-        if (user.donorType === 'Business') return user.businessType || '';
-        return user.donorType || 'Individual';
-    }
-    if (user.role === 'Receiver') return user.receiverType || '';
-    if (user.role === 'Driver') return user.vehicleType ? `${user.vehicleType}${user.vehicleNumber ? ` • ${user.vehicleNumber}` : ''}` : '';
-    return '';
-}
+import { getAdminUserName, getAdminUserOrganization } from '../../../../utils/adminUserDisplay';
 
 function formatDate(createdAt) {
     if (!createdAt) return '—';
@@ -90,7 +69,7 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
                                 <tr key={user._id}>
                                     <td>
                                         <div className="user-info">
-                                            <span className="user-name">{getDisplayName(user)}</span>
+                                            <span className="user-name">{getAdminUserName(user)}</span>
                                             <span className="user-email">{user.email}</span>
                                         </div>
                                     </td>
@@ -98,7 +77,7 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
                                     <td>
                                         <div className="role-info">
                                             <span className="role-type">{user.role}</span>
-                                            <span className="role-org">{getOrganization(user)}</span>
+                                            <span className="role-org">{getAdminUserOrganization(user)}</span>
                                         </div>
                                     </td>
                                     <td className="status-cell">

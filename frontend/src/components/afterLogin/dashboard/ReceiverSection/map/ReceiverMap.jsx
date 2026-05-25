@@ -3,6 +3,8 @@ import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import MapReadyNotifier from '../../../RoleLayout/MapReadyNotifier';
+import MapTileLayer from '../../../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 import './ReceiverMap.css';
 import { getMapLocations } from '../../../../../services/mapApi';
 import { getAvailableDonations } from '../../../../../services/donationApi';
@@ -121,7 +123,9 @@ function DonorMap() {
                     {error && (
                         <div className="donor-map__error">{error}</div>
                     )}
-                    <MapContainer center={DEFAULT_CENTER} zoom={13} scrollWheelZoom={false} zoomControl={false}>
+                    <MapContainer center={DEFAULT_CENTER} zoom={13} scrollWheelZoom={false} zoomControl={false} style={{ height: '100%', width: '100%' }}>
+                        <MapTileLayer />
+                        <MapInvalidateSize />
                         <MapReadyNotifier />
                         <MapController setMapInstance={setMapInstance} />
                         {donorLocations.map((loc, idx) => (

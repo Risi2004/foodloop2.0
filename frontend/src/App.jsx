@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/beforeLogin/landingPage/LandingPage";
 import DonorDashboard from "./pages/afterLogin/donor/dashboard/DonorDashboard"
 import LoginPage from "./pages/beforeLogin/loginPage/LoginPage";
@@ -60,10 +60,20 @@ import CustomerCart from "./pages/afterLogin/customer/cart/CustomerCart";
 import CustomerPayment from "./pages/afterLogin/customer/payment/CustomerPayment";
 import CustomerProfile from "./pages/afterLogin/customer/profile/CustomerProfile";
 
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import RoleLayout from "./components/afterLogin/RoleLayout/RoleLayout";
 import { MarketplaceProvider } from "./contexts/MarketplaceContext";
 
+function ProtectedRoleRoute({ allowedRoles }) {
+  return (
+    <ProtectedRoute>
+      <RoleProtectedRoute allowedRoles={allowedRoles}>
+        <RoleLayout />
+      </RoleProtectedRoute>
+    </ProtectedRoute>
+  );
+}
 
 function App() {
 
@@ -89,7 +99,7 @@ function App() {
         {/* After Signin - Protected Routes */}
 
         {/* Donor Routes - Only accessible by Donor role */}
-        <Route path="/donor" element={<RoleProtectedRoute allowedRoles={['Donor']}><RoleLayout /></RoleProtectedRoute>}>
+        <Route path="/donor" element={<ProtectedRoleRoute allowedRoles={['Donor']} />}>
           <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="about" element={<DonorAbout />} />
           <Route path="privacy-policy" element={<DonorPrivacyPolicy />} />
@@ -106,7 +116,7 @@ function App() {
         </Route>
 
         {/* Receiver Routes - Only accessible by Receiver role */}
-        <Route path="/receiver" element={<RoleProtectedRoute allowedRoles={['Receiver']}><RoleLayout /></RoleProtectedRoute>}>
+        <Route path="/receiver" element={<ProtectedRoleRoute allowedRoles={['Receiver']} />}>
           <Route path="dashboard" element={<ReceiverDashboard />} />
           <Route path="about" element={<ReceiverAbout />} />
           <Route path="privacy-policy" element={<ReceiverPrivacyPolicy />} />
@@ -121,7 +131,7 @@ function App() {
         </Route>
 
         {/* Driver Routes - Only accessible by Driver role */}
-        <Route path="/driver" element={<RoleProtectedRoute allowedRoles={['Driver']}><RoleLayout /></RoleProtectedRoute>}>
+        <Route path="/driver" element={<ProtectedRoleRoute allowedRoles={['Driver']} />}>
           <Route path="dashboard" element={<DriverDashboard />} />
           <Route path="about" element={<DriverAbout />} />
           <Route path="privacy-policy" element={<DriverPrivacyPolicy />} />
@@ -136,7 +146,7 @@ function App() {
         </Route>
 
         {/* Admin Routes - Only accessible by Admin role */}
-        <Route path="/admin" element={<RoleProtectedRoute allowedRoles={['Admin']}><RoleLayout /></RoleProtectedRoute>}>
+        <Route path="/admin" element={<ProtectedRoleRoute allowedRoles={['Admin']} />}>
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="notification" element={<AdminNotificationPage />} />
           <Route path="user-management" element={<AdminUserManagementPage />} />
@@ -145,14 +155,14 @@ function App() {
         </Route>
 
         {/* Vendor Routes - Accessible by Seller roles */}
-        <Route path="/vendor" element={<RoleProtectedRoute allowedRoles={['restaurant', 'supermarket', 'business', 'individual']}><RoleLayout /></RoleProtectedRoute>}>
+        <Route path="/vendor" element={<ProtectedRoleRoute allowedRoles={['restaurant', 'supermarket', 'business', 'individual']} />}>
           <Route path="dashboard" element={<VendorDashboard />} />
           <Route path="products" element={<VendorProducts />} />
           <Route path="add-product" element={<VendorAddProduct />} />
         </Route>
 
         {/* Customer Routes - Accessible by Customer role */}
-        <Route path="/customer" element={<RoleProtectedRoute allowedRoles={['customer']}><RoleLayout /></RoleProtectedRoute>}>
+        <Route path="/customer" element={<ProtectedRoleRoute allowedRoles={['customer']} />}>
           <Route path="marketplace" element={<CustomerMarketplace />} />
           <Route path="cart" element={<CustomerCart />} />
           <Route path="payment" element={<CustomerPayment />} />

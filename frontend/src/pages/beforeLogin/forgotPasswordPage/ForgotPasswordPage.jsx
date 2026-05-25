@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { requestPasswordReset } from '../../../services/api';
 import '../loginPage/LoginPage.css';
 import loginImage from '../../../assets/images/login/login.svg';
 
 function ForgotPasswordPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess(false);
     if (!email.trim()) {
       setError('Email is required');
       return;
@@ -21,9 +20,14 @@ function ForgotPasswordPage() {
     setLoading(true);
     try {
       await requestPasswordReset(email.trim());
-      setSuccess(true);
+      navigate('/reset-password', { state: { email: email.trim().toLowerCase() } });
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Something went wrong');
+      const msg =
+        err.response?.data?.errors?.[0]?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        'Something went wrong';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -42,7 +46,7 @@ function ForgotPasswordPage() {
               </div>
             </div>
             <h1>Forgot Password</h1>
-            <p className="subtitle">Enter your email to receive a reset link.</p>
+            <p className="subtitle">Enter your email to receive a 6-digit reset code.</p>
           </div>
 
           <form className="form__card" onSubmit={handleSubmit}>
@@ -60,20 +64,6 @@ function ForgotPasswordPage() {
                 {error}
               </div>
             )}
-            {success && (
-              <div style={{
-                color: '#86efac',
-                backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                padding: '12px',
-                borderRadius: '8px',
-                marginBottom: '1rem',
-                textAlign: 'center',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-              }}>
-                If an account exists for this email, you will receive a password reset link. Check your inbox and spam.
-              </div>
-            )}
 
             <div className="input__group">
               <label htmlFor="email">Email</label>
@@ -88,7 +78,7 @@ function ForgotPasswordPage() {
             </div>
 
             <button type="submit" className="login__btn" disabled={loading}>
-              {loading ? 'Sending...' : 'Send reset link'}
+              {loading ? 'Sending...' : 'Send reset code'}
             </button>
           </form>
 

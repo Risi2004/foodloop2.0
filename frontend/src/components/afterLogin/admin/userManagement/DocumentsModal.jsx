@@ -28,8 +28,14 @@ const DocumentsModal = ({ user, isOpen, onClose }) => {
             return true;
         }
         
-        // Accept S3 URLs (s3:// or s3.amazonaws.com)
-        if (urlString.includes('s3') || urlString.includes('amazonaws.com')) {
+        // Accept S3 / Cloudflare R2 URLs
+        if (
+            urlString.includes('s3') ||
+            urlString.includes('amazonaws.com') ||
+            urlString.includes('r2.dev') ||
+            urlString.includes('r2.cloudflarestorage.com') ||
+            urlString.includes('cloudflare')
+        ) {
             return true;
         }
         
@@ -62,7 +68,9 @@ const DocumentsModal = ({ user, isOpen, onClose }) => {
             { field: 'businessRegFileUrl', label: 'Business Registration Document' },
             { field: 'addressProofFileUrl', label: 'Address Proof Document' },
             { field: 'nicFileUrl', label: 'NIC Document' },
-            { field: 'licenseFileUrl', label: 'License Document' }
+            { field: 'licenseFileUrl', label: 'License Document' },
+            { field: 'gramaNiladhariLetterUrl', label: 'Grama Niladhari Letter' },
+            { field: 'gramaNiladhariLetter', label: 'Grama Niladhari Letter' },
         ];
 
         // Check ALL document fields and add any that exist

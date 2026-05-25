@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './AdminUserManagement.css';
 import { getPendingUsers, updateUserStatus } from '../../../../services/api';
+import { getAdminUserName, getAdminUserOrganization } from '../../../../utils/adminUserDisplay';
 import DocumentsModal from './DocumentsModal';
 
 const RecentRequestsTable = ({ onUserStatusChange }) => {
@@ -94,34 +95,6 @@ const RecentRequestsTable = ({ onUserStatusChange }) => {
         });
     };
 
-    // Get user display name based on role
-    const getUserName = (user) => {
-        if (user.role === 'Donor') {
-            if (user.donorType === 'Business') {
-                return user.businessName || user.email;
-            } else {
-                return user.username || user.email;
-            }
-        } else if (user.role === 'Receiver') {
-            return user.receiverName || user.email;
-        } else if (user.role === 'Driver') {
-            return user.driverName || user.email;
-        }
-        return user.email;
-    };
-
-    // Get organization/sub-role display
-    const getOrganization = (user) => {
-        if (user.role === 'Donor') {
-            return user.donorType || 'Donor';
-        } else if (user.role === 'Receiver') {
-            return user.receiverType || 'Receiver';
-        } else if (user.role === 'Driver') {
-            return user.vehicleType || 'Driver';
-        }
-        return user.role;
-    };
-
     // Handle view documents
     const handleViewDocuments = (user) => {
         setSelectedUser(user);
@@ -191,13 +164,13 @@ const RecentRequestsTable = ({ onUserStatusChange }) => {
                             {requests.map((req) => (
                                 <tr key={req._id}>
                                     <td className="user-cell">
-                                        <div className="user-name">{getUserName(req)}</div>
+                                        <div className="user-name">{getAdminUserName(req)}</div>
                                         <div className="user-email">{req.email}</div>
                                     </td>
                                     <td className="date-cell">{formatDate(req.createdAt)}</td>
                                     <td className="role-cell">
                                         <div className="role-main">{req.role}</div>
-                                        <div className="role-sub">{getOrganization(req)}</div>
+                                        <div className="role-sub">{getAdminUserOrganization(req)}</div>
                                     </td>
                                     <td className="action-cell">
                                         <button 

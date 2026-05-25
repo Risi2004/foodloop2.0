@@ -3,14 +3,20 @@ import './AdminUserManagement.css';
 
 const ROLE_OPTIONS = [
   { value: '', label: 'All roles' },
-  { value: 'Donor', label: 'Donor' },
   { value: 'Receiver', label: 'Receiver' },
   { value: 'Driver', label: 'Driver' },
+  { value: 'customer', label: 'Customer' },
+  { value: 'restaurant', label: 'Restaurant / Hotel' },
+  { value: 'supermarket', label: 'Supermarket' },
+  { value: 'business', label: 'Other Business' },
+  { value: 'individual', label: 'Individual / Startup' },
 ];
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
-  { value: 'completed', label: 'Verified' },
+  { value: 'completed', label: 'Active / Verified' },
+  { value: 'pending', label: 'Pending approval' },
+  { value: 'unverified', label: 'Email not verified' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'inactive', label: 'Inactive' },
 ];

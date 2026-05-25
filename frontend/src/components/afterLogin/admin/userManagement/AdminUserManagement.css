@@ -114,11 +114,74 @@
     color: #618972;
 }
 
+.details-text {
+    font-size: 12px;
+    color: #2E4E3F;
+    line-height: 1.4;
+    max-width: 200px;
+}
+
+.details-text.muted {
+    color: #618972;
+}
+
+.members-count {
+    font-size: 0.9rem;
+    color: #A5D6A7;
+    margin: -12px 0 16px 0;
+    font-weight: 600;
+}
+
+.members-table-wide {
+    min-width: 960px;
+}
+
+.retry-btn-inline {
+    margin-left: 10px;
+    padding: 6px 12px;
+    background: #7abfa1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* DOCS column — compact eye button */
+.custom-table th.docs-col,
+.custom-table td.docs-cell {
+    width: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    text-align: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+
+.docs-cell .action-btn.view {
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0 auto;
+    display: inline-flex;
+    flex: none;
+    box-sizing: border-box;
+}
+
 /* Action Buttons (Icons) */
 .action-cell {
+    vertical-align: middle;
+}
+
+.action-cell-inner {
     display: flex;
-    gap: 10px;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    width: fit-content;
 }
 
 .action-btn {
@@ -127,13 +190,18 @@
     border-radius: 8px;
     width: 32px;
     height: 32px;
-    display: flex;
+    min-width: 32px;
+    max-width: 32px;
+    padding: 0;
+    flex: 0 0 auto;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
     color: #1F4E36;
     font-weight: 800;
+    box-sizing: border-box;
 }
 
 .action-btn:hover {
@@ -345,6 +413,16 @@
     background-color: #F3F4F6;
     color: #4B5563;
     border: 1px solid #E5E7EB;
+}
+
+.status-badge.pending {
+    background: rgba(255, 193, 7, 0.2);
+    color: #8a6d00;
+}
+
+.status-badge.unverified {
+    background: rgba(158, 158, 158, 0.2);
+    color: #555;
 }
 
 .status-badge.rejected {

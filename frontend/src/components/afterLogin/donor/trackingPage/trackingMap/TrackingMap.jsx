@@ -1,5 +1,7 @@
 import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
+import MapTileLayer from '../../../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './TrackingMap.css';
@@ -109,7 +111,10 @@ function TrackingMap({ trackingData, driverLocation: liveDriverLocation }) {
                 className="map-container"
                 zoomControl={false}
                 key="tracking-map"
+                style={{ height: '100%', width: '100%' }}
             >
+                <MapTileLayer />
+                <MapInvalidateSize />
                 <MapUpdater 
                     driverLocation={driverLocation}
                     donorLocation={donorLocation}

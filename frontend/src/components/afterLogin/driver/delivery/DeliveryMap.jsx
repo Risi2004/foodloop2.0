@@ -3,6 +3,8 @@ import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import LocationBox from './LocationBox';
+import MapTileLayer from '../../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../shared/map/MapInvalidateSize';
 import './DeliveryMap.css';
 
 // Same pin SVG as donor and receiver dashboard maps (map pin with circle)
@@ -198,6 +200,8 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
             >
+                <MapTileLayer />
+                <MapInvalidateSize />
                 <MapResizeFix />
                 {bounds && <MapController bounds={bounds} />}
 

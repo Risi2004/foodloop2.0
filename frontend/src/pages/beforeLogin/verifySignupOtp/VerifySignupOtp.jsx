@@ -45,9 +45,15 @@ function VerifySignupOtp() {
     }
     setLoading(true);
     try {
-      await verifySignupOtp(email, trimmedOtp);
-      setSuccessMessage('Account created successfully! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 1500);
+      const data = await verifySignupOtp(email, trimmedOtp);
+      setSuccessMessage(data.message || 'Account verified! Redirecting to login...');
+      setTimeout(
+        () =>
+          navigate('/login', {
+            state: { pendingApproval: !!data.requiresAdminApproval },
+          }),
+        2000
+      );
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
     } finally {

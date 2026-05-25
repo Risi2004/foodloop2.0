@@ -3,6 +3,8 @@ import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import MapReadyNotifier from '../../../RoleLayout/MapReadyNotifier';
+import MapTileLayer from '../../../../shared/map/MapTileLayer';
+import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 import './DriverMap.css';
 
 
@@ -83,7 +85,9 @@ function DonorMap() {
             </div>
             <div className='donor-map__content'>
                 <div className="donor-map__container">
-                    <MapContainer center={position} zoom={13} scrollWheelZoom={false} zoomControl={false}>
+                    <MapContainer center={position} zoom={13} scrollWheelZoom={false} zoomControl={false} style={{ height: '100%', width: '100%' }}>
+                        <MapTileLayer />
+                        <MapInvalidateSize />
                         <MapReadyNotifier />
                         <MapController setMapInstance={setMapInstance} />
                         {/* Showing only Active Pickups, but with GREEN styling as requested */}
