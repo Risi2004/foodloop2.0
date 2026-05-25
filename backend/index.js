@@ -7,6 +7,8 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const donationRoutes = require('./routes/donation.routes');
+const geocodeRoutes = require('./routes/geocode.routes');
 const { isR2Configured } = require('./config/r2');
 
 const app = express();
@@ -50,6 +52,8 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/donations', donationRoutes);
+app.use('/api/geocode', geocodeRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

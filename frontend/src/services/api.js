@@ -2,7 +2,7 @@ import { getAuthHeaders } from '../utils/auth';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-async function parseResponse(response) {
+export async function parseResponse(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(data.message || 'Request failed');
@@ -12,7 +12,7 @@ async function parseResponse(response) {
   return data;
 }
 
-function buildUrl(path) {
+export function buildUrl(path) {
   const base = API_BASE.replace(/\/$/, '');
   const p = path.startsWith('/') ? path : `/${path}`;
   return base ? `${base}${p}` : p;

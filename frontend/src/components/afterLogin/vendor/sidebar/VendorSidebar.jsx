@@ -1,8 +1,16 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { clearAuth } from '../../../../utils/auth';
 import './VendorSidebar.css';
 
 const VendorSidebar = () => {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        clearAuth();
+        navigate('/login');
+    };
+
     return (
         <aside className="vendor-sidebar">
             <div className="vendor-sidebar__header">
@@ -26,6 +34,9 @@ const VendorSidebar = () => {
             </nav>
 
             <div className="vendor-sidebar__footer">
+                <button type="button" className="vendor-logout-btn" onClick={handleLogout}>
+                    Log Out
+                </button>
                 <div className="info-card">
                     <h4>Marketplace Tip</h4>
                     <p>Items marked as "Donation" are hidden from the public store and shown only to receivers.</p>

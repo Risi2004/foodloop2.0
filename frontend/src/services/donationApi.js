@@ -1,6 +1,5 @@
-/**
- * Offline stubs — no network.
- */
+import { getToken, getAuthHeaders } from '../utils/auth';
+import { buildUrl, parseResponse } from './api';
 
 const emptyPdfBlob = () =>
   new Blob(['%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n'], { type: 'application/pdf' });
@@ -32,8 +31,15 @@ export const analyzeFoodImage = async () => ({
 });
 
 export const uploadAndAnalyzeImage = async (file) => {
-  const imageUrl = file instanceof File ? URL.createObjectURL(file) : '';
-  return { success: true, imageUrl, predictions: null };
+  const formData = new FormData();
+  formData.append('image', file);
+  const token = getToken();
+  const response = await fetch(buildUrl('/api/donations/analyze-image'), {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  return parseResponse(response);
 };
 
 export const getAvailableDonations = async () => ({
@@ -46,24 +52,36 @@ export const claimDonation = async () => ({
   donation: demoDonation(),
 });
 
-export const getMyDonations = async () => ({
-  success: true,
-  donations: [],
-});
+export const getMyDonations = async () => {
+  const response = await fetch(buildUrl('/api/donations/mine'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const getDonation = async (donationId) => ({
-  success: true,
-  donation: demoDonation(donationId || 'offline'),
-});
+export const getDonation = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}`), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const updateDonation = async () => ({
-  success: true,
-  donation: demoDonation(),
-});
+export const updateDonation = async (donationId, payload) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}`), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(response);
+};
 
-export const deleteDonation = async () => ({
-  success: true,
-});
+export const deleteDonation = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}`), {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
 export const getMyClaims = async () => ({
   success: true,
@@ -172,10 +190,14 @@ export const confirmDelivery = async () => ({
   success: true,
 });
 
-export const submitDonation = async () => ({
-  success: true,
-  donation: demoDonation(),
-});
+export const submitDonation = async (donationData) => {
+  const response = await fetch(buildUrl('/api/donations'), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(donationData),
+  });
+  return parseResponse(response);
+};
 
 export const getDonationReceiptDetails = async (donationId) => ({
   success: true,

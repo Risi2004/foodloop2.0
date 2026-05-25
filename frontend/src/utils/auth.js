@@ -5,6 +5,48 @@ const USER_KEY = 'foodloop_user';
 
 const VENDOR_ROLES = ['restaurant', 'supermarket', 'business', 'individual'];
 
+/** Roles that use the donor dashboard (legacy Donor + vendor signups) */
+export const DONOR_DASHBOARD_ROLES = ['Donor', ...VENDOR_ROLES];
+
+export function isDonorDashboardRole(role) {
+  const key = normalizeRole(role).toLowerCase();
+  return key === 'donor' || VENDOR_ROLES.includes(key);
+}
+
+/** Display name for donor dashboard navbar (business name, not email) */
+export function getDonorDisplayName(user) {
+  if (!user) return 'User';
+  const role = (user.role || '').toLowerCase();
+
+  if (role === 'donor') {
+    if (user.donorType === 'Business') return user.businessName?.trim() || user.username?.trim() || 'Business';
+    return user.username?.trim() || 'Donor';
+  }
+
+  if (['restaurant', 'supermarket', 'business'].includes(role)) {
+    return user.businessName?.trim() || 'Business';
+  }
+
+  if (role === 'individual') {
+    return user.businessName?.trim() || user.username?.trim() || 'Individual';
+  }
+
+  return user.businessName?.trim() || user.username?.trim() || 'User';
+}
+
+/** Resolved profile photo URL from login/signup user object (R2, /uploads, or blob preview) */
+export function getUserProfileImageUrl(user) {
+  if (!user) return null;
+  const raw = user.profileImageUrl || user.profileImage;
+  if (!raw || typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^(https?:|blob:)/i.test(trimmed)) return trimmed;
+  const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return base ? `${base}${path}` : path;
+}
+
 export const setToken = (token) => {
   localStorage.setItem(TOKEN_KEY, token);
 };
@@ -88,18 +130,23 @@ export const normalizeRole = (role) => {
 export const getDashboardPath = (role) => {
   const key = normalizeRole(role).toLowerCase();
 
-  if (key === 'donor') return '/donor/dashboard';
+  if (isDonorDashboardRole(role)) return '/donor/dashboard';
   if (key === 'receiver') return '/receiver/dashboard';
   if (key === 'driver') return '/driver/dashboard';
   if (key === 'admin') return '/admin/dashboard';
   if (key === 'customer') return '/customer/marketplace';
-  if (VENDOR_ROLES.includes(key)) return '/vendor/dashboard';
   return '/login';
 };
 
 export const rolesMatch = (userRole, allowedRoles) => {
   if (!allowedRoles || allowedRoles.length === 0) return true;
   const normalized = normalizeRole(userRole);
+  const allowsDonorArea = allowedRoles.some((allowed) =>
+    DONOR_DASHBOARD_ROLES.some(
+      (donorRole) => donorRole.toLowerCase() === String(allowed).trim().toLowerCase()
+    )
+  );
+  if (allowsDonorArea && isDonorDashboardRole(userRole)) return true;
   return allowedRoles.some((allowed) => {
     const a = String(allowed).trim();
     if (a.toLowerCase() === normalized.toLowerCase()) return true;

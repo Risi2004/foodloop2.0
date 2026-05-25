@@ -15,6 +15,7 @@
    - `FRONTEND_URL` — Vite dev URL (default `http://localhost:5173`)
    - Gmail SMTP: `SMTP_USER`, `SMTP_PASS` (use a [Google App Password](https://support.google.com/accounts/answer/185833), not your normal Gmail password)
    - Cloudflare R2: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_BASE_URL`
+   - Google Gemini: `GEMINI_API_KEY` ([Google AI Studio](https://aistudio.google.com/apikey)), optional `GEMINI_MODEL` (default `gemini-3.5-flash`; falls back to `gemini-2.5-flash` then `gemini-1.5-flash` on quota errors)
 
 3. Install and run:
 
@@ -64,6 +65,8 @@ All new signup uploads (PDFs and profile images) are stored in **Cloudflare R2**
 
 Object keys: `users/{userId}/{fieldname}-{timestamp}.pdf` (or `.jpg`/`.png` for profile photos).
 
+Donation photos use `donations/{userId}/donation-{timestamp}.jpg` (or `.png`). Images are uploaded to R2 **only after** Gemini accepts the photo (rejects AI-generated, non-food, and spoiled images).
+
 ### Legacy local uploads
 
 Older accounts may still reference `/uploads/...` on disk under `backend/uploads/`. The API serves that folder only if it exists, for backward compatibility.
@@ -88,6 +91,27 @@ Uses `SMTP_*` and `FRONTEND_URL` from `.env`. Email failures are logged but do n
 
 1. `/forgot-password` — enter email; unregistered emails show a red error.
 2. `/reset-password` — enter OTP from email, then set a new password (same strength rules as signup).
+
+## Donation endpoints (JWT required)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/donations/analyze-image` | Multipart field `image` (JPEG/PNG, max 10 MB). Gemini vision analyzes the photo, then stores it in R2. Returns `{ success, imageUrl, predictions }`. |
+| POST | `/api/donations` | Create donation from form JSON (includes `imageUrl`, AI metadata, pickup window, `pickupAddress`, `donorLatitude`, `donorLongitude`, `listingType`, price). |
+| GET | `/api/donations/mine` | List current donor's donations (newest first). |
+| GET | `/api/donations/:id` | Get one donation (owner only). |
+| PATCH | `/api/donations/:id` | Update donation when `status` is `available` or `draft` (including `pickupAddress` and coordinates). |
+
+List/detail responses include `pickupAddress` and `donorAddress` (same value) for maps and receiver UI.
+| DELETE | `/api/donations/:id` | Cancel donation (sets `status` to `cancelled`). |
+
+**Analyze-image rejection codes (HTTP 400):**
+
+| Code | Meaning |
+|------|---------|
+| `AI_GENERATED_IMAGE` | Synthetic/CGI/stock image (not a real photo) |
+
+If `GEMINI_API_KEY` is missing, analyze-image returns **503** with `GEMINI_NOT_CONFIGURED`.
 
 ## Admin endpoints (JWT + role `Admin`)
 

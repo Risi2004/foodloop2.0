@@ -73,6 +73,33 @@
 
 .vendor-sidebar__footer {
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.vendor-logout-btn {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.vendor-logout-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.4);
+    color: #ffb4b4;
+}
+
+.vendor-logout-btn:active {
+    transform: scale(0.98);
 }
 
 .info-card {
@@ -104,8 +131,15 @@
         padding: 2rem 1rem;
         align-items: center;
     }
-    .vendor-sidebar__header, .vendor-sidebar__nav span, .vendor-sidebar__footer {
+    .vendor-sidebar__header,
+    .vendor-sidebar__nav span,
+    .vendor-sidebar__footer .info-card {
         display: none;
+    }
+
+    .vendor-logout-btn {
+        padding: 0.75rem;
+        font-size: 0.75rem;
     }
     .vendor-nav-item {
         padding: 1rem;

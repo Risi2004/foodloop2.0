@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, Marker, useMapEvents } from 'react-leaflet';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -6,21 +6,25 @@ import 'leaflet/dist/leaflet.css';
 import './LocationMapModal.css';
 import MapTileLayer from '../../../../shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
+import { geocodeAddress, reverseGeocode, isWithinSriLanka } from '../../../../../services/geocodingService';
+import { getCurrentLocation } from '../../../../../services/locationService';
 
-// Fix for default marker icons in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
-    iconAnchor: [12, 41]
+    iconAnchor: [12, 41],
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Component to handle map clicks
+const DEFAULT_CENTER = [7.0873, 80.0144];
+const DEFAULT_ZOOM = 13;
+const MAP_ZOOM = 15;
+
 const MapClickHandler = ({ onMapClick }) => {
     useMapEvents({
         click: (e) => {
@@ -30,178 +34,364 @@ const MapClickHandler = ({ onMapClick }) => {
     return null;
 };
 
-// Component to center map on coordinates
 const MapCenterController = ({ center, zoom }) => {
     const map = useMap();
-    
+
     useEffect(() => {
         if (center) {
             map.setView(center, zoom);
         }
     }, [map, center, zoom]);
-    
+
     return null;
 };
 
-const LocationMapModal = ({ isOpen, onClose, onConfirm, defaultAddress, defaultLat, defaultLng, title = 'Confirm Pickup Location' }) => {
+const LocationMapModal = ({
+    isOpen,
+    onClose,
+    onConfirm,
+    initialPickupAddress: initialPickupAddressProp = '',
+    defaultAddress,
+    defaultLat,
+    defaultLng,
+    autoFetchOnOpen = true,
+    saving = false,
+    saveError = null,
+    title = 'Confirm Pickup Location',
+}) => {
+    const initialPickupAddress = (initialPickupAddressProp || defaultAddress || '').trim()
+        ? (initialPickupAddressProp || defaultAddress || '')
+        : '';
+    const [addressText, setAddressText] = useState('');
     const [coordinates, setCoordinates] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [currentAddress, setCurrentAddress] = useState(defaultAddress || '');
     const [markerPosition, setMarkerPosition] = useState(null);
+    const [mapReady, setMapReady] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [info, setInfo] = useState(null);
+    const [loadingMessage, setLoadingMessage] = useState('Fetching your location…');
     const markerRef = useRef(null);
 
-    // Default center (Sri Lanka)
-    const defaultCenter = [7.0873, 80.0144];
-    const defaultZoom = 13;
+    const applyCoords = useCallback((lat, lng, addressOverride) => {
+        const coords = [lat, lng];
+        setCoordinates(coords);
+        setMarkerPosition(coords);
+        if (addressOverride != null) {
+            setAddressText(addressOverride);
+        }
+    }, []);
 
-    // Geocode address on mount or when address changes; or use defaultLat/defaultLng when provided (edit mode)
+    const loadFromCoords = useCallback(
+        async (lat, lng, reverse = true) => {
+            if (!isWithinSriLanka(lat, lng)) {
+                setError('Selected location is outside Sri Lanka. Please select a valid location.');
+                return false;
+            }
+            applyCoords(lat, lng, null);
+            if (reverse) {
+                try {
+                    const addr = await reverseGeocode(lat, lng);
+                    if (addr) setAddressText(addr);
+                } catch {
+                    setAddressText(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                }
+            }
+            return true;
+        },
+        [applyCoords]
+    );
+
+    const runGeocode = useCallback(
+        async (address) => {
+            const query = String(address || '').trim();
+            if (!query) {
+                setError('Please enter a pickup address.');
+                return false;
+            }
+            setActionLoading(true);
+            setError(null);
+            try {
+                const result = await geocodeAddress(query);
+                if (!result) {
+                    setError('Could not find that address in Sri Lanka. Try a more specific address or use current location.');
+                    return false;
+                }
+                applyCoords(result.lat, result.lng, result.displayName || query);
+                setInfo('Address placed on the map. Drag the marker to fine-tune if needed.');
+                return true;
+            } catch (err) {
+                setError(err.message || 'Failed to look up address.');
+                return false;
+            } finally {
+                setActionLoading(false);
+            }
+        },
+        [applyCoords]
+    );
+
+    const fetchCurrentLocation = useCallback(async () => {
+        if (!navigator.geolocation) {
+            setError('Geolocation is not supported by your browser.');
+            return false;
+        }
+
+        setActionLoading(true);
+        setLoadingMessage('Fetching your location…');
+        setError(null);
+
+        return new Promise((resolve) => {
+            getCurrentLocation(async (coords, err) => {
+                if (err || !coords) {
+                    setError(
+                        err?.message ||
+                            'Failed to get your current location. Allow location access or enter an address and tap Find on map.'
+                    );
+                    setActionLoading(false);
+                    resolve(false);
+                    return;
+                }
+                try {
+                    await loadFromCoords(coords.latitude, coords.longitude, true);
+                    setInfo('Location loaded. Drag the marker or edit the address if needed.');
+                    resolve(true);
+                } catch (e) {
+                    setError(e.message || 'Failed to resolve address for your location.');
+                    resolve(false);
+                } finally {
+                    setActionLoading(false);
+                }
+            });
+        });
+    }, [loadFromCoords]);
+
     useEffect(() => {
         if (!isOpen) return;
 
-        if (defaultLat != null && defaultLng != null && !isNaN(defaultLat) && !isNaN(defaultLng)) {
-            const coords = [Number(defaultLat), Number(defaultLng)];
-            setCoordinates(coords);
-            setMarkerPosition(coords);
-            setLoading(false);
-            setError(null);
-            return;
-        }
+        const savedAddress = (initialPickupAddress || '').trim();
+        setAddressText(savedAddress);
+        setError(null);
+        setInfo(null);
+        setMapReady(true);
+        setCoordinates(DEFAULT_CENTER);
+        setMarkerPosition(DEFAULT_CENTER);
 
-        const loadOffline = (address) => {
-            setLoading(true);
-            setError(null);
-            if (!address || address.trim() === '') {
-                setError('No address provided');
-                setCoordinates(defaultCenter);
-                setMarkerPosition(defaultCenter);
-                setCurrentAddress('');
-            } else {
-                setCoordinates(defaultCenter);
-                setMarkerPosition(defaultCenter);
-                setCurrentAddress(address.trim());
-                setError('Offline mode: drag the marker to set the exact pickup point.');
+        const init = async () => {
+            setActionLoading(true);
+            try {
+                if (
+                    defaultLat != null &&
+                    defaultLng != null &&
+                    !Number.isNaN(Number(defaultLat)) &&
+                    !Number.isNaN(Number(defaultLng))
+                ) {
+                    setLoadingMessage('Loading map…');
+                    const hasSavedAddress = !!savedAddress;
+                    await loadFromCoords(
+                        Number(defaultLat),
+                        Number(defaultLng),
+                        !hasSavedAddress
+                    );
+                    if (hasSavedAddress) setAddressText(savedAddress);
+                    setInfo('Pickup location loaded. Adjust on the map if needed.');
+                    return;
+                }
+
+                if (savedAddress) {
+                    setLoadingMessage('Finding address on map…');
+                    const ok = await runGeocode(savedAddress);
+                    if (!ok) {
+                        setCoordinates(DEFAULT_CENTER);
+                        setMarkerPosition(DEFAULT_CENTER);
+                        setInfo('Could not find that address. Try current location or edit the address.');
+                    }
+                    return;
+                }
+
+                if (autoFetchOnOpen) {
+                    await fetchCurrentLocation();
+                } else {
+                    setInfo('Use current location or type an address and tap Find on map.');
+                }
+            } finally {
+                setActionLoading(false);
             }
-            setLoading(false);
         };
 
-        loadOffline(defaultAddress);
-    }, [isOpen, defaultAddress, defaultLat, defaultLng]);
+        init();
+    }, [
+        isOpen,
+        initialPickupAddress,
+        defaultLat,
+        defaultLng,
+        autoFetchOnOpen,
+        loadFromCoords,
+        runGeocode,
+        fetchCurrentLocation,
+    ]);
 
-    // Handle marker drag end
-    const handleMarkerDragEnd = (e) => {
-        const marker = e.target;
-        const position = marker.getLatLng();
-        const newCoords = [position.lat, position.lng];
-        setMarkerPosition(newCoords);
-        setCoordinates(newCoords);
-        
-        setCurrentAddress(`${newCoords[0].toFixed(5)}, ${newCoords[1].toFixed(5)}`);
-    };
-
-    // Handle map click
-    const handleMapClick = (latlng) => {
-        const newCoords = [latlng.lat, latlng.lng];
-        setMarkerPosition(newCoords);
-        setCoordinates(newCoords);
-        setCurrentAddress(`${newCoords[0].toFixed(5)}, ${newCoords[1].toFixed(5)}`);
-    };
-
-    // Handle confirm
-    const handleConfirm = () => {
-        if (!coordinates) {
-            setError('Please select a location on the map');
+    const handleMarkerDragEnd = async (e) => {
+        const { lat, lng } = e.target.getLatLng();
+        if (!isWithinSriLanka(lat, lng)) {
+            setError('Selected location is outside Sri Lanka.');
             return;
         }
+        setActionLoading(true);
+        setError(null);
+        try {
+            applyCoords(lat, lng, null);
+            const addr = await reverseGeocode(lat, lng);
+            if (addr) setAddressText(addr);
+            else setAddressText(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        } catch {
+            setAddressText(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
-        // Validate coordinates are within Sri Lanka bounds
-        if (coordinates[0] < 5 || coordinates[0] > 10 || coordinates[1] < 79 || coordinates[1] > 82) {
+    const handleMapClick = async (latlng) => {
+        const { lat, lng } = latlng;
+        await loadFromCoords(lat, lng, true);
+        setError(null);
+    };
+
+    const handleUseCurrentLocation = () => {
+        fetchCurrentLocation();
+    };
+
+    const handleFindOnMap = async () => {
+        await runGeocode(addressText);
+    };
+
+    const handleConfirm = async () => {
+        const trimmed = addressText.trim();
+        if (!trimmed) {
+            setError('Please enter a pickup address.');
+            return;
+        }
+        if (!coordinates) {
+            setError('Please select a location on the map.');
+            return;
+        }
+        if (!isWithinSriLanka(coordinates[0], coordinates[1])) {
             setError('Selected location is outside Sri Lanka. Please select a valid location.');
             return;
         }
-
-        onConfirm(coordinates[0], coordinates[1], currentAddress);
+        setError(null);
+        try {
+            await onConfirm(Number(coordinates[0]), Number(coordinates[1]), trimmed);
+        } catch (err) {
+            setError(err?.message || 'Failed to save donation.');
+        }
     };
 
-    // Handle cancel
     const handleCancel = () => {
+        if (saving) return;
         onClose();
     };
 
     if (!isOpen) return null;
 
-    const center = coordinates || defaultCenter;
-    const zoom = coordinates ? 15 : defaultZoom;
+    const center = coordinates || DEFAULT_CENTER;
+    const zoom = coordinates ? MAP_ZOOM : DEFAULT_ZOOM;
+    const busy = actionLoading || saving;
+    const displayError = saveError || error;
+    const overlayMessage = saving ? 'Saving donation to database…' : loadingMessage;
 
     return (
         <div className="location-map-modal-overlay" onClick={handleCancel}>
             <div className="location-map-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="location-map-modal-header">
                     <h2>{title}</h2>
-                    <button className="location-map-modal-close" onClick={handleCancel}>×</button>
+                    <button type="button" className="location-map-modal-close" onClick={handleCancel}>
+                        ×
+                    </button>
                 </div>
 
                 <div className="location-map-modal-body">
-                    <div className="location-map-address-display">
-                        <strong>Address:</strong> {currentAddress || defaultAddress || 'Loading...'}
+                    <label className="location-map-address-label" htmlFor="pickup-address-input">
+                        Pickup address
+                    </label>
+                    <textarea
+                        id="pickup-address-input"
+                        className="location-map-address-input"
+                        value={addressText}
+                        onChange={(e) => setAddressText(e.target.value)}
+                        rows={3}
+                        placeholder="Enter the address where food can be picked up"
+                        disabled={busy}
+                    />
+
+                    <div className="location-map-actions">
+                        <button
+                            type="button"
+                            className="location-map-action-btn location-map-action-btn-primary"
+                            onClick={handleUseCurrentLocation}
+                            disabled={busy}
+                        >
+                            Use current location
+                        </button>
+                        <button
+                            type="button"
+                            className="location-map-action-btn"
+                            onClick={handleFindOnMap}
+                            disabled={busy || !addressText.trim()}
+                        >
+                            Find on map
+                        </button>
                     </div>
 
-                    {error && (
-                        <div className="location-map-error">
-                            ⚠️ {error}
-                        </div>
-                    )}
-
-                    {loading && (
-                        <div className="location-map-loading">
-                            <div className="spinner"></div>
-                            <p>Finding your location...</p>
-                        </div>
-                    )}
+                    {info && !saving && <div className="location-map-info">{info}</div>}
+                    {displayError && <div className="location-map-error">⚠️ {displayError}</div>}
 
                     <div className="location-map-container">
-                        {!loading && (
+                        {mapReady && (
                             <MapContainer
+                                key="pickup-location-map"
                                 center={center}
                                 zoom={zoom}
-                                scrollWheelZoom={true}
+                                scrollWheelZoom
                                 className="location-map"
-                                style={{ height: '100%', width: '100%' }}
+                                style={{ height: '100%', width: '100%', minHeight: 400 }}
                             >
                                 <MapTileLayer />
                                 <MapInvalidateSize />
                                 <MapCenterController center={center} zoom={zoom} />
                                 <MapClickHandler onMapClick={handleMapClick} />
-                                
                                 {markerPosition && (
                                     <Marker
                                         position={markerPosition}
-                                        draggable={true}
-                                        eventHandlers={{
-                                            dragend: handleMarkerDragEnd,
-                                        }}
+                                        draggable
+                                        eventHandlers={{ dragend: handleMarkerDragEnd }}
                                         ref={markerRef}
                                     />
                                 )}
                             </MapContainer>
                         )}
+                        {busy && (
+                            <div className="location-map-loading-overlay">
+                                <div className="spinner" />
+                                <p>{overlayMessage}</p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="location-map-instructions">
-                        <p>📍 Drag the marker or click on the map to adjust the pickup location</p>
+                        <p>Drag the marker or click the map to adjust the exact pickup point.</p>
                     </div>
                 </div>
 
                 <div className="location-map-modal-footer">
-                    <button className="location-map-btn-cancel" onClick={handleCancel}>
+                    <button type="button" className="location-map-btn-cancel" onClick={handleCancel} disabled={saving}>
                         Cancel
                     </button>
-                    <button 
-                        className="location-map-btn-confirm" 
+                    <button
+                        type="button"
+                        className="location-map-btn-confirm"
                         onClick={handleConfirm}
-                        disabled={!coordinates || loading}
+                        disabled={!coordinates || busy || !addressText.trim()}
                     >
-                        Confirm Location
+                        {saving ? 'Saving to database…' : 'Confirm & save donation'}
                     </button>
                 </div>
             </div>

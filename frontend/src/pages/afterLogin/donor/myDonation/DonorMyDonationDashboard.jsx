@@ -80,7 +80,12 @@ const DonorMyDonationDashboard = () => {
 
     // Flow: Looking for Receiver (unclaimed) → Looking for Driver (claimed, no driver) → In Transit → Completed
     const lookingForReceiver = donations.filter(d =>
-        (d.status === 'pending' || d.status === 'approved') && !d.assignedReceiverId
+        (d.status === 'available' ||
+            d.status === 'draft' ||
+            d.status === 'pending' ||
+            d.status === 'approved') &&
+        !d.assignedReceiverId &&
+        d.status !== 'cancelled'
     );
     const lookingForDriver = donations.filter(d =>
         d.status === 'assigned' && d.assignedReceiverId && !d.assignedDriverId

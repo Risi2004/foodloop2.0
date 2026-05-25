@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { submitDonation, updateDonation, getDonorStatistics } from '../../../../../services/donationApi';
-import { clearAuth, getUser } from '../../../../../utils/auth';
+import { clearAuth } from '../../../../../utils/auth';
 import { getBadgeIconSrc, BADGE_KEYS_ORDER } from '../../../../../utils/badgeIcons';
 import LocationMapModal from '../locationMapModal/LocationMapModal';
 import autoFixHighIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/auto_fix_high.svg';
@@ -30,6 +30,9 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     const [itemName, setItemName] = useState('Vegetable Curry with Rice');
     const [quantity, setQuantity] = useState(15);
     const [storage, setStorage] = useState('hot'); // hot, cold, dry
+    const [listingType, setListingType] = useState('donate'); // donate | sell
+    const [priceAmount, setPriceAmount] = useState('');
+    const [aiSuggestedPrice, setAiSuggestedPrice] = useState(null);
     const [pickupDate, setPickupDate] = useState(() => {
         const today = new Date();
         return today.toISOString().split('T')[0];
@@ -46,12 +49,13 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     const [isEditing, setIsEditing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+    const [submitSuccess, setSubmitSuccess] = useState(null);
     const [safetyConfirmed, setSafetyConfirmed] = useState(false);
     const [userProvidedExpiryDate, setUserProvidedExpiryDate] = useState('');
     const [showLocationModal, setShowLocationModal] = useState(false);
-    const [, setSelectedLatitude] = useState(null);
-    const [, setSelectedLongitude] = useState(null);
-    const [donorAddress, setDonorAddress] = useState('');
+    const [selectedLatitude, setSelectedLatitude] = useState(null);
+    const [selectedLongitude, setSelectedLongitude] = useState(null);
+    const [pickupAddress, setPickupAddress] = useState('');
     const [donorStats, setDonorStats] = useState(null);
 
     // Initialize form from initialData when in edit mode
@@ -66,7 +70,13 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         setPickupDate(d.preferredPickupDate || new Date().toISOString().split('T')[0]);
         setPickupTimeFrom(d.preferredPickupTimeFrom || getTimeString(new Date()));
         setPickupTimeTo(d.preferredPickupTimeTo || getTimeString(new Date(Date.now() + 90 * 60 * 1000)));
-        setUserProvidedExpiryDate(d.expiryDate || '');
+        setUserProvidedExpiryDate(d.expiryDate || d.userProvidedExpiryDate || '');
+        setListingType(d.listingType === 'sell' ? 'sell' : 'donate');
+        setPriceAmount(d.priceAmount != null ? String(d.priceAmount) : '');
+        setAiSuggestedPrice(d.aiSuggestedPrice ?? null);
+        const savedPickup =
+            d.pickupAddress || d.donorAddress || '';
+        if (savedPickup) setPickupAddress(savedPickup);
         if (d.donorLatitude != null && d.donorLongitude != null) {
             setSelectedLatitude(d.donorLatitude);
             setSelectedLongitude(d.donorLongitude);
@@ -111,16 +121,18 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         
         // Check if expiry date is provided (required for all products)
         const hasExpiryDate = !!userProvidedExpiryDate;
+        const sellPriceValid =
+            listingType !== 'sell' || (Number(priceAmount) > 0 && !Number.isNaN(Number(priceAmount)));
         
         return hasImage && hasFoodCategory && hasItemName && hasQuantity && 
                hasStorage && hasPickupDate && hasPickupTimeFrom && hasPickupTimeTo && 
-               isTimeRangeValid && hasSafetyConfirm && hasValidQuality && hasExpiryDate;
+               isTimeRangeValid && hasSafetyConfirm && hasValidQuality && hasExpiryDate &&
+               sellPriceValid;
     };
     
-    // Get reason why button is disabled
-    const getDisabledReason = () => {
+    const getDisabledReasons = () => {
         const reasons = [];
-        
+
         if (!imageUrl) reasons.push('Please upload an image');
         if (!foodCategory || foodCategory.trim() === '') reasons.push('Food category is required');
         if (!itemName || itemName.trim() === '') reasons.push('Item name is required');
@@ -132,22 +144,25 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         if (pickupTimeFrom && pickupTimeTo && pickupTimeFrom >= pickupTimeTo) {
             reasons.push('End time must be after start time');
         }
-        
-        // Check expiry date (required for all products)
-        if (!userProvidedExpiryDate) {
-            reasons.push('Expiry date is required');
-        }
-        
+        if (!userProvidedExpiryDate) reasons.push('Expiry date is required');
         if (!safetyConfirmed) reasons.push('Please confirm safety standards');
-        
+        if (listingType === 'sell') {
+            const p = Number(priceAmount);
+            if (!priceAmount || Number.isNaN(p) || p <= 0) {
+                reasons.push('Enter a valid price (LKR) for cash listings');
+            }
+        }
         const qualityScore = aiQualityScore || aiPredictions?.qualityScore;
         if (qualityScore !== null && qualityScore !== undefined && qualityScore < 0.8) {
             const qualityPercent = Math.round(qualityScore * 100);
             reasons.push(`Food quality score is ${qualityPercent}% (minimum 80% required)`);
         }
-        
-        return reasons.length > 0 ? reasons.join(', ') : null;
+
+        return reasons;
     };
+
+    const formCanSubmit = isFormValid();
+    const disabledReasons = getDisabledReasons();
 
     // Auto-fill form when AI predictions are received
     useEffect(() => {
@@ -186,6 +201,9 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
             if (aiPredictions.qualityScore) {
                 console.log('[DonationForm] Setting qualityScore:', aiPredictions.qualityScore);
                 setAiQualityScore(aiPredictions.qualityScore);
+            }
+            if (aiPredictions.suggestedPrice != null && !Number.isNaN(Number(aiPredictions.suggestedPrice))) {
+                setAiSuggestedPrice(Math.round(Number(aiPredictions.suggestedPrice)));
             }
             
             // Auto-calculate and set expiry date based on product type
@@ -235,13 +253,20 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         setQuantity(prev => Math.max(1, prev + delta));
     };
 
-    // Get donor address on component mount
-    useEffect(() => {
-        const user = getUser();
-        if (user && user.address) {
-            setDonorAddress(user.address);
+    const handleApplyAiPrice = () => {
+        if (aiSuggestedPrice != null && aiSuggestedPrice > 0) {
+            setPriceAmount(String(aiSuggestedPrice));
+            setIsEditing(true);
         }
-    }, []);
+    };
+
+    const handleListingTypeChange = (type) => {
+        setListingType(type);
+        setIsEditing(true);
+        if (type === 'donate') {
+            setPriceAmount('');
+        }
+    };
 
     // Handle edit all fields
     const handleEditAll = () => {
@@ -249,6 +274,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     };
 
     const handlePostDonation = async () => {
+        if (!isFormValid() || isSubmitting) {
+            return;
+        }
+
         // Validate required fields
         if (!imageUrl) {
             setSubmitError('Please upload an image first');
@@ -260,46 +289,94 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
             return;
         }
 
-        // Get donor address if not already set
-        if (!donorAddress) {
-            const user = getUser();
-            if (user && user.address) {
-                setDonorAddress(user.address);
-            }
-        }
-
-        // Open location confirmation modal
+        setSubmitError(null);
         setShowLocationModal(true);
     };
 
-    // Handle location confirmation from modal
-    const handleLocationConfirm = async (lat, lng, _address) => {
-        setShowLocationModal(false);
-        setSelectedLatitude(lat);
-        setSelectedLongitude(lng);
+    const getResolvedExpiryDate = () =>
+        (userProvidedExpiryDate || aiPredictions?.expiryDateFromPackage || '').trim();
 
+    const buildCreatePayload = (latitude, longitude, address) => {
+        const storageCapitalized = storage.charAt(0).toUpperCase() + storage.slice(1);
+        return {
+            foodCategory: foodCategory.trim(),
+            itemName: itemName.trim(),
+            quantity: Number(quantity),
+            storageRecommendation: storageCapitalized,
+            imageUrl,
+            preferredPickupDate: pickupDate,
+            preferredPickupTimeFrom: pickupTimeFrom,
+            preferredPickupTimeTo: pickupTimeTo,
+            aiConfidence: aiConfidence ?? aiPredictions?.confidence ?? null,
+            aiQualityScore: aiQualityScore ?? aiPredictions?.qualityScore ?? null,
+            aiFreshness: aiPredictions?.freshness || null,
+            aiDetectedItems: aiPredictions?.detectedItems || [],
+            productType: aiPredictions?.productType || null,
+            expiryDateFromPackage: aiPredictions?.expiryDateFromPackage || null,
+            userProvidedExpiryDate: getResolvedExpiryDate(),
+            listingType,
+            priceAmount: listingType === 'sell' ? Number(priceAmount) : null,
+            priceCurrency: 'LKR',
+            aiSuggestedPrice: aiSuggestedPrice ?? aiPredictions?.suggestedPrice ?? null,
+            pickupAddress: address,
+            donorLatitude: latitude,
+            donorLongitude: longitude,
+        };
+    };
+
+    const buildUpdatePayload = (latitude, longitude, address) => {
+        const storageCapitalized = storage.charAt(0).toUpperCase() + storage.slice(1);
+        return {
+            foodCategory: foodCategory.trim(),
+            itemName: itemName.trim(),
+            quantity: Number(quantity),
+            storageRecommendation: storageCapitalized,
+            imageUrl: imageUrl || undefined,
+            preferredPickupDate: pickupDate,
+            preferredPickupTimeFrom: pickupTimeFrom,
+            preferredPickupTimeTo: pickupTimeTo,
+            userProvidedExpiryDate: getResolvedExpiryDate(),
+            listingType,
+            priceAmount: listingType === 'sell' ? Number(priceAmount) : null,
+            priceCurrency: 'LKR',
+            pickupAddress: address,
+            donorLatitude: latitude,
+            donorLongitude: longitude,
+        };
+    };
+
+    const handleLocationConfirm = async (lat, lng, confirmedAddress) => {
+        const address = String(confirmedAddress || '').trim();
+        const latitude = Number(lat);
+        const longitude = Number(lng);
+
+        if (!address) {
+            setSubmitError('Pickup address is required.');
+            return;
+        }
+        if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+            setSubmitError('Valid pickup coordinates are required.');
+            return;
+        }
+        if (!imageUrl) {
+            setSubmitError('Please upload an image first.');
+            return;
+        }
+
+        setSelectedLatitude(latitude);
+        setSelectedLongitude(longitude);
+        setPickupAddress(address);
         setIsSubmitting(true);
         setSubmitError(null);
 
         try {
-            const storageCapitalized = storage.charAt(0).toUpperCase() + storage.slice(1);
-
             if (isEditMode && editDonationId) {
-                const updatePayload = {
-                    foodCategory,
-                    itemName,
-                    quantity: Number(quantity),
-                    storageRecommendation: storageCapitalized,
-                    imageUrl: imageUrl || undefined,
-                    preferredPickupDate: pickupDate,
-                    preferredPickupTimeFrom: pickupTimeFrom,
-                    preferredPickupTimeTo: pickupTimeTo,
-                    userProvidedExpiryDate: userProvidedExpiryDate || undefined,
-                    donorLatitude: lat,
-                    donorLongitude: lng,
-                };
-                const response = await updateDonation(editDonationId, updatePayload);
+                const response = await updateDonation(
+                    editDonationId,
+                    buildUpdatePayload(latitude, longitude, address)
+                );
                 if (response?.success) {
+                    setShowLocationModal(false);
                     navigate('/donor/my-donation', { replace: true });
                 } else {
                     throw new Error(response?.message || 'Failed to update donation');
@@ -307,30 +384,16 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 return;
             }
 
-            const donationData = {
-                foodCategory,
-                itemName,
-                quantity: Number(quantity),
-                storageRecommendation: storageCapitalized,
-                imageUrl,
-                preferredPickupDate: pickupDate,
-                preferredPickupTimeFrom: pickupTimeFrom,
-                preferredPickupTimeTo: pickupTimeTo,
-                aiConfidence: aiConfidence || aiPredictions?.confidence || null,
-                aiQualityScore: aiPredictions?.qualityScore || null,
-                aiFreshness: aiPredictions?.freshness || null,
-                aiDetectedItems: aiPredictions?.detectedItems || [],
-                productType: aiPredictions?.productType || null,
-                expiryDateFromPackage: aiPredictions?.expiryDateFromPackage || null,
-                userProvidedExpiryDate: userProvidedExpiryDate || aiPredictions?.expiryDateFromPackage || null,
-                donorLatitude: lat,
-                donorLongitude: lng,
-            };
-
-            const response = await submitDonation(donationData);
+            const response = await submitDonation(
+                buildCreatePayload(latitude, longitude, address)
+            );
 
             if (response?.success || response?.donation) {
-                navigate('/donor/my-donation', { replace: true });
+                setShowLocationModal(false);
+                setSubmitSuccess('Donation saved successfully. Redirecting…');
+                setTimeout(() => {
+                    navigate('/donor/my-donation', { replace: true });
+                }, 600);
             } else {
                 throw new Error(response?.message || 'Failed to submit donation');
             }
@@ -369,9 +432,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         }
     };
 
-    // Handle modal close
     const handleLocationModalClose = () => {
+        if (isSubmitting) return;
         setShowLocationModal(false);
+        setSubmitError(null);
     };
 
     return (
@@ -395,6 +459,20 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 <div className="error-banner">
                     <span className="error-icon">⚠️</span>
                     <span className="error-text">{error}</span>
+                </div>
+            )}
+            {aiPredictions?.isSpoiled && (
+                <div className="spoilage-advisory-banner">
+                    <span className="error-icon">⚠️</span>
+                    <span className="error-text">
+                        AI detected possible spoilage or quality concerns. Review the item before posting.
+                    </span>
+                </div>
+            )}
+            {submitSuccess && (
+                <div className="success-banner">
+                    <span className="success-icon">✓</span>
+                    <span className="success-text">{submitSuccess}</span>
                 </div>
             )}
             {submitError && (
@@ -517,6 +595,62 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         </button>
                     </div>
                 </div>
+
+                <div className="form-group form-group-full">
+                    <label>Listing type <span className="required-asterisk">*</span></label>
+                    <div className="toggle-group listing-type-toggle">
+                        <button
+                            type="button"
+                            className={`toggle-btn ${listingType === 'donate' ? 'active' : ''}`}
+                            onClick={() => handleListingTypeChange('donate')}
+                        >
+                            Donate
+                        </button>
+                        <button
+                            type="button"
+                            className={`toggle-btn sell ${listingType === 'sell' ? 'active' : ''}`}
+                            onClick={() => handleListingTypeChange('sell')}
+                        >
+                            Sell for cash
+                        </button>
+                    </div>
+                </div>
+
+                {listingType === 'sell' && (
+                    <div className="form-group form-group-full">
+                        <label>Price (LKR) <span className="required-asterisk">*</span></label>
+                        <div className="price-input-row">
+                            <input
+                                type="number"
+                                className="price-input"
+                                min="1"
+                                step="1"
+                                placeholder="e.g. 500"
+                                value={priceAmount}
+                                onChange={(e) => {
+                                    setPriceAmount(e.target.value);
+                                    setIsEditing(true);
+                                }}
+                                required
+                            />
+                            {aiSuggestedPrice != null && aiSuggestedPrice > 0 && (
+                                <button
+                                    type="button"
+                                    className="use-ai-price-btn"
+                                    onClick={handleApplyAiPrice}
+                                >
+                                    <img src={autoFixHighIcon} alt="" className="form-icon use-ai-price-icon" />
+                                    Use AI price (Rs. {aiSuggestedPrice.toLocaleString()})
+                                </button>
+                            )}
+                        </div>
+                        {aiSuggestedPrice != null && aiSuggestedPrice > 0 && (
+                            <p className="price-hint">
+                                AI suggested Rs. {aiSuggestedPrice.toLocaleString()} based on the photo
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Logistics Header */}
@@ -618,18 +752,31 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                     <label htmlFor="safety-confirm">I confirm that all detected AI details are accurate and the food meets safety standards.</label>
                 </div>
 
-                <div className="post-button-wrapper">
-                    <button 
-                        className={`post-donation-btn ${!isFormValid() ? 'disabled' : ''}`}
+                <div
+                    className={`post-button-wrapper${!formCanSubmit && !isSubmitting ? ' has-disabled-hint' : ''}`}
+                >
+                    <button
+                        type="button"
+                        className={`post-donation-btn ${!formCanSubmit || isSubmitting ? 'disabled' : ''}`}
                         onClick={handlePostDonation}
-                        disabled={isSubmitting || !isFormValid()}
-                        title={!isFormValid() ? getDisabledReason() : ''}
+                        disabled={isSubmitting}
+                        aria-disabled={!formCanSubmit || isSubmitting}
+                        aria-describedby={!formCanSubmit && !isSubmitting ? 'post-donation-disabled-hint' : undefined}
                     >
                         {isSubmitting ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Donation' : 'Post Donation ▶')}
                     </button>
-                    {!isFormValid() && (
-                        <div className="disabled-tooltip">
-                            {getDisabledReason()}
+                    {!formCanSubmit && !isSubmitting && disabledReasons.length > 0 && (
+                        <div
+                            id="post-donation-disabled-hint"
+                            className="disabled-tooltip"
+                            role="tooltip"
+                        >
+                            <span className="disabled-tooltip-title">Complete these to post:</span>
+                            <ul className="disabled-tooltip-list">
+                                {disabledReasons.map((reason) => (
+                                    <li key={reason}>{reason}</li>
+                                ))}
+                            </ul>
                         </div>
                     )}
                 </div>
@@ -694,9 +841,18 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 isOpen={showLocationModal}
                 onClose={handleLocationModalClose}
                 onConfirm={handleLocationConfirm}
-                defaultAddress={donorAddress}
-                defaultLat={isEditMode && initialData?.donorLatitude != null ? initialData.donorLatitude : undefined}
-                defaultLng={isEditMode && initialData?.donorLongitude != null ? initialData.donorLongitude : undefined}
+                saving={isSubmitting}
+                saveError={submitError}
+                initialPickupAddress={
+                    isEditMode
+                        ? pickupAddress ||
+                          initialData?.pickupAddress ||
+                          initialData?.donorAddress ||
+                          ''
+                        : pickupAddress || ''
+                }
+                defaultLat={selectedLatitude ?? (isEditMode ? initialData?.donorLatitude : undefined)}
+                defaultLng={selectedLongitude ?? (isEditMode ? initialData?.donorLongitude : undefined)}
             />
         </div>
     );

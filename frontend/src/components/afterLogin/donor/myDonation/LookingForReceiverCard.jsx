@@ -42,7 +42,11 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
     const imageUrl = donation.imageUrl || foodImage;
 
     // Show edit/delete when pending or approved (no receiver yet)
-    const canEdit = donation.status === 'pending' || donation.status === 'approved';
+    const canEdit =
+        donation.status === 'available' ||
+        donation.status === 'draft' ||
+        donation.status === 'pending' ||
+        donation.status === 'approved';
 
     return (
         <div className="donation-card">

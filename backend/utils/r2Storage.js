@@ -76,9 +76,34 @@ async function uploadSignupFilesToR2(userId, files) {
   return out;
 }
 
+async function uploadDonationImage({ userId, file }) {
+  assertR2Configured();
+
+  if (!file?.buffer) {
+    throw new Error('Missing file buffer for donation image');
+  }
+
+  const ext = extensionFromFile(file) || '.jpg';
+  const key = `donations/${userId}/donation-${Date.now()}${ext}`;
+  const { bucketName } = getR2Config();
+  const client = getR2Client();
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype || 'image/jpeg',
+    })
+  );
+
+  return buildPublicUrl(key);
+}
+
 module.exports = {
   SIGNUP_FILE_FIELDS,
   uploadSignupFile,
   uploadSignupFilesToR2,
+  uploadDonationImage,
   buildPublicUrl,
 };

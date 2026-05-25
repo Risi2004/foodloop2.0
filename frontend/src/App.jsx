@@ -51,10 +51,6 @@ import ReceiptForm from "./pages/afterLogin/receiver/receiptForm/ReceiptForm";
 import Myclaims from "./pages/afterLogin/receiver/myClaims/MyClaims";
 import ReceiverTrackingPage from "./pages/afterLogin/receiver/trackingPage/ReceiverTrackingPage";
 
-import VendorDashboard from "./pages/afterLogin/vendor/dashboard/VendorDashboard";
-import VendorProducts from "./pages/afterLogin/vendor/products/VendorProducts";
-import VendorAddProduct from "./pages/afterLogin/vendor/products/VendorAddProduct";
-
 import CustomerMarketplace from "./pages/afterLogin/customer/marketplace/CustomerMarketplace";
 import CustomerCart from "./pages/afterLogin/customer/cart/CustomerCart";
 import CustomerPayment from "./pages/afterLogin/customer/payment/CustomerPayment";
@@ -64,6 +60,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import RoleLayout from "./components/afterLogin/RoleLayout/RoleLayout";
 import { MarketplaceProvider } from "./contexts/MarketplaceContext";
+import { DONOR_DASHBOARD_ROLES } from "./utils/auth";
 
 function ProtectedRoleRoute({ allowedRoles }) {
   return (
@@ -98,8 +95,8 @@ function App() {
 
         {/* After Signin - Protected Routes */}
 
-        {/* Donor Routes - Only accessible by Donor role */}
-        <Route path="/donor" element={<ProtectedRoleRoute allowedRoles={['Donor']} />}>
+        {/* Donor Routes — Donor + restaurant / supermarket / business / individual */}
+        <Route path="/donor" element={<ProtectedRoleRoute allowedRoles={DONOR_DASHBOARD_ROLES} />}>
           <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="about" element={<DonorAbout />} />
           <Route path="privacy-policy" element={<DonorPrivacyPolicy />} />
@@ -152,13 +149,6 @@ function App() {
           <Route path="user-management" element={<AdminUserManagementPage />} />
           <Route path="reviews" element={<AdminReviewManagementPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
-        </Route>
-
-        {/* Vendor Routes - Accessible by Seller roles */}
-        <Route path="/vendor" element={<ProtectedRoleRoute allowedRoles={['restaurant', 'supermarket', 'business', 'individual']} />}>
-          <Route path="dashboard" element={<VendorDashboard />} />
-          <Route path="products" element={<VendorProducts />} />
-          <Route path="add-product" element={<VendorAddProduct />} />
         </Route>
 
         {/* Customer Routes - Accessible by Customer role */}

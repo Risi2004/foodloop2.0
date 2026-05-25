@@ -6,9 +6,9 @@ function fileFilter(req, file, cb) {
   const imageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
   const pdfType = 'application/pdf';
 
-  if (file.fieldname === 'profileImage') {
+  if (file.fieldname === 'profileImage' || file.fieldname === 'image') {
     if (imageTypes.includes(file.mimetype)) return cb(null, true);
-    return cb(new Error('Profile image must be JPEG or PNG'));
+    return cb(new Error('Image must be JPEG or PNG'));
   }
 
   if (pdfType === file.mimetype) return cb(null, true);
@@ -32,4 +32,6 @@ const signupFields = [
 
 const signupUpload = upload.fields(signupFields);
 
-module.exports = { signupUpload };
+const donationImageUpload = upload.single('image');
+
+module.exports = { signupUpload, donationImageUpload };

@@ -4,16 +4,42 @@ import "./DonorNavbar.css"
 import notification from "../../../../../assets/icons/afterLogin/navbar/notification.svg"
 import profile from "../../../../../assets/icons/afterLogin/navbar/profile.svg"
 import menu from "../../../../../assets/icons/navbar/menu-bar.svg"
-import { clearAuth, getUser } from "../../../../../utils/auth";
+import { clearAuth, getUser, setUser, getDonorDisplayName, getUserProfileImageUrl } from "../../../../../utils/auth";
 import { getUnreadCount, NOTIFICATIONS_READ_EVENT } from "../../../../../services/notificationApi";
 import { getSocket, onNewNotification } from "../../../../../services/socket";
-import { deleteAccount } from "../../../../../services/api";
+import { deleteAccount, getCurrentUser } from "../../../../../services/api";
 
 function Navbar() {
     const navigate = useNavigate();
-    const user = getUser();
+    const [user, setUserState] = useState(() => getUser());
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [avatarError, setAvatarError] = useState(false);
+
+    const profileImageUrl = getUserProfileImageUrl(user);
+    const showProfilePhoto = Boolean(profileImageUrl) && !avatarError;
+
+    useEffect(() => {
+        setAvatarError(false);
+    }, [profileImageUrl]);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await getCurrentUser();
+                if (!cancelled && res?.user) {
+                    setUser(res.user);
+                    setUserState(res.user);
+                }
+            } catch (_) {
+                /* keep localStorage user */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         const fetchCount = async () => {
@@ -35,26 +61,7 @@ function Navbar() {
         };
     }, []);
     
-    // Get user display name
-    const getUserName = () => {
-        if (!user) return 'User_Name';
-        if (user.role === 'Donor') {
-            if (user.donorType === 'Business') {
-                return user.businessName || user.email;
-            } else {
-                return user.username || user.email;
-            }
-        }
-        return user.email;
-    };
-    
-    // Get profile image URL or default icon
-    const getProfileImage = () => {
-        if (user && user.profileImageUrl) {
-            return user.profileImageUrl;
-        }
-        return profile;
-    };
+    const displayName = getDonorDisplayName(user);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -136,16 +143,22 @@ function Navbar() {
                         )}
                     </Link>
                     <div className="navbar__s3__sub" onClick={toggleProfile}>
-                        <h3>{getUserName()}</h3>
+                        <h3>{displayName}</h3>
                         <div className="navbar__profile-wrap">
-                            <img 
-                                className="navbar__s3__img2" 
-                                src={getProfileImage()} 
-                                alt="profile-icon"
-                                onError={(e) => {
-                                    e.target.src = profile;
-                                }}
-                            />
+                            {showProfilePhoto ? (
+                                <img
+                                    className="navbar__s3__img2 navbar__s3__img2--photo"
+                                    src={profileImageUrl}
+                                    alt=""
+                                    onError={() => setAvatarError(true)}
+                                />
+                            ) : (
+                                <img
+                                    className="navbar__s3__img2 navbar__s3__img2--placeholder"
+                                    src={profile}
+                                    alt=""
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
