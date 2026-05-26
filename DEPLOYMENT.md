@@ -83,14 +83,17 @@ Default admin: `admin` / `admin123` (change after first login).
 | `GEMINI_API_KEY` | Yes | |
 | `GEMINI_MODEL` | No | e.g. `gemini-2.5-flash` |
 
-**CORS example (production + Vercel preview):**
+**CORS (required):**
 
 ```env
-FRONTEND_URL=https://foodloop.vercel.app
-CORS_ORIGINS=https://foodloop.vercel.app,https://foodloop-git-main-youruser.vercel.app
+FRONTEND_URL=https://your-production-app.vercel.app
 ```
 
-After the frontend is live, set `FRONTEND_URL` and **redeploy** the Render service.
+- `FRONTEND_URL` is used for email links and as an allowed browser origin.
+- **Vercel preview URLs** (`https://*-youruser.vercel.app`) are allowed automatically unless you set `ALLOW_VERCEL_PREVIEWS=false`.
+- Optional extra origins: `CORS_ORIGINS=https://app.example.com,https://staging.example.com`
+
+After the frontend is live, set `FRONTEND_URL` to your **production** Vercel URL and **redeploy** the Render service.
 
 **Free tier:** the service sleeps after inactivity; the first request may take 30–60 seconds.
 

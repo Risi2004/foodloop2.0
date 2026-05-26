@@ -19,20 +19,48 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
-/** Allowed browser origins for CORS and Socket.IO (FRONTEND_URL + optional CORS_ORIGINS). */
+/** Explicit allowlist: FRONTEND_URL plus any comma-separated CORS_ORIGINS. */
 function getAllowedOrigins() {
+  const set = new Set();
+  const front = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  set.add(front);
   const raw = process.env.CORS_ORIGINS;
   if (raw && String(raw).trim()) {
-    return [...new Set(String(raw).split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean))];
+    String(raw)
+      .split(',')
+      .map((s) => s.trim().replace(/\/$/, ''))
+      .filter(Boolean)
+      .forEach((o) => set.add(o));
   }
-  const front = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-  return [front];
+  return [...set];
 }
 
 const allowedOrigins = getAllowedOrigins();
 
+/** Vercel preview URLs change per deploy; allow https://*.vercel.app unless disabled. */
+function isVercelPreviewAllowed() {
+  return process.env.ALLOW_VERCEL_PREVIEWS !== 'false';
+}
+
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  const normalized = origin.replace(/\/$/, '');
+  if (allowedOrigins.includes(normalized)) return true;
+  if (!isVercelPreviewAllowed()) return false;
+  try {
+    const { protocol, hostname } = new URL(origin);
+    return protocol === 'https:' && hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+}
+
 function corsOriginCheck(origin, callback) {
-  if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+  callback(null, isOriginAllowed(origin));
+}
+
+function socketCorsOrigin(origin, callback) {
+  if (isOriginAllowed(origin)) {
     callback(null, true);
   } else {
     callback(null, false);
@@ -90,7 +118,7 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 const socketServer = new Server(server, {
   cors: {
-    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+    origin: socketCorsOrigin,
     credentials: true,
   },
 });
@@ -104,7 +132,11 @@ mongoose
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log('Socket.IO enabled');
-      console.log('CORS origins:', allowedOrigins.join(', '));
+      console.log('CORS allowlist:', allowedOrigins.join(', '));
+      console.log(
+        'CORS Vercel previews:',
+        isVercelPreviewAllowed() ? 'enabled (*.vercel.app)' : 'disabled'
+      );
     });
   })
   .catch((err) => {
