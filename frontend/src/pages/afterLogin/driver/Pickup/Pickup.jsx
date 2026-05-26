@@ -17,8 +17,10 @@ import MapTileLayer from '../../../../components/shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../components/shared/map/MapInvalidateSize';
 import { startLocationTracking, stopLocationTracking } from '../../../../services/locationService';
 import { updateDriverLocation, startDemo, stopDemo } from '../../../../services/api';
-import { generateRouteWaypoints, simulateMovement, stopSimulation } from '../../../../services/demoModeService';
+import { simulateMovement, stopSimulation } from '../../../../services/demoModeService';
 import { resolveDemoEndpoints } from '../../../../utils/driverDemoMode';
+import { getRoute, getDemoSimulationDurationMs } from '../../../../services/routingService';
+import RouteInsightPanel from '../../../../components/afterLogin/driver/RouteInsightPanel';
 import { getUser } from '../../../../utils/auth';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
 
@@ -70,6 +72,8 @@ function Pickup() {
     const [routeLoading, setRouteLoading] = useState(false);
     const locationUpdateIntervalRef = useRef(null);
     const [impactProgress, setImpactProgress] = useState(null);
+    const [routeInsight, setRouteInsight] = useState(null);
+    const [routeInsightLoading, setRouteInsightLoading] = useState(false);
 
     // Fetch donation data
     useEffect(() => {
@@ -127,6 +131,48 @@ function Pickup() {
         };
         fetchStats();
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadLegRoute = async () => {
+            if (!donationData?.donor?.location) return;
+
+            const from =
+                driverLocation?.length === 2
+                    ? { latitude: driverLocation[0], longitude: driverLocation[1] }
+                    : donationData.driver?.location;
+            const to = donationData.donor.location;
+
+            if (!from?.latitude || !to?.latitude) return;
+
+            setRouteInsightLoading(true);
+            try {
+                const result = await getRoute(from, to, { alternatives: 2 });
+                if (cancelled) return;
+                setRouteInsight({
+                    eta: result.eta,
+                    traffic: result.traffic,
+                    suggested: result.suggested,
+                    shorterDistanceRoute: result.shorterDistanceRoute,
+                    distanceKm: (result.suggested?.distanceM || 0) / 1000,
+                    approximate: result.approximate,
+                });
+            } catch {
+                if (!cancelled) setRouteInsight(null);
+            } finally {
+                if (!cancelled) setRouteInsightLoading(false);
+            }
+        };
+
+        if (!isDemoMode) {
+            loadLegRoute();
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [donationData, driverLocation, isDemoMode]);
 
     // Start location tracking when component mounts (only if demo mode is off)
     useEffect(() => {
@@ -211,18 +257,28 @@ function Pickup() {
             setDriverLocation([start.lat, start.lng]);
 
             try {
-                const waypoints = await generateRouteWaypoints(
-                    start.lat,
-                    start.lng,
-                    end.lat,
-                    end.lng
+                const routeResult = await getRoute(
+                    { latitude: start.lat, longitude: start.lng },
+                    { latitude: end.lat, longitude: end.lng },
+                    { alternatives: 2 }
                 );
+
+                const waypoints = routeResult.suggested?.waypoints || routeResult.route?.waypoints || [];
 
                 if (waypoints.length === 0) {
                     setIsDemoMode(false);
                     alert('Failed to generate path waypoints. Check donor and driver coordinates.');
                     return;
                 }
+
+                setRouteInsight({
+                    eta: routeResult.eta,
+                    traffic: routeResult.traffic,
+                    suggested: routeResult.suggested,
+                    shorterDistanceRoute: routeResult.shorterDistanceRoute,
+                    distanceKm: (routeResult.suggested?.distanceM || 0) / 1000,
+                    approximate: routeResult.approximate,
+                });
 
                 setDemoRouteWaypoints(waypoints.map((w) => [w.latitude, w.longitude]));
 
@@ -231,6 +287,11 @@ function Pickup() {
                 } catch (err) {
                     console.warn('[Pickup] Server demo unavailable, using client simulation only:', err.message);
                 }
+
+                const simMs = Math.min(
+                    60000,
+                    Math.max(20000, (routeResult.traffic?.adjustedSec || 60) * 40)
+                );
 
                 const success = simulateMovement(
                     waypoints,
@@ -243,7 +304,7 @@ function Pickup() {
                             console.error('[Pickup] Error updating driver location in demo mode:', err);
                         }
                     },
-                    2500
+                    { totalDurationMs: simMs || getDemoSimulationDurationMs() }
                 );
 
                 if (!success) {
@@ -515,9 +576,20 @@ function Pickup() {
                     </MapContainer>
                 </div>
                 <div className='pickup__s2'>
+                    <RouteInsightPanel
+                        routeInsight={routeInsight}
+                        loading={routeInsightLoading && !isDemoMode}
+                        approximate={!!routeInsight?.approximate}
+                    />
                     <DriverDetails tracking={donationData} driverProfileImageUrl={getUser()?.profileImageUrl} />
                     <Food tracking={donationData} />
-                    <LiveJourney tracking={donationData} isConfirmed={isConfirmed} impactProgress={impactProgress} />
+                    <LiveJourney
+                        tracking={donationData}
+                        isConfirmed={isConfirmed}
+                        impactProgress={impactProgress}
+                        routeEta={routeInsight?.eta}
+                        trafficLabel={routeInsight?.traffic?.label}
+                    />
                     <div style={{ 
                         padding: '20px', 
                         background: 'white', 

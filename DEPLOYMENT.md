@@ -82,6 +82,7 @@ Default admin: `admin` / `admin123` (change after first login).
 | `R2_PUBLIC_BASE_URL` | Yes | Public R2 URL, no trailing slash |
 | `GEMINI_API_KEY` | Yes | |
 | `GEMINI_MODEL` | No | e.g. `gemini-2.5-flash` |
+| `OSRM_BASE_URL` | No | Default `https://router.project-osrm.org`; set to self-hosted OSRM for production scale |
 
 **CORS (required):**
 
@@ -177,6 +178,15 @@ Open `http://localhost:5173`. API requests proxy to `http://localhost:5000` via 
 
 ---
 
+## Driver routing (OSRM + traffic model)
+
+Road distances and ETAs use **OSRM** via `GET /api/routing/route` and `POST /api/routing/table` (JWT required). The public OSRM demo server has **no live traffic** and rate limits; the app applies a **Colombo time-of-day traffic heuristic** for adjusted ETAs.
+
+- If routing fails, the UI falls back to straight-line (Haversine) distance at ~30 km/h.
+- For heavy demo/production use, self-host [OSRM](http://project-osrm.org/) with a Sri Lanka map extract and set `OSRM_BASE_URL` on Render.
+
+---
+
 ## Troubleshooting
 
 | Issue | Fix |
@@ -187,6 +197,8 @@ Open `http://localhost:5173`. API requests proxy to `http://localhost:5000` via 
 | Mongo connection failed | Atlas IP allowlist; correct `MONGO_URI` user/password |
 | Upload fails | All `R2_*` vars set; bucket public URL works |
 | Stale frontend API URL | Redeploy Vercel after changing `VITE_API_URL` |
+| Routing / ETA fails | Check Render logs; OSRM demo may be rate-limited; set `OSRM_BASE_URL` or wait and retry |
+| “Approximate route” in UI | OSRM unavailable; app used straight-line fallback |
 
 ---
 

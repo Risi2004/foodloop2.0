@@ -1,26 +1,15 @@
 /**
- * Demo Mode Service
- * Simulates driver movement along a path for competition demonstrations
+ * Demo Mode Service — simulates driver movement along a road path.
  */
 
 import { getRouteWaypoints } from './mapApi';
+import { calculateDistance } from '../utils/distance';
+import { getDemoSimulationDurationMs } from './routingService';
 
-let simulationInterval = null;
-let currentWaypointIndex = 0;
+let simulationTimeouts = [];
 let waypoints = [];
 let onLocationUpdateCallback = null;
 
-/**
- * Generate intermediate waypoints between two coordinates
- * Uses linear interpolation to create a smooth path
- * 
- * @param {number} startLat - Starting latitude
- * @param {number} startLng - Starting longitude
- * @param {number} endLat - Ending latitude
- * @param {number} endLng - Ending longitude
- * @param {number} numPoints - Number of intermediate points (default: 12)
- * @returns {Array} Array of waypoint objects with latitude and longitude
- */
 function coordsValid(startLat, startLng, endLat, endLng) {
   return [startLat, startLng, endLat, endLng].every((n) => Number.isFinite(Number(n)));
 }
@@ -36,144 +25,124 @@ export const generatePathWaypoints = (startLat, startLng, endLat, endLng, numPoi
   endLat = Number(endLat);
   endLng = Number(endLng);
 
-  const points = [];
-  
-  // Include start point
-  points.push({ latitude: startLat, longitude: startLng });
-  
-  // Generate intermediate points
+  const points = [{ latitude: startLat, longitude: startLng }];
+
   for (let i = 1; i < numPoints; i++) {
     const ratio = i / numPoints;
-    const lat = startLat + (endLat - startLat) * ratio;
-    const lng = startLng + (endLng - startLng) * ratio;
-    points.push({ latitude: lat, longitude: lng });
+    points.push({
+      latitude: startLat + (endLat - startLat) * ratio,
+      longitude: startLng + (endLng - startLng) * ratio,
+    });
   }
-  
-  // Include end point
+
   points.push({ latitude: endLat, longitude: endLng });
-  
-  console.log(`[DemoMode] Generated ${points.length} waypoints from [${startLat}, ${startLng}] to [${endLat}, ${endLng}]`);
   return points;
 };
 
-/**
- * Generate road-following waypoints via routing API; fall back to linear interpolation on failure.
- * @param {number} startLat
- * @param {number} startLng
- * @param {number} endLat
- * @param {number} endLng
- * @returns {Promise<Array<{ latitude: number, longitude: number }>>}
- */
 export const generateRouteWaypoints = async (startLat, startLng, endLat, endLng) => {
   if (!coordsValid(startLat, startLng, endLat, endLng)) {
-    console.error('[DemoMode] Invalid coordinates for route');
     return [];
   }
   try {
-    const waypoints = await getRouteWaypoints(startLat, startLng, endLat, endLng);
-    if (waypoints && waypoints.length > 0) {
-      console.log(`[DemoMode] Using road route: ${waypoints.length} waypoints`);
-      return waypoints;
-    }
+    const wps = await getRouteWaypoints(startLat, startLng, endLat, endLng);
+    if (wps && wps.length > 0) return wps;
   } catch (err) {
     console.warn('[DemoMode] Route API failed, using straight line:', err.message);
   }
   return generatePathWaypoints(startLat, startLng, endLat, endLng, 12);
 };
 
+function segmentWeights(pathWaypoints) {
+  const weights = [0];
+  let totalKm = 0;
+
+  for (let i = 1; i < pathWaypoints.length; i++) {
+    const a = pathWaypoints[i - 1];
+    const b = pathWaypoints[i];
+    const km =
+      calculateDistance(a.latitude, a.longitude, b.latitude, b.longitude) || 0;
+    totalKm += km;
+    weights.push(totalKm);
+  }
+
+  if (totalKm <= 0) {
+    const even = 1 / Math.max(1, pathWaypoints.length - 1);
+    return pathWaypoints.map((_, i) => i * even);
+  }
+
+  return weights.map((w) => w / totalKm);
+}
+
+function clearSimulationTimers() {
+  simulationTimeouts.forEach((id) => clearTimeout(id));
+  simulationTimeouts = [];
+}
+
 /**
- * Start simulating movement along the waypoints
- * 
- * @param {Array} pathWaypoints - Array of waypoint objects with latitude and longitude
- * @param {Function} onLocationUpdate - Callback function called with each waypoint {latitude, longitude, index, total}
- * @param {number} intervalMs - Interval between waypoint updates in milliseconds (default: 2500)
- * @returns {boolean} True if simulation started successfully
+ * Move along path with timing proportional to segment distance.
+ * @param {Array} pathWaypoints
+ * @param {Function} onLocationUpdate
+ * @param {{ totalDurationMs?: number }} options
  */
-export const simulateMovement = (pathWaypoints, onLocationUpdate, intervalMs = 2500) => {
-  // Stop any existing simulation
+export const simulateMovement = (pathWaypoints, onLocationUpdate, options = {}) => {
   stopSimulation();
-  
-  if (!pathWaypoints || pathWaypoints.length === 0) {
+
+  if (!pathWaypoints?.length) {
     console.error('[DemoMode] No waypoints provided');
     return false;
   }
-  
   if (typeof onLocationUpdate !== 'function') {
     console.error('[DemoMode] onLocationUpdate must be a function');
     return false;
   }
-  
+
   waypoints = pathWaypoints;
-  currentWaypointIndex = 0;
   onLocationUpdateCallback = onLocationUpdate;
-  
-  console.log(`[DemoMode] Starting simulation with ${waypoints.length} waypoints, interval: ${intervalMs}ms`);
-  
-  // Immediately call callback with first waypoint
-  if (waypoints.length > 0) {
+
+  const totalDurationMs =
+    options.totalDurationMs ?? getDemoSimulationDurationMs();
+  const cumulative = segmentWeights(pathWaypoints);
+  const total = pathWaypoints.length;
+
+  const emit = (index) => {
+    const wp = pathWaypoints[index];
     onLocationUpdateCallback({
-      latitude: waypoints[0].latitude,
-      longitude: waypoints[0].longitude,
-      index: 0,
-      total: waypoints.length
+      latitude: wp.latitude,
+      longitude: wp.longitude,
+      index,
+      total,
     });
-  }
-  
-  // Start interval for remaining waypoints
-  if (waypoints.length > 1) {
-    currentWaypointIndex = 1;
-    simulationInterval = setInterval(() => {
-      if (currentWaypointIndex < waypoints.length) {
-        const waypoint = waypoints[currentWaypointIndex];
-        onLocationUpdateCallback({
-          latitude: waypoint.latitude,
-          longitude: waypoint.longitude,
-          index: currentWaypointIndex,
-          total: waypoints.length
-        });
-        currentWaypointIndex++;
-      } else {
-        // Reached destination
+  };
+
+  emit(0);
+
+  for (let i = 1; i < pathWaypoints.length; i++) {
+    const delay = Math.max(50, Math.round(totalDurationMs * cumulative[i]));
+    const timeoutId = setTimeout(() => {
+      emit(i);
+      if (i === pathWaypoints.length - 1) {
         console.log('[DemoMode] Reached destination');
-        stopSimulation();
+        clearSimulationTimers();
+        waypoints = [];
+        onLocationUpdateCallback = null;
       }
-    }, intervalMs);
+    }, delay);
+    simulationTimeouts.push(timeoutId);
   }
-  
+
   return true;
 };
 
-/**
- * Stop the simulation and clear the interval
- */
 export const stopSimulation = () => {
-  if (simulationInterval) {
-    clearInterval(simulationInterval);
-    simulationInterval = null;
-    console.log('[DemoMode] Simulation stopped');
-  }
-  
-  currentWaypointIndex = 0;
+  clearSimulationTimers();
   waypoints = [];
   onLocationUpdateCallback = null;
 };
 
-/**
- * Check if simulation is currently running
- * @returns {boolean} True if simulation is active
- */
-export const isSimulationActive = () => {
-  return simulationInterval !== null;
-};
+export const isSimulationActive = () => simulationTimeouts.length > 0;
 
-/**
- * Get current simulation progress
- * @returns {Object} Progress info with current index and total waypoints
- */
-export const getSimulationProgress = () => {
-  return {
-    currentIndex: currentWaypointIndex,
-    total: waypoints.length,
-    isActive: isSimulationActive()
-  };
-};
+export const getSimulationProgress = () => ({
+  currentIndex: 0,
+  total: waypoints.length,
+  isActive: isSimulationActive(),
+});

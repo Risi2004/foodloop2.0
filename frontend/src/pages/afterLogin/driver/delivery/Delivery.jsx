@@ -17,6 +17,8 @@ import {
 } from '../../../../services/socket';
 import {
     computeRouteDistances,
+    computeRoadRouteDistances,
+    enrichPickupsWithRoadEta,
     isPickupWithinDriverRadius,
 } from '../../../../utils/driverRoute';
 import { useNavigate } from 'react-router-dom';
@@ -66,11 +68,11 @@ function Delivery() {
         };
     }, [driverLocation?.latitude, driverLocation?.longitude]);
 
-    const enrichPickup = useCallback((pickup, location) => {
+    const enrichPickup = useCallback(async (pickup, location) => {
         if (!pickup) return null;
         const loc = location || driverLocationRef.current;
         if (!loc?.latitude || !loc?.longitude) return pickup;
-        return computeRouteDistances(pickup, loc.latitude, loc.longitude);
+        return computeRoadRouteDistances(pickup, loc.latitude, loc.longitude);
     }, []);
 
     const fetchData = useCallback(async (locationOverride) => {
@@ -94,9 +96,10 @@ function Delivery() {
             }
 
             const rawPickups = pickupsResponse?.success ? pickupsResponse.pickups || [] : [];
-            const enriched = lat != null && lng != null
-                ? rawPickups.map((p) => computeRouteDistances(p, lat, lng))
-                : rawPickups;
+            let enriched = rawPickups;
+            if (lat != null && lng != null) {
+                enriched = await enrichPickupsWithRoadEta(rawPickups, lat, lng);
+            }
             setPickups(enriched);
 
             if (deliveriesResponse?.success) {
@@ -172,8 +175,10 @@ function Delivery() {
         };
     }, [fetchData]);
 
-    const handlePickupSelect = (pickup) => {
-        setSelectedPickup(enrichPickup(pickup));
+    const handlePickupSelect = async (pickup) => {
+        setSelectedPickup(computeRouteDistances(pickup, driverLocationRef.current?.latitude, driverLocationRef.current?.longitude));
+        const enriched = await enrichPickup(pickup);
+        if (enriched) setSelectedPickup(enriched);
     };
 
     const handleAcceptOrder = async (pickup) => {
@@ -182,7 +187,7 @@ function Delivery() {
             alert('You can only have 1 order at a time. Complete your current delivery first.');
             return;
         }
-        if (!driverLocation || !pickup.totalRouteDistanceFormatted) {
+        if (!driverLocation || (!pickup.totalRouteDistanceFormatted && !pickup.totalEtaFormatted)) {
             alert('Set your location and select this order to view route distance before accepting.');
             return;
         }
@@ -220,9 +225,12 @@ function Delivery() {
             await fetchData(location);
 
             if (selectedPickup) {
-                setSelectedPickup(
-                    computeRouteDistances(selectedPickup, location.latitude, location.longitude)
+                const enriched = await computeRoadRouteDistances(
+                    selectedPickup,
+                    location.latitude,
+                    location.longitude
                 );
+                setSelectedPickup(enriched);
             }
         }
 
@@ -246,13 +254,9 @@ function Delivery() {
         }
     };
 
-    const selectedWithDistances = selectedPickup
-        ? enrichPickup(selectedPickup)
-        : null;
-
     const canAcceptSelected =
         !!driverLocation &&
-        !!selectedWithDistances?.totalRouteDistanceFormatted &&
+        !!(selectedPickup?.totalRouteDistanceFormatted || selectedPickup?.totalEtaFormatted) &&
         activeDeliveries.length === 0;
 
     if (loading) {
@@ -363,7 +367,7 @@ function Delivery() {
                             <div className="delivery__pickups-list">
                                 {pickups.map((pickup) => {
                                     const isSelected = selectedPickup?.id === pickup.id;
-                                    const enriched = isSelected ? selectedWithDistances : pickup;
+                                    const enriched = isSelected ? selectedPickup : pickup;
                                     return (
                                         <DeliverCard
                                             key={pickup.id}
@@ -387,7 +391,7 @@ function Delivery() {
                 </div>
                 <div className='delivery__s1'>
                     <DeliveryMap
-                        selectedPickup={selectedWithDistances}
+                        selectedPickup={selectedPickup}
                         driverLocation={driverLocation}
                         driverAddress={driverAddress}
                         onOpenLocationModal={() => {

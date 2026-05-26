@@ -1,0 +1,65 @@
+.route-insight {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #14532d;
+}
+
+.route-insight--loading {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+.route-insight--approx {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.route-insight__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.route-insight__badge {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1f4e36;
+}
+
+.route-insight__warn {
+  font-size: 12px;
+  color: #b45309;
+}
+
+.route-insight__eta {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.route-insight__traffic {
+  margin: 0 0 6px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.route-insight__meta,
+.route-insight__alt {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.route-insight__disclaimer {
+  margin: 8px 0 0;
+  font-size: 11px;
+  opacity: 0.75;
+}

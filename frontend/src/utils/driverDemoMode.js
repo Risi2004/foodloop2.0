@@ -41,12 +41,13 @@ export async function resolveDemoEndpoints(leg, tracking, driverLocationState) {
 
   let start = null;
 
-  if (driverLocationState?.length === 2 && isValidCoord(driverLocationState[0], driverLocationState[1])) {
+  // After pickup: driver is at the donor, then heads to the receiver.
+  if (leg === 'delivery' && donor && isValidCoord(donor.latitude, donor.longitude)) {
+    start = { lat: Number(donor.latitude), lng: Number(donor.longitude) };
+  } else if (driverLocationState?.length === 2 && isValidCoord(driverLocationState[0], driverLocationState[1])) {
     start = { lat: Number(driverLocationState[0]), lng: Number(driverLocationState[1]) };
   } else if (driver && isValidCoord(driver.latitude, driver.longitude)) {
     start = { lat: Number(driver.latitude), lng: Number(driver.longitude) };
-  } else if (leg === 'delivery' && donor && isValidCoord(donor.latitude, donor.longitude)) {
-    start = { lat: Number(donor.latitude), lng: Number(donor.longitude) };
   } else if (leg === 'pickup' && donor && isValidCoord(donor.latitude, donor.longitude)) {
     start = offsetStartSouth(donor.latitude, donor.longitude);
   }

@@ -25,6 +25,7 @@ function DeliveryCard({
     const quantity = formatQuantity(donation.quantity);
     const expiryText = donation.expiryText || 'Expiry unknown';
     const totalRoute = donation.totalRouteDistanceFormatted;
+    const totalEta = donation.totalEtaFormatted;
 
     let acceptTitle = 'Accept order';
     if (hasActiveDelivery) {
@@ -57,9 +58,21 @@ function DeliveryCard({
                 <img src={schedule} alt="schedule" />
                 <p>{expiryText}</p>
             </div>
-            {isSelected && totalRoute && (
+            {isSelected && (totalRoute || totalEta) && (
                 <p className="delivery__card__route-total">
-                    Total route: <strong>{totalRoute}</strong>
+                    {totalEta && (
+                        <>
+                            Est. time: <strong>{totalEta}</strong>
+                            {donation.trafficLabel ? ` (${donation.trafficLabel})` : ''}
+                            {totalRoute ? ' · ' : ''}
+                        </>
+                    )}
+                    {totalRoute && (
+                        <>
+                            Route: <strong>{totalRoute}</strong>
+                            {donation.approximateRoute ? ' (approx.)' : ''}
+                        </>
+                    )}
                 </p>
             )}
             <button

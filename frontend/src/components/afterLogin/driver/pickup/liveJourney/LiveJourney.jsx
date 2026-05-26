@@ -11,7 +11,7 @@ function formatDate(date) {
     return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function LiveJourney({ tracking, isConfirmed, impactProgress }) {
+function LiveJourney({ tracking, isConfirmed, impactProgress, routeEta, trafficLabel }) {
     const createdAt = tracking?.timestamps?.createdAt;
     const actualPickupDate = tracking?.timestamps?.actualPickupDate;
     const driverName = tracking?.driver?.name ?? 'Driver';
@@ -66,7 +66,13 @@ function LiveJourney({ tracking, isConfirmed, impactProgress }) {
                         <div className="timeline-content">
                             <p className="step-status orange-text">Reached the Needy</p>
                             <h4 className="step-title">{status === 'delivered' ? 'Delivered' : 'Pending Drop-off'}</h4>
-                            <p className="step-meta">{status === 'delivered' ? 'Delivery completed' : 'Estimated arrival: 12:45 PM'}</p>
+                            <p className="step-meta">
+                                {status === 'delivered'
+                                    ? 'Delivery completed'
+                                    : routeEta?.eta
+                                      ? `Estimated arrival: ${routeEta.eta}${trafficLabel ? ` (${trafficLabel})` : ''}`
+                                      : 'Estimated arrival pending'}
+                            </p>
                         </div>
                     </div>
                 </div>
