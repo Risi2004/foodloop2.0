@@ -1,15 +1,19 @@
+const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const donationRoutes = require('./routes/donation.routes');
+const driverRoutes = require('./routes/driver.routes');
 const geocodeRoutes = require('./routes/geocode.routes');
 const { isR2Configured } = require('./config/r2');
+const { setIO, attachSocketAuth } = require('./socket');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -53,6 +57,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/donations', donationRoutes);
+app.use('/api/driver', driverRoutes);
 app.use('/api/geocode', geocodeRoutes);
 
 app.use((err, req, res, next) => {
@@ -63,12 +68,23 @@ app.use((err, req, res, next) => {
   });
 });
 
+const server = http.createServer(app);
+const socketServer = new Server(server, {
+  cors: {
+    origin: FRONTEND_URL,
+    credentials: true,
+  },
+});
+setIO(socketServer);
+attachSocketAuth(socketServer);
+
 mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log('MongoDB connected successfully');
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      console.log('Socket.IO enabled');
     });
   })
   .catch((err) => {

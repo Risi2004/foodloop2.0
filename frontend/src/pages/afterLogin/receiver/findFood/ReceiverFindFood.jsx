@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ReceiverFindFood.css';
 import Sidebar from '../../../../components/afterLogin/receiver/findFood/sideBar/SideBar';
@@ -8,21 +8,90 @@ import ReceiverFooter from "../../../../components/afterLogin/dashboard/Receiver
 import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
 import { getAvailableDonations, claimDonation } from '../../../../services/donationApi';
 import { getCurrentUser } from '../../../../services/api';
-import { onDonationCreated } from '../../../../services/socket';
+import {
+    getSocket,
+    onDonationCreated,
+    onDonationClaimed,
+    onDonationCancelled,
+    onDonationClaimCancelled,
+    MAX_RECEIVER_RADIUS_KM,
+} from '../../../../services/socket';
+import { calculateDistance, formatDistance } from '../../../../utils/distance';
+import { formatExpiryDate } from '../../../../utils/donationDisplay';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
-import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 
-// Offline: no external geocoder
-const reverseGeocode = async (lat, lng) => {
-    if (lat == null || lng == null) return null;
-    return `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
+const getTimeAgo = (date) => {
+    if (!date) return 'Recently';
+    const now = new Date();
+    const donationDate = new Date(date);
+    const diffInSeconds = Math.floor((now - donationDate) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} sec${diffInSeconds !== 1 ? 's' : ''} ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min${Math.floor(diffInSeconds / 60) !== 1 ? 's' : ''} ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hr${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''} ago`;
+    return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''} ago`;
 };
+
+const formatQuantity = (quantity) => {
+    if (!quantity) return 'N/A';
+    return `${quantity} ${quantity === 1 ? 'serving' : 'servings'} Available`;
+};
+
+function transformDonationToItem(donation, receiverPosition) {
+    const lat = donation.donorLatitude ?? donation.position?.[0];
+    const lng = donation.donorLongitude ?? donation.position?.[1];
+    const hasCoords = lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng));
+    const position = hasCoords ? [Number(lat), Number(lng)] : null;
+
+    let distanceKm = donation.distanceKm;
+    if (receiverPosition && position) {
+        distanceKm = calculateDistance(
+            receiverPosition[0],
+            receiverPosition[1],
+            position[0],
+            position[1]
+        );
+    }
+
+    return {
+        id: donation.id || donation._id,
+        trackingId: donation.trackingId,
+        title: donation.itemName,
+        listedTime: getTimeAgo(donation.createdAt),
+        expiry: formatExpiryDate(donation.expiryDate || donation.userProvidedExpiryDate),
+        quantity: formatQuantity(donation.quantity),
+        impactPeople: donation.quantity || 0,
+        image: donation.imageUrl,
+        position,
+        hasValidCoordinates: !!position,
+        distanceKm: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
+        distanceLabel: distanceKm != null ? formatDistance(distanceKm) : null,
+        donation,
+        foodCategory: donation.foodCategory,
+        storageRecommendation: donation.storageRecommendation,
+        aiQualityScore: donation.aiQualityScore,
+        preferredPickupDate: donation.preferredPickupDate,
+        preferredPickupTimeFrom: donation.preferredPickupTimeFrom,
+        preferredPickupTimeTo: donation.preferredPickupTimeTo,
+        donorName: donation.donorName,
+        donorType: donation.donorType,
+        donorAddress: donation.donorAddress || donation.pickupAddress,
+        priceLabel: donation.priceLabel,
+        listingType: donation.listingType,
+        priceAmount: donation.priceAmount,
+        priceCurrency: donation.priceCurrency,
+    };
+}
+
+function isWithinRadius(item) {
+    if (item.distanceKm == null) return false;
+    return item.distanceKm <= MAX_RECEIVER_RADIUS_KM;
+}
 
 const FindFood = () => {
     const navigate = useNavigate();
-    const { products, claimVendorProduct } = useMarketplace();
     const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [receiverPosition, setReceiverPosition] = useState(null);
     const [receiverAddress, setReceiverAddress] = useState('');
@@ -30,233 +99,126 @@ const FindFood = () => {
     const [showLocationModal, setShowLocationModal] = useState(false);
     const [claimLocationModalOpen, setClaimLocationModalOpen] = useState(false);
     const [claimingDonationId, setClaimingDonationId] = useState(null);
-    const [locationLoading, setLocationLoading] = useState(false);
-    const [locationError, setLocationError] = useState('');
+    const [selectedItemId, setSelectedItemId] = useState(null);
+    const [claimSaving, setClaimSaving] = useState(false);
+    const [claimSaveError, setClaimSaveError] = useState(null);
 
-    // Format time ago
-    const getTimeAgo = (date) => {
-        if (!date) return 'Recently';
-        const now = new Date();
-        const donationDate = new Date(date);
-        const diffInSeconds = Math.floor((now - donationDate) / 1000);
-        
-        if (diffInSeconds < 60) return `${diffInSeconds} sec${diffInSeconds !== 1 ? 's' : ''} ago`;
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min${Math.floor(diffInSeconds / 60) !== 1 ? 's' : ''} ago`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hr${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''} ago`;
-        return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''} ago`;
-    };
+    const fetchDonations = useCallback(async (lat, lng) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await getAvailableDonations(lat, lng);
 
-    // Format expiry date
-    const formatExpiryDate = (date) => {
-        if (!date) return 'N/A';
-        const expiryDate = new Date(date);
-        const month = (expiryDate.getMonth() + 1).toString().padStart(2, '0');
-        const year = expiryDate.getFullYear();
-        return `${month}/${year}`;
-    };
-
-    // Format quantity display
-    const formatQuantity = (quantity) => {
-        if (!quantity) return 'N/A';
-        return `${quantity} ${quantity === 1 ? 'serving' : 'servings'} Available`;
-    };
-
-    // Fetch available donations (on mount and when donor posts a new donation via socket)
-    useEffect(() => {
-        const fetchDonations = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                console.log('[ReceiverFindFood] Fetching available donations...');
-                
-                const response = await getAvailableDonations();
-                
-                if (response.success && response.donations) {
-                    // Default coordinates (Sri Lanka center) for donations without geocoded addresses
-                    const defaultCoordinates = [7.0873, 80.0144];
-                    
-                    // Transform donation data to match component structure
-                    // Show ALL donations - use default coordinates if geocoding failed
-                    const transformedItems = response.donations.map(donation => ({
-                        id: donation.id,
-                        trackingId: donation.trackingId,
-                        title: donation.itemName,
-                        listedTime: getTimeAgo(donation.createdAt),
-                        expiry: formatExpiryDate(donation.expiryDate),
-                        quantity: formatQuantity(donation.quantity),
-                        impactPeople: donation.quantity || 0,
-                        image: donation.imageUrl,
-                        // Use provided coordinates or default to Sri Lanka center
-                        position: donation.position && Array.isArray(donation.position) && donation.position.length === 2
-                            ? donation.position
-                            : defaultCoordinates,
-                        hasValidCoordinates: !!(donation.position && Array.isArray(donation.position) && donation.position.length === 2),
-                        // Additional data for tooltips and details
-                        donation: donation, // Store full donation object
-                        foodCategory: donation.foodCategory,
-                        storageRecommendation: donation.storageRecommendation,
-                        aiQualityScore: donation.aiQualityScore,
-                        preferredPickupDate: donation.preferredPickupDate,
-                        preferredPickupTimeFrom: donation.preferredPickupTimeFrom,
-                        preferredPickupTimeTo: donation.preferredPickupTimeTo,
-                        donorName: donation.donorName,
-                        donorType: donation.donorType,
-                        donorAddress: donation.donorAddress,
-                    }));
-                    
-                    const vendorDonations = products
-                        .filter(p => p.isDonation)
-                        .map(p => ({
-                            id: p.id,
-                            isVendor: true,
-                            trackingId: `VND-${p.id}`,
-                            title: p.name,
-                            listedTime: 'Recently',
-                            expiry: formatExpiryDate(p.expiryDate),
-                            quantity: formatQuantity(p.quantity),
-                            impactPeople: p.quantity || 0,
-                            image: p.image,
-                            position: p.position || defaultCoordinates,
-                            hasValidCoordinates: true,
-                            donation: p,
-                            foodCategory: p.category,
-                            donorName: p.vendorName || 'Retail Vendor',
-                            donorType: 'Retailer',
-                        }));
-
-                    const finalItems = [...transformedItems, ...vendorDonations];
-                    console.log(`[ReceiverFindFood] Loaded ${transformedItems.length} donations and ${vendorDonations.length} vendor items`);
-                    setItems(finalItems);
-                } else {
-                    // Fallback to only vendor donations if API fails or returns empty
-                    const vendorDonations = products
-                        .filter(p => p.isDonation)
-                        .map(p => ({
-                            id: p.id,
-                            isVendor: true,
-                            trackingId: `VND-${p.id}`,
-                            title: p.name,
-                            listedTime: 'Recently',
-                            expiry: 'N/A',
-                            quantity: formatQuantity(p.quantity),
-                            image: p.image,
-                            position: p.position || [7.0873, 80.0144],
-                            hasValidCoordinates: true,
-                            donation: p,
-                            foodCategory: p.category,
-                            donorName: p.vendorName || 'Retail Vendor',
-                        }));
-                    setItems(vendorDonations);
-                }
-            } catch (err) {
-                console.error('[ReceiverFindFood] Error fetching donations:', err);
-                const vendorDonations = products
-                    .filter(p => p.isDonation)
-                    .map(p => ({
-                        id: p.id,
-                        isVendor: true,
-                        trackingId: `VND-${p.id}`,
-                        title: p.name,
-                        listedTime: 'Recently',
-                        expiry: 'N/A',
-                        quantity: formatQuantity(p.quantity),
-                        image: p.image,
-                        position: p.position || [7.0873, 80.0144],
-                        hasValidCoordinates: true,
-                        donation: p,
-                        foodCategory: p.category,
-                        donorName: p.vendorName || 'Retail Vendor',
-                    }));
-                setItems(vendorDonations);
-                // setError(err.message || 'Failed to load donations');
-            } finally {
-                setLoading(false);
+            if (response.success && response.donations) {
+                const receiverPos = [lat, lng];
+                const transformed = response.donations
+                    .map((d) => transformDonationToItem(d, receiverPos))
+                    .filter(isWithinRadius);
+                setItems(transformed);
+                setSelectedItemId((current) => {
+                    if (current && transformed.some((t) => t.id === current)) return current;
+                    return transformed.length > 0 ? transformed[0].id : null;
+                });
+            } else {
+                setItems([]);
+                setSelectedItemId(null);
             }
-        };
-
-        fetchDonations();
-        const unsubscribe = onDonationCreated(() => fetchDonations());
-        return () => unsubscribe();
+        } catch (err) {
+            console.error('[ReceiverFindFood] Error fetching donations:', err);
+            setError(err.message || 'Failed to load donations');
+            setItems([]);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    // Load profile address for default in modals
+    useEffect(() => {
+        if (!receiverPosition) return;
+        const [lat, lng] = receiverPosition;
+        fetchDonations(lat, lng);
+    }, [receiverPosition, fetchDonations]);
+
+    useEffect(() => {
+        if (!receiverPosition) return undefined;
+
+        getSocket();
+
+        const mergeCreated = (payload) => {
+            const donation = payload?.donation;
+            if (!donation) return;
+
+            const [lat, lng] = receiverPosition;
+            const item = transformDonationToItem(
+                { ...donation, donorName: payload.donorName || donation.donorName },
+                receiverPosition
+            );
+            if (!isWithinRadius(item)) return;
+
+            setItems((prev) => {
+                if (prev.some((i) => i.id === item.id)) return prev;
+                return [item, ...prev];
+            });
+        };
+
+        const removeById = (payload) => {
+            const id = payload?.donationId;
+            if (!id) return;
+            setItems((prev) => prev.filter((i) => i.id !== id));
+            setSelectedItemId((current) => (current === id ? null : current));
+        };
+
+        const mergeClaimCancelled = (payload) => {
+            const donation = payload?.donation;
+            if (!donation) return;
+            const item = transformDonationToItem(donation, receiverPosition);
+            if (!isWithinRadius(item)) return;
+            setItems((prev) => {
+                if (prev.some((i) => i.id === item.id)) return prev;
+                return [item, ...prev];
+            });
+        };
+
+        const unsubCreated = onDonationCreated(mergeCreated);
+        const unsubClaimed = onDonationClaimed(removeById);
+        const unsubCancelled = onDonationCancelled(removeById);
+        const unsubClaimCancelled = onDonationClaimCancelled(mergeClaimCancelled);
+
+        return () => {
+            unsubCreated();
+            unsubClaimed();
+            unsubCancelled();
+            unsubClaimCancelled();
+        };
+    }, [receiverPosition]);
+
     useEffect(() => {
         let cancelled = false;
         getCurrentUser()
-            .then(res => {
+            .then((res) => {
                 if (!cancelled && res?.user?.address) setProfileAddress(res.user.address);
             })
             .catch(() => {});
         return () => { cancelled = true; };
     }, []);
 
-    const handleUseMyLocation = () => {
-        setLocationError('');
-        setLocationLoading(true);
-        if (!navigator.geolocation) {
-            setLocationError('Geolocation is not supported.');
-            setLocationLoading(false);
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                if (lat < 5 || lat > 10 || lng < 79 || lng > 82) {
-                    setLocationError('Location is outside Sri Lanka.');
-                    setReceiverPosition(null);
-                    setReceiverAddress('');
-                } else {
-                    setReceiverPosition([lat, lng]);
-                    const addr = await reverseGeocode(lat, lng);
-                    setReceiverAddress(addr || 'Location set');
-                }
-                setLocationLoading(false);
-            },
-            () => {
-                setLocationError('Could not get location. Check permissions or try Select location.');
-                setLocationLoading(false);
-            },
-            { timeout: 10000, maximumAge: 60000 }
-        );
-    };
-
-    const handleSelectLocationConfirm = (lat, lng, address) => {
+    const handleSelectLocationConfirm = async (lat, lng, address) => {
         setReceiverPosition([lat, lng]);
         setReceiverAddress(address || 'Location set');
         setShowLocationModal(false);
     };
 
     const handleClaim = (donationId) => {
+        setClaimSaveError(null);
         setClaimingDonationId(donationId);
         setClaimLocationModalOpen(true);
     };
 
     const handleClaimLocationConfirm = async (lat, lng, address) => {
         const donationId = claimingDonationId;
-        const selectedItem = items.find(item => item.id === donationId);
-        
-        setClaimLocationModalOpen(false);
-        setClaimingDonationId(null);
         if (!donationId) return;
 
-        // Handle Vendor Claim
-        if (selectedItem?.isVendor) {
-            try {
-                claimVendorProduct(selectedItem.donation, {
-                    receiverLatitude: lat,
-                    receiverLongitude: lng,
-                    receiverAddress: address || '',
-                });
-                navigate('/receiver/my-claims');
-                return;
-            } catch (err) {
-                alert('Failed to claim vendor product');
-                return;
-            }
-        }
-
-        // Handle Regular API Claim
+        setClaimSaving(true);
+        setClaimSaveError(null);
         try {
             const response = await claimDonation(donationId, {
                 receiverLatitude: lat,
@@ -264,41 +226,54 @@ const FindFood = () => {
                 receiverAddress: address || '',
             });
             if (response.success) {
-                setItems(prev => prev.filter(item => {
-                    const id = item.id || item.donation?._id || item.donation?.id;
-                    return id !== donationId;
-                }));
+                setReceiverPosition([lat, lng]);
+                setReceiverAddress(address || 'Location set');
+                setItems((prev) => prev.filter((item) => item.id !== donationId));
+                setSelectedItemId((current) => (current === donationId ? null : current));
+                setClaimLocationModalOpen(false);
+                setClaimingDonationId(null);
                 navigate('/receiver/my-claims');
             }
         } catch (err) {
             const msg = err.response?.data?.message || err.message || 'Failed to claim donation. Please try again.';
-            alert(msg);
+            setClaimSaveError(msg);
+            throw new Error(msg);
+        } finally {
+            setClaimSaving(false);
         }
     };
 
-    if (loading) {
+    const handleCardClick = (item) => {
+        if (item?.id) setSelectedItemId(item.id);
+    };
+
+    const locationRequired = !receiverPosition;
+    const selectedItem = items.find((i) => i.id === selectedItemId) || null;
+
+    if (loading && receiverPosition && items.length === 0) {
         return <PageLoader message="Loading available donations..." />;
     }
 
-    if (error) {
+    if (error && receiverPosition) {
         return (
             <>
                 <ReceiverNavbar />
                 <div className="find-food-page">
-                    <div className="error-container" style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
+                    <div className="error-container" style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                         height: '100vh',
                         flexDirection: 'column',
                         gap: '16px',
-                        padding: '20px'
+                        padding: '20px',
                     }}>
                         <p style={{ color: '#d32f2f', fontSize: '16px', textAlign: 'center' }}>
-                            ⚠️ {error}
+                            {error}
                         </p>
-                        <button 
-                            onClick={() => window.location.reload()} 
+                        <button
+                            type="button"
+                            onClick={() => fetchDonations(receiverPosition[0], receiverPosition[1])}
                             style={{
                                 padding: '10px 20px',
                                 backgroundColor: '#1b4332',
@@ -306,7 +281,7 @@ const FindFood = () => {
                                 border: 'none',
                                 borderRadius: '6px',
                                 cursor: 'pointer',
-                                fontSize: '14px'
+                                fontSize: '14px',
                             }}
                         >
                             Retry
@@ -318,32 +293,28 @@ const FindFood = () => {
         );
     }
 
-    // Handle card click to center map on marker
-    const handleCardClick = (item) => {
-        if (item.position && window.mapInstance) {
-            window.mapInstance.setView(item.position, 15, {
-                animate: true,
-                duration: 0.5
-            });
-        }
-    };
-
     return (
         <>
             <ReceiverNavbar />
             <div className="find-food-page">
                 <div className="sidebar-section">
-                    <Sidebar items={items} onCardClick={handleCardClick} onClaim={handleClaim} />
+                    <Sidebar
+                        items={items}
+                        onCardClick={handleCardClick}
+                        onClaim={handleClaim}
+                        selectedItemId={selectedItemId}
+                        locationRequired={locationRequired}
+                        maxRadiusKm={MAX_RECEIVER_RADIUS_KM}
+                    />
                 </div>
                 <div className="map-section">
                     <MapSection
                         items={items}
                         receiverPosition={receiverPosition}
                         receiverAddress={receiverAddress}
+                        selectedItemId={selectedItemId}
+                        selectedItem={selectedItem}
                         onSelectLocation={() => setShowLocationModal(true)}
-                        onUseMyLocation={handleUseMyLocation}
-                        locationLoading={locationLoading}
-                        locationError={locationError}
                     />
                 </div>
             </div>
@@ -352,19 +323,33 @@ const FindFood = () => {
                 isOpen={showLocationModal}
                 onClose={() => setShowLocationModal(false)}
                 onConfirm={handleSelectLocationConfirm}
-                defaultAddress={receiverAddress || profileAddress}
-                title="Select your location"
+                defaultAddress=""
+                autoFetchOnOpen
+                title="Set your location"
+                confirmLabel="Confirm location"
+                addressLabel="Your location"
+                addressPlaceholder="Enter your delivery address"
             />
 
             <LocationMapModal
                 isOpen={claimLocationModalOpen}
                 onClose={() => {
+                    if (claimSaving) return;
                     setClaimLocationModalOpen(false);
                     setClaimingDonationId(null);
+                    setClaimSaveError(null);
                 }}
                 onConfirm={handleClaimLocationConfirm}
-                defaultAddress={receiverAddress}
-                title="Confirm delivery location"
+                defaultAddress={receiverAddress || profileAddress}
+                defaultLat={receiverPosition?.[0]}
+                defaultLng={receiverPosition?.[1]}
+                autoFetchOnOpen={!receiverPosition}
+                saving={claimSaving}
+                saveError={claimSaveError}
+                title="Set delivery location"
+                confirmLabel="Confirm & claim"
+                addressLabel="Delivery address"
+                addressPlaceholder="Enter where you want the food delivered"
             />
 
             <ReceiverFooter />

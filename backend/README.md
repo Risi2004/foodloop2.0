@@ -84,6 +84,8 @@ Older accounts may still reference `/uploads/...` on disk under `backend/uploads
 | Admin reactivates deactivated account | Your account has been reactivated |
 | Forgot password (registered email) | Password reset code (6-digit OTP) |
 | Password reset completed | Your password was changed |
+| Donation posted successfully | Donor: your listing is live (full food details) |
+| New donation published | Receiver: new food available (full food details + link to Find Food) |
 
 Uses `SMTP_*` and `FRONTEND_URL` from `.env`. Email failures are logged but do not block API responses.
 
@@ -94,15 +96,42 @@ Uses `SMTP_*` and `FRONTEND_URL` from `.env`. Email failures are logged but do n
 
 ## Donation endpoints (JWT required)
 
+### Receiver — browse and claim
+
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| GET | `/api/donations/available?lat=&lng=` | Receiver | List `available` donations within **25 km** of receiver (lat/lng required). Excludes expired listings. |
+| POST | `/api/donations/:id/claim` | Receiver | Claim donation (`available` → `claimed`). Body required: `receiverLatitude`, `receiverLongitude`, `receiverAddress`. Sends emails to donor, receiver, and all active drivers. |
+| GET | `/api/donations/my-claims` | Receiver | List donations claimed by the current receiver. |
+
+### Donor — create and manage
+
+
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/donations/analyze-image` | Multipart field `image` (JPEG/PNG, max 10 MB). Gemini vision analyzes the photo, then stores it in R2. Returns `{ success, imageUrl, predictions }`. |
-| POST | `/api/donations` | Create donation from form JSON (includes `imageUrl`, AI metadata, pickup window, `pickupAddress`, `donorLatitude`, `donorLongitude`, `listingType`, price). |
+| POST | `/api/donations` | Create donation from form JSON (includes `imageUrl`, AI metadata, pickup window, `pickupAddress`, `donorLatitude`, `donorLongitude`, `listingType`, price). Sends the donor a confirmation email and notifies **all active, verified Receiver accounts** by email with full listing details (requires `SMTP_*`). |
 | GET | `/api/donations/mine` | List current donor's donations (newest first). |
 | GET | `/api/donations/:id` | Get one donation (owner only). |
 | PATCH | `/api/donations/:id` | Update donation when `status` is `available` or `draft` (including `pickupAddress` and coordinates). |
 
 List/detail responses include `pickupAddress` and `donorAddress` (same value) for maps and receiver UI.
+
+## Real-time (Socket.IO)
+
+Connect from the frontend with `auth: { token: <JWT> }` (same origin or proxy `/socket.io`).
+
+| Event | Audience | When |
+|-------|----------|------|
+| `donation:created` | `receivers` room | New donation posted |
+| `donation:claimed` | `receivers` room | `{ donationId }` |
+| `donation:claimedForDonor` | `donor:{donorId}` room | `{ donationId, donorId, donation }` |
+| `donation:newPickup` | `drivers` room | `{ donationId, donation }` |
+| `donation:cancelled` | `receivers` room | `{ donationId }` |
+
+Receivers join `receivers`; drivers join `drivers`; donor roles join `donor:{userId}` on connect.
+
+| Donation claimed | Donor, receiver, and each active driver notified by email |
 | DELETE | `/api/donations/:id` | Cancel donation (sets `status` to `cancelled`). |
 
 **Analyze-image rejection codes (HTTP 400):**

@@ -57,7 +57,12 @@ const LocationMapModal = ({
     autoFetchOnOpen = true,
     saving = false,
     saveError = null,
+    savingMessage = 'Saving…',
+    instructions = 'Drag the marker or click the map to adjust the exact pickup point.',
     title = 'Confirm Pickup Location',
+    confirmLabel = 'Confirm & save donation',
+    addressLabel = 'Pickup address',
+    addressPlaceholder = 'Enter the address where food can be picked up',
 }) => {
     const initialPickupAddress = (initialPickupAddressProp || defaultAddress || '').trim()
         ? (initialPickupAddressProp || defaultAddress || '')
@@ -296,7 +301,7 @@ const LocationMapModal = ({
     const zoom = coordinates ? MAP_ZOOM : DEFAULT_ZOOM;
     const busy = actionLoading || saving;
     const displayError = saveError || error;
-    const overlayMessage = saving ? 'Saving donation to database…' : loadingMessage;
+    const overlayMessage = saving ? savingMessage : loadingMessage;
 
     return (
         <div className="location-map-modal-overlay" onClick={handleCancel}>
@@ -310,7 +315,7 @@ const LocationMapModal = ({
 
                 <div className="location-map-modal-body">
                     <label className="location-map-address-label" htmlFor="pickup-address-input">
-                        Pickup address
+                        {addressLabel}
                     </label>
                     <textarea
                         id="pickup-address-input"
@@ -318,7 +323,7 @@ const LocationMapModal = ({
                         value={addressText}
                         onChange={(e) => setAddressText(e.target.value)}
                         rows={3}
-                        placeholder="Enter the address where food can be picked up"
+                        placeholder={addressPlaceholder}
                         disabled={busy}
                     />
 
@@ -377,7 +382,7 @@ const LocationMapModal = ({
                     </div>
 
                     <div className="location-map-instructions">
-                        <p>Drag the marker or click the map to adjust the exact pickup point.</p>
+                        <p>{instructions}</p>
                     </div>
                 </div>
 
@@ -391,7 +396,7 @@ const LocationMapModal = ({
                         onClick={handleConfirm}
                         disabled={!coordinates || busy || !addressText.trim()}
                     >
-                        {saving ? 'Saving to database…' : 'Confirm & save donation'}
+                        {saving ? 'Saving…' : confirmLabel}
                     </button>
                 </div>
             </div>

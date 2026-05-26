@@ -21,11 +21,20 @@ let onLocationUpdateCallback = null;
  * @param {number} numPoints - Number of intermediate points (default: 12)
  * @returns {Array} Array of waypoint objects with latitude and longitude
  */
+function coordsValid(startLat, startLng, endLat, endLng) {
+  return [startLat, startLng, endLat, endLng].every((n) => Number.isFinite(Number(n)));
+}
+
 export const generatePathWaypoints = (startLat, startLng, endLat, endLng, numPoints = 12) => {
-  if (!startLat || !startLng || !endLat || !endLng) {
+  if (!coordsValid(startLat, startLng, endLat, endLng)) {
     console.error('[DemoMode] Invalid coordinates provided');
     return [];
   }
+
+  startLat = Number(startLat);
+  startLng = Number(startLng);
+  endLat = Number(endLat);
+  endLng = Number(endLng);
 
   const points = [];
   
@@ -56,9 +65,9 @@ export const generatePathWaypoints = (startLat, startLng, endLat, endLng, numPoi
  * @returns {Promise<Array<{ latitude: number, longitude: number }>>}
  */
 export const generateRouteWaypoints = async (startLat, startLng, endLat, endLng) => {
-  if (!startLat || !startLng || !endLat || !endLng) {
+  if (!coordsValid(startLat, startLng, endLat, endLng)) {
     console.error('[DemoMode] Invalid coordinates for route');
-    return generatePathWaypoints(startLat, startLng, endLat, endLng, 12);
+    return [];
   }
   try {
     const waypoints = await getRouteWaypoints(startLat, startLng, endLat, endLng);

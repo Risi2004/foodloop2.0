@@ -2,6 +2,27 @@ const mongoose = require('mongoose');
 const Donation = require('../models/Donation');
 const { analyzeFoodImage, FoodVisionError } = require('../services/geminiFoodVision');
 const { uploadDonationImage } = require('../utils/r2Storage');
+const {
+  sendDonationPostedEmail,
+  sendNewDonationToAllReceivers,
+} = require('../utils/sendNotificationEmail');
+const {
+  MAX_RECEIVER_RADIUS_KM,
+  calculateDistanceKm,
+  isDonationExpired,
+} = require('../utils/distance');
+const {
+  getDonorDisplayName,
+  isReceiverRole,
+  isWithinSriLanka,
+  toAvailableDonationJSON,
+  toClaimJSON,
+} = require('../utils/donationHelpers');
+const { emitToReceivers, emitToDonor, emitToDrivers } = require('../socket');
+const {
+  sendDonationClaimedEmails,
+  sendDonationClaimCancelledEmails,
+} = require('../utils/sendNotificationEmail');
 
 const DONOR_ROLES = [
   'donor',
@@ -193,6 +214,20 @@ exports.createDonation = async (req, res) => {
       status: 'available',
     });
 
+    sendDonationPostedEmail(req.user, donation);
+    sendNewDonationToAllReceivers(donation, req.user);
+
+    const populated = await Donation.findById(donation._id).populate(
+      'donorId',
+      'username businessName role'
+    );
+    if (populated) {
+      emitToReceivers('donation:created', {
+        donation: toAvailableDonationJSON(populated, null),
+        donorName: getDonorDisplayName(populated.donorId),
+      });
+    }
+
     return res.status(201).json({
       success: true,
       donation: donation.toPublicJSON(),
@@ -202,6 +237,272 @@ exports.createDonation = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message || 'Failed to create donation',
+    });
+  }
+};
+
+exports.getAvailableDonations = async (req, res) => {
+  try {
+    if (!isReceiverRole(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only receivers can browse available donations.',
+      });
+    }
+
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Receiver location (lat and lng) is required.',
+      });
+    }
+
+    const donations = await Donation.find({ status: 'available' })
+      .populate('donorId', 'username businessName role')
+      .sort({ createdAt: -1 });
+
+    const results = [];
+    for (const donation of donations) {
+      if (isDonationExpired(donation.userProvidedExpiryDate)) continue;
+      if (
+        donation.donorLatitude == null ||
+        donation.donorLongitude == null ||
+        Number.isNaN(Number(donation.donorLatitude)) ||
+        Number.isNaN(Number(donation.donorLongitude))
+      ) {
+        continue;
+      }
+
+      const distanceKm = calculateDistanceKm(
+        lat,
+        lng,
+        donation.donorLatitude,
+        donation.donorLongitude
+      );
+      if (distanceKm == null || distanceKm > MAX_RECEIVER_RADIUS_KM) continue;
+
+      results.push(toAvailableDonationJSON(donation, distanceKm));
+    }
+
+    results.sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
+
+    return res.json({
+      success: true,
+      donations: results,
+      maxRadiusKm: MAX_RECEIVER_RADIUS_KM,
+    });
+  } catch (err) {
+    console.error('getAvailableDonations error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to load available donations',
+    });
+  }
+};
+
+exports.claimDonation = async (req, res) => {
+  try {
+    if (!isReceiverRole(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only receivers can claim donations.',
+      });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid donation id.' });
+    }
+
+    const body = req.body || {};
+    const { receiverLatitude, receiverLongitude, receiverAddress } = body;
+    const lat = Number(receiverLatitude);
+    const lng = Number(receiverLongitude);
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery location (latitude and longitude) is required.',
+      });
+    }
+    if (!isWithinSriLanka(lat, lng)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery location must be within Sri Lanka.',
+      });
+    }
+    if (!receiverAddress?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery address is required.',
+      });
+    }
+
+    const donation = await Donation.findById(id);
+    if (!donation) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+    if (donation.status !== 'available') {
+      return res.status(400).json({
+        success: false,
+        message: 'This donation is no longer available.',
+      });
+    }
+    if (isDonationExpired(donation.userProvidedExpiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This donation has expired.',
+      });
+    }
+
+    donation.status = 'claimed';
+    donation.receiverId = req.user._id;
+    donation.receiverLatitude = lat;
+    donation.receiverLongitude = lng;
+    donation.receiverAddress = receiverAddress.trim();
+    donation.claimedAt = new Date();
+    await donation.save();
+
+    await donation.populate([
+      { path: 'donorId', select: 'username businessName role email' },
+      { path: 'receiverId', select: 'username receiverName email' },
+    ]);
+
+    const donationId = donation._id.toString();
+    const donorId = donation.donorId._id?.toString?.() || donation.donorId.toString();
+    const claimPayload = toClaimJSON(donation);
+
+    emitToReceivers('donation:claimed', { donationId });
+    emitToDonor(donorId, 'donation:claimedForDonor', {
+      donationId,
+      donorId,
+      donation: claimPayload,
+    });
+    emitToDrivers('donation:newPickup', { donationId, donation: claimPayload });
+
+    sendDonationClaimedEmails(donation, donation.donorId, donation.receiverId);
+
+    return res.json({
+      success: true,
+      donation: claimPayload,
+    });
+  } catch (err) {
+    console.error('claimDonation error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to claim donation',
+    });
+  }
+};
+
+exports.cancelClaim = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid donation id.' });
+    }
+
+    const donation = await Donation.findById(id).populate([
+      { path: 'donorId', select: 'username businessName role email' },
+      { path: 'receiverId', select: 'username receiverName email' },
+    ]);
+
+    if (!donation) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+
+    if (donation.status !== 'claimed') {
+      return res.status(400).json({
+        success: false,
+        message:
+          'This claim can only be cancelled before a driver is assigned. It may already be in transit or delivered.',
+      });
+    }
+
+    const userId = req.user._id.toString();
+    const isReceiver =
+      isReceiverRole(req.user.role) &&
+      donation.receiverId &&
+      donation.receiverId._id?.toString?.() === userId;
+    const isDonor = isDonorOwner(donation, req.user._id);
+
+    if (!isReceiver && !isDonor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not allowed to cancel this claim.',
+      });
+    }
+
+    const receiverUser = donation.receiverId;
+    const donorUser = donation.donorId;
+
+    donation.status = 'available';
+    donation.receiverId = null;
+    donation.receiverLatitude = null;
+    donation.receiverLongitude = null;
+    donation.receiverAddress = null;
+    donation.claimedAt = null;
+    await donation.save();
+
+    const donationId = donation._id.toString();
+    const donorId = donorUser._id?.toString?.() || donorUser.toString();
+    const availablePayload = donation.toPublicJSON();
+
+    emitToReceivers('donation:claimCancelled', {
+      donationId,
+      donation: availablePayload,
+    });
+    emitToDonor(donorId, 'donation:claimCancelledForDonor', {
+      donationId,
+      donorId,
+      donation: availablePayload,
+    });
+    emitToDrivers('donation:claimCancelled', { donationId });
+
+    sendDonationClaimCancelledEmails(donation, donorUser, receiverUser);
+
+    return res.json({
+      success: true,
+      message: 'Claim cancelled. The listing is available for receivers again.',
+      donation: availablePayload,
+    });
+  } catch (err) {
+    console.error('cancelClaim error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to cancel claim',
+    });
+  }
+};
+
+exports.getMyClaims = async (req, res) => {
+  try {
+    if (!isReceiverRole(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only receivers can view claims.',
+      });
+    }
+
+    const donations = await Donation.find({
+      receiverId: req.user._id,
+      status: { $nin: ['cancelled', 'draft'] },
+    })
+      .populate('donorId', 'username businessName role')
+      .populate('receiverId', 'username receiverName')
+      .sort({ claimedAt: -1, createdAt: -1 });
+
+    return res.json({
+      success: true,
+      donations: donations.map((d) => toClaimJSON(d)),
+    });
+  } catch (err) {
+    console.error('getMyClaims error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to load claims',
     });
   }
 };
@@ -412,6 +713,10 @@ exports.deleteDonation = async (req, res) => {
 
     donation.status = 'cancelled';
     await donation.save();
+
+    const donationId = donation._id.toString();
+    emitToReceivers('donation:cancelled', { donationId });
+    emitToDrivers('donation:cancelled', { donationId });
 
     return res.json({
       success: true,

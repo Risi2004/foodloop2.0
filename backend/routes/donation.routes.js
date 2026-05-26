@@ -24,6 +24,10 @@ router.post(
 
 router.post('/', verifyJwt, donationController.createDonation);
 router.get('/mine', verifyJwt, donationController.getMyDonations);
+router.get('/available', verifyJwt, donationController.getAvailableDonations);
+router.get('/my-claims', verifyJwt, donationController.getMyClaims);
+router.post('/:id/claim', verifyJwt, donationController.claimDonation);
+router.post('/:id/cancel-claim', verifyJwt, donationController.cancelClaim);
 router.get('/:id', verifyJwt, donationController.getDonationById);
 router.patch('/:id', verifyJwt, donationController.updateDonation);
 router.delete('/:id', verifyJwt, donationController.deleteDonation);

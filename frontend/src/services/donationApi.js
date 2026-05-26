@@ -42,15 +42,38 @@ export const uploadAndAnalyzeImage = async (file) => {
   return parseResponse(response);
 };
 
-export const getAvailableDonations = async () => ({
-  success: true,
-  donations: [],
-});
+export const getAvailableDonations = async (lat, lng) => {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+    throw new Error('Receiver location is required to load donations.');
+  }
+  const params = new URLSearchParams({
+    lat: String(latitude),
+    lng: String(longitude),
+  });
+  const response = await fetch(buildUrl(`/api/donations/available?${params}`), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const claimDonation = async () => ({
-  success: true,
-  donation: demoDonation(),
-});
+export const claimDonation = async (donationId, payload = {}) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/claim`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(response);
+};
+
+export const cancelClaim = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/cancel-claim`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
 export const getMyDonations = async () => {
   const response = await fetch(buildUrl('/api/donations/mine'), {
@@ -83,51 +106,56 @@ export const deleteDonation = async (donationId) => {
   return parseResponse(response);
 };
 
-export const getMyClaims = async () => ({
-  success: true,
-  donations: [],
-});
+export const getMyClaims = async () => {
+  const response = await fetch(buildUrl('/api/donations/my-claims'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const getAvailablePickups = async () => ({
-  success: true,
-  pickups: [
-    {
-      id: 'p1',
-      donorName: 'Harvest Bakery',
-      itemName: 'Leftover Bread Loaves',
-      quantity: 12,
-      expiryText: 'Expires in 4 hours',
-      earnings: 350, // LKR
-      donorLatitude: 6.9271,
-      donorLongitude: 79.8612,
-    },
-    {
-      id: 'p2',
-      donorName: 'Fresh Fruits Co',
-      itemName: 'Organic Strawberries',
-      quantity: 5,
-      expiryText: 'Expires in 1 day',
-      earnings: 350, // LKR
-      donorLatitude: 6.9371,
-      donorLongitude: 79.8812,
-    }
-  ],
-  driverLocation: null,
-});
+export const getAvailablePickups = async (lat, lng) => {
+  const params = new URLSearchParams();
+  if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+    params.set('lat', String(lat));
+    params.set('lng', String(lng));
+  }
+  const qs = params.toString();
+  const response = await fetch(
+    buildUrl(`/api/driver/pickups/available${qs ? `?${qs}` : ''}`),
+    { headers: getAuthHeaders() }
+  );
+  return parseResponse(response);
+};
 
-export const acceptOrder = async () => ({
-  success: true,
-});
+export const acceptOrder = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/driver/pickups/${donationId}/accept`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const confirmPickup = async () => ({
-  success: true,
-});
+export const confirmPickup = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/driver/donations/${donationId}/confirm-pickup`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const getActiveDeliveries = async () => ({
-  success: true,
-  deliveries: [],
-  driverLocation: null,
-});
+export const getActiveDeliveries = async (lat, lng) => {
+  const params = new URLSearchParams();
+  if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+    params.set('lat', String(lat));
+    params.set('lng', String(lng));
+  }
+  const qs = params.toString();
+  const response = await fetch(
+    buildUrl(`/api/driver/deliveries/active${qs ? `?${qs}` : ''}`),
+    { headers: getAuthHeaders() }
+  );
+  return parseResponse(response);
+};
 
 export const getDonorStatistics = async () => ({
   success: true,
@@ -181,14 +209,20 @@ export const getDriverCompletedDeliveries = async () => ({
   ],
 });
 
-export const getDonationTracking = async () => ({
-  success: false,
-  message: 'Offline mode',
-});
+export const getDonationTracking = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/driver/donations/${donationId}/tracking`), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const confirmDelivery = async () => ({
-  success: true,
-});
+export const confirmDelivery = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/driver/donations/${donationId}/confirm-delivery`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
 export const submitDonation = async (donationData) => {
   const response = await fetch(buildUrl('/api/donations'), {

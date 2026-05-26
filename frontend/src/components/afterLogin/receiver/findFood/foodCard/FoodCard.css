@@ -8,6 +8,36 @@
     display: flex;
     flex-direction: column;
     border: 1px solid #f0f0f0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.food-card--selected {
+    border: 2px solid #1b4332;
+    box-shadow: 0 4px 16px rgba(27, 67, 50, 0.2);
+}
+
+.card-badge.distance-badge {
+    position: absolute;
+    top: 40px;
+    left: 12px;
+    background: #e8f5e9;
+    color: #1b4332;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    z-index: 11;
+    border: 1px solid #c8e6c9;
+}
+
+.food-card .card-badge.verified + .card-badge.distance-badge {
+    top: 40px;
+}
+
+.food-card .card-badge.distance-badge:only-of-type {
+    top: 12px;
+    left: auto;
+    right: 88px;
 }
 
 .card-badge.verified {
@@ -43,6 +73,25 @@
     font-weight: 700;
     z-index: 10;
     border: 1px solid #ffedd5;
+}
+
+.card-badge.card-badge--price {
+    position: absolute;
+    top: 40px;
+    left: 12px;
+    background: #ecfdf5;
+    color: #047857;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    z-index: 10;
+    border: 1px solid #a7f3d0;
+}
+
+.card-meta.card-meta--price {
+    color: #047857;
+    font-weight: 600;
 }
 
 .claim-btn {
@@ -104,6 +153,11 @@
     /* Using the dark green theme color */
     margin: 0;
     opacity: 0.8;
+}
+
+.card-meta--distance {
+    color: #1b4332;
+    font-weight: 700;
 }
 
 .card-meta.highlight {

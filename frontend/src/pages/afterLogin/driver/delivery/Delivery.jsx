@@ -1,12 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DriverNavbar from "../../../../components/afterLogin/dashboard/driverSection/navbar/DriverNavbar";
 import DriverFooter from "../../../../components/afterLogin/dashboard/driverSection/footer/DriverFooter";
 import DeliverCard from "../../../../components/afterLogin/driver/delivery/DeliveryCard";
 import DeliveryMap from "../../../../components/afterLogin/driver/delivery/DeliveryMap";
+import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
+import { reverseGeocode } from '../../../../services/geocodingService';
 import { getAvailablePickups, getActiveDeliveries, acceptOrder } from '../../../../services/donationApi';
 import { updateDriverLocation } from '../../../../services/api';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
-import { onDonationClaimed } from '../../../../services/socket';
+import {
+    getSocket,
+    onDonationNewPickup,
+    onDonationPickupTaken,
+    onDonationClaimCancelled,
+    onDonationCancelled,
+} from '../../../../services/socket';
+import {
+    computeRouteDistances,
+    isPickupWithinDriverRadius,
+} from '../../../../utils/driverRoute';
 import { useNavigate } from 'react-router-dom';
 import './Delivery.css';
 
@@ -19,60 +31,149 @@ function Delivery() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [acceptingOrderId, setAcceptingOrderId] = useState(null);
+    const [driverAddress, setDriverAddress] = useState('');
+    const [showLocationModal, setShowLocationModal] = useState(false);
+    const [locationSaving, setLocationSaving] = useState(false);
+    const [locationSaveError, setLocationSaveError] = useState(null);
+    const driverLocationRef = useRef(driverLocation);
 
-    // Fetch available pickups, active deliveries, and driver location
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                console.log('[Delivery] Fetching available pickups and active deliveries...');
-                
-                // Fetch pickups and active deliveries in parallel
-                const [pickupsResponse, deliveriesResponse] = await Promise.all([
-                    getAvailablePickups(),
-                    getActiveDeliveries()
-                ]);
-                
-                if (pickupsResponse && pickupsResponse.success && pickupsResponse.pickups) {
-                    console.log(`[Delivery] Loaded ${pickupsResponse.pickups.length} pickups`);
-                    setPickups(pickupsResponse.pickups);
-                    
-                    // Set driver location from response
-                    if (pickupsResponse.driverLocation) {
-                        setDriverLocation(pickupsResponse.driverLocation);
-                    }
-                } else {
-                    setPickups([]);
-                }
+        driverLocationRef.current = driverLocation;
+    }, [driverLocation]);
 
-                if (deliveriesResponse && deliveriesResponse.success && deliveriesResponse.deliveries) {
-                    console.log(`[Delivery] Loaded ${deliveriesResponse.deliveries.length} active deliveries`);
-                    setActiveDeliveries(deliveriesResponse.deliveries);
-                    
-                    // Set driver location from deliveries response if not already set
-                    if (!driverLocation && deliveriesResponse.driverLocation) {
-                        setDriverLocation(deliveriesResponse.driverLocation);
-                    }
-                } else {
-                    setActiveDeliveries([]);
+    useEffect(() => {
+        let cancelled = false;
+        const loadAddress = async () => {
+            if (!driverLocation?.latitude || !driverLocation?.longitude) {
+                setDriverAddress('');
+                return;
+            }
+            try {
+                const addr = await reverseGeocode(
+                    driverLocation.latitude,
+                    driverLocation.longitude
+                );
+                if (!cancelled) {
+                    setDriverAddress(addr || 'Location set');
                 }
-            } catch (err) {
-                console.error('[Delivery] Error fetching data:', err);
-                setError(err.message || 'Failed to load pickups');
-                setPickups([]);
-            } finally {
-                setLoading(false);
+            } catch {
+                if (!cancelled) setDriverAddress('Location set');
             }
         };
+        loadAddress();
+        return () => {
+            cancelled = true;
+        };
+    }, [driverLocation?.latitude, driverLocation?.longitude]);
 
-        fetchData();
-        const unsubscribe = onDonationClaimed(() => fetchData());
-        return () => unsubscribe();
+    const enrichPickup = useCallback((pickup, location) => {
+        if (!pickup) return null;
+        const loc = location || driverLocationRef.current;
+        if (!loc?.latitude || !loc?.longitude) return pickup;
+        return computeRouteDistances(pickup, loc.latitude, loc.longitude);
     }, []);
 
+    const fetchData = useCallback(async (locationOverride) => {
+        const loc = locationOverride || driverLocationRef.current;
+        const lat = loc?.latitude;
+        const lng = loc?.longitude;
+
+        try {
+            setError(null);
+
+            const [pickupsResponse, deliveriesResponse] = await Promise.all([
+                getAvailablePickups(lat, lng),
+                getActiveDeliveries(lat, lng),
+            ]);
+
+            if (pickupsResponse?.driverLocation && !loc) {
+                setDriverLocation(pickupsResponse.driverLocation);
+            }
+            if (deliveriesResponse?.driverLocation && !loc && !pickupsResponse?.driverLocation) {
+                setDriverLocation(deliveriesResponse.driverLocation);
+            }
+
+            const rawPickups = pickupsResponse?.success ? pickupsResponse.pickups || [] : [];
+            const enriched = lat != null && lng != null
+                ? rawPickups.map((p) => computeRouteDistances(p, lat, lng))
+                : rawPickups;
+            setPickups(enriched);
+
+            if (deliveriesResponse?.success) {
+                const deliveries = deliveriesResponse.deliveries || [];
+                setActiveDeliveries(
+                    lat != null && lng != null
+                        ? deliveries.map((d) => computeRouteDistances(d, lat, lng))
+                        : deliveries
+                );
+            } else {
+                setActiveDeliveries([]);
+            }
+
+            setSelectedPickup((current) => {
+                if (!current) return null;
+                const updated = enriched.find((p) => p.id === current.id);
+                return updated ? updated : current;
+            });
+        } catch (err) {
+            console.error('[Delivery] Error fetching data:', err);
+            setError(err.message || 'Failed to load pickups');
+            setPickups([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        let mounted = true;
+
+        const init = async () => {
+            setLoading(true);
+            await fetchData();
+            if (mounted) setLoading(false);
+        };
+
+        init();
+        getSocket();
+
+        const removePickupById = (payload) => {
+            const id = payload?.donationId;
+            if (!id) return;
+            setPickups((prev) => prev.filter((p) => p.id !== id));
+            setSelectedPickup((current) => (current?.id === id ? null : current));
+        };
+
+        const mergeNewPickup = (payload) => {
+            const donation = payload?.donation;
+            if (!donation) return;
+
+            const loc = driverLocationRef.current;
+            if (loc?.latitude == null || loc?.longitude == null) return;
+            if (!isPickupWithinDriverRadius(donation, loc.latitude, loc.longitude)) return;
+
+            const item = computeRouteDistances(donation, loc.latitude, loc.longitude);
+            const id = item.id || item._id;
+
+            setPickups((prev) => {
+                if (prev.some((p) => p.id === id)) return prev;
+                return [item, ...prev];
+            });
+        };
+
+        const unsubNew = onDonationNewPickup(mergeNewPickup);
+        const unsubTaken = onDonationPickupTaken(removePickupById);
+        const unsubClaimCancelled = onDonationClaimCancelled(removePickupById);
+        const unsubCancelled = onDonationCancelled(removePickupById);
+
+        return () => {
+            mounted = false;
+            unsubNew();
+            unsubTaken();
+            unsubClaimCancelled();
+            unsubCancelled();
+        };
+    }, [fetchData]);
+
     const handlePickupSelect = (pickup) => {
-        setSelectedPickup(pickup);
+        setSelectedPickup(enrichPickup(pickup));
     };
 
     const handleAcceptOrder = async (pickup) => {
@@ -81,9 +182,17 @@ function Delivery() {
             alert('You can only have 1 order at a time. Complete your current delivery first.');
             return;
         }
+        if (!driverLocation || !pickup.totalRouteDistanceFormatted) {
+            alert('Set your location and select this order to view route distance before accepting.');
+            return;
+        }
+
         setAcceptingOrderId(pickup.id);
         try {
             await acceptOrder(pickup.id);
+            setPickups((prev) => prev.filter((p) => p.id !== pickup.id));
+            setSelectedPickup(null);
+            await fetchData();
             navigate(`/driver/pickup?donationId=${pickup.id}`);
         } catch (err) {
             const msg = err.response?.data?.message || err.message || 'Failed to accept order. Please try again.';
@@ -95,43 +204,56 @@ function Delivery() {
 
     const handleInTransitSelect = (delivery) => {
         if (delivery.status === 'assigned') {
-            // Pickup not confirmed yet – go to pickup page to confirm pickup
             navigate(`/driver/pickup?donationId=${delivery.id}`);
         } else {
-            // Pickup confirmed (picked_up) – go to delivery confirmation page
             navigate(`/driver/delivery-confirmation?donationId=${delivery.id}`);
         }
     };
 
     const handleLocationUpdate = async (latitude, longitude) => {
-        try {
-            console.log('[Delivery] Updating driver location:', { latitude, longitude });
-            
-            const response = await updateDriverLocation(latitude, longitude);
-            
-            if (response.success && response.location) {
-                setDriverLocation(response.location);
-                console.log('[Delivery] Driver location updated successfully');
-                
-                // Refresh pickups to recalculate distances
-                const pickupsResponse = await getAvailablePickups();
-                if (pickupsResponse.success && pickupsResponse.pickups) {
-                    setPickups(pickupsResponse.pickups);
-                    
-                    // Update selected pickup if one is selected
-                    if (selectedPickup) {
-                        const updatedPickup = pickupsResponse.pickups.find(p => p.id === selectedPickup.id);
-                        if (updatedPickup) {
-                            setSelectedPickup(updatedPickup);
-                        }
-                    }
-                }
+        const response = await updateDriverLocation(latitude, longitude);
+
+        if (response.success && response.location) {
+            const location = response.location;
+            setDriverLocation(location);
+            driverLocationRef.current = location;
+            await fetchData(location);
+
+            if (selectedPickup) {
+                setSelectedPickup(
+                    computeRouteDistances(selectedPickup, location.latitude, location.longitude)
+                );
             }
+        }
+
+        return response;
+    };
+
+    const handleLocationModalConfirm = async (lat, lng, address) => {
+        setLocationSaving(true);
+        setLocationSaveError(null);
+        try {
+            await handleLocationUpdate(lat, lng);
+            setDriverAddress(address?.trim() || 'Location set');
+            setShowLocationModal(false);
         } catch (err) {
-            console.error('[Delivery] Error updating location:', err);
-            throw err; // Re-throw to let LocationBox handle the error
+            const msg =
+                err.response?.data?.message || err.message || 'Failed to save location.';
+            setLocationSaveError(msg);
+            throw new Error(msg);
+        } finally {
+            setLocationSaving(false);
         }
     };
+
+    const selectedWithDistances = selectedPickup
+        ? enrichPickup(selectedPickup)
+        : null;
+
+    const canAcceptSelected =
+        !!driverLocation &&
+        !!selectedWithDistances?.totalRouteDistanceFormatted &&
+        activeDeliveries.length === 0;
 
     if (loading) {
         return <PageLoader message="Loading available pickups..." />;
@@ -142,21 +264,21 @@ function Delivery() {
             <>
                 <DriverNavbar />
                 <div className='delivery'>
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                         height: '600px',
                         flexDirection: 'column',
                         gap: '16px',
                         padding: '20px',
-                        width: '100%'
+                        width: '100%',
                     }}>
                         <p style={{ color: '#d32f2f', fontSize: '16px', textAlign: 'center' }}>
                             ⚠️ {error}
                         </p>
-                        <button 
-                            onClick={() => window.location.reload()} 
+                        <button
+                            onClick={() => window.location.reload()}
                             style={{
                                 padding: '10px 20px',
                                 backgroundColor: '#1F4E36',
@@ -164,7 +286,7 @@ function Delivery() {
                                 border: 'none',
                                 borderRadius: '6px',
                                 cursor: 'pointer',
-                                fontSize: '14px'
+                                fontSize: '14px',
                             }}
                         >
                             Retry
@@ -180,9 +302,7 @@ function Delivery() {
         <>
             <DriverNavbar />
             <div className='delivery'>
-                {/* Left: Content (In Transit + Available Pickups) */}
                 <div className='delivery__s2'>
-                    {/* In Transit Pickups - card panel like DriverDetails/Food on pickup */}
                     {activeDeliveries.length > 0 && (
                         <div className='delivery__panel'>
                             <div className='delivery__s2__info'>
@@ -192,32 +312,34 @@ function Delivery() {
                             {activeDeliveries.map((delivery) => {
                                 const pickupConfirmed = delivery.status === 'picked_up';
                                 return (
-                                <div
-                                    key={delivery.id}
-                                    onClick={() => handleInTransitSelect(delivery)}
-                                    className='delivery__in-transit-card'
-                                >
-                                    <div className='delivery__in-transit-card__inner'>
-                                        <div>
-                                            <h3>{delivery.itemName}</h3>
-                                            <p>To: {delivery.receiverName}</p>
-                                            <p className='delivery__in-transit-card__distance'>
-                                                {pickupConfirmed
-                                                    ? (delivery.driverToReceiverDistanceFormatted || 'Calculating distance...')
-                                                    : (delivery.driverToDonorDistanceFormatted || 'Calculating distance...')}
-                                            </p>
+                                    <div
+                                        key={delivery.id}
+                                        onClick={() => handleInTransitSelect(delivery)}
+                                        className='delivery__in-transit-card'
+                                    >
+                                        <div className='delivery__in-transit-card__inner'>
+                                            <div>
+                                                <h3>{delivery.itemName}</h3>
+                                                <p>To: {delivery.receiverName}</p>
+                                                <p className='delivery__in-transit-card__distance'>
+                                                    {pickupConfirmed
+                                                        ? (delivery.driverToReceiverDistanceFormatted ||
+                                                          delivery.donorToReceiverDistanceFormatted ||
+                                                          'Calculating distance...')
+                                                        : (delivery.driverToDonorDistanceFormatted ||
+                                                          'Calculating distance...')}
+                                                </p>
+                                            </div>
+                                            <button className='delivery__in-transit-card__btn' type="button">
+                                                {pickupConfirmed ? 'Confirm Delivery' : 'Confirm Pickup Here'}
+                                            </button>
                                         </div>
-                                        <button className='delivery__in-transit-card__btn' type="button">
-                                            {pickupConfirmed ? 'Confirm Delivery' : 'Confirm Pickup Here'}
-                                        </button>
                                     </div>
-                                </div>
                                 );
                             })}
                         </div>
                     )}
 
-                    {/* Available Pickups Section - card panel like pickup page */}
                     <div className='delivery__panel'>
                         <div className='delivery__s2__info'>
                             <h1>Available Pickups</h1>
@@ -239,33 +361,68 @@ function Delivery() {
                             </div>
                         ) : (
                             <div className="delivery__pickups-list">
-                                {pickups.map((pickup) => (
-                                    <DeliverCard
-                                        key={pickup.id}
-                                        donation={pickup}
-                                        isSelected={selectedPickup?.id === pickup.id}
-                                        onClick={() => handlePickupSelect(pickup)}
-                                        onAcceptOrder={handleAcceptOrder}
-                                        isAccepting={acceptingOrderId === pickup.id}
-                                        hasActiveDelivery={activeDeliveries.length > 0}
-                                    />
-                                ))}
+                                {pickups.map((pickup) => {
+                                    const isSelected = selectedPickup?.id === pickup.id;
+                                    const enriched = isSelected ? selectedWithDistances : pickup;
+                                    return (
+                                        <DeliverCard
+                                            key={pickup.id}
+                                            donation={enriched}
+                                            isSelected={isSelected}
+                                            onClick={() => handlePickupSelect(pickup)}
+                                            onAcceptOrder={handleAcceptOrder}
+                                            isAccepting={acceptingOrderId === pickup.id}
+                                            hasActiveDelivery={activeDeliveries.length > 0}
+                                            canAcceptOrder={
+                                                isSelected &&
+                                                canAcceptSelected &&
+                                                acceptingOrderId !== pickup.id
+                                            }
+                                        />
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
                 </div>
-                {/* Right: Map */}
                 <div className='delivery__s1'>
-                    <DeliveryMap 
-                        selectedPickup={selectedPickup}
+                    <DeliveryMap
+                        selectedPickup={selectedWithDistances}
                         driverLocation={driverLocation}
-                        onLocationUpdate={handleLocationUpdate}
+                        driverAddress={driverAddress}
+                        onOpenLocationModal={() => {
+                            setLocationSaveError(null);
+                            setShowLocationModal(true);
+                        }}
                     />
                 </div>
             </div>
+
+            <LocationMapModal
+                isOpen={showLocationModal}
+                onClose={() => {
+                    if (locationSaving) return;
+                    setShowLocationModal(false);
+                    setLocationSaveError(null);
+                }}
+                onConfirm={handleLocationModalConfirm}
+                defaultAddress={driverAddress}
+                defaultLat={driverLocation?.latitude}
+                defaultLng={driverLocation?.longitude}
+                autoFetchOnOpen={!driverLocation}
+                saving={locationSaving}
+                saveError={locationSaveError}
+                title="Set your location"
+                confirmLabel="Confirm location"
+                addressLabel="Your location"
+                addressPlaceholder="Enter your current area or address in Sri Lanka"
+                savingMessage="Saving your location…"
+                instructions="Drag the marker or tap the map to adjust your position. Live GPS loads when you open this screen."
+            />
+
             <DriverFooter />
         </>
-    )
+    );
 }
 
-export default Delivery; 
+export default Delivery;

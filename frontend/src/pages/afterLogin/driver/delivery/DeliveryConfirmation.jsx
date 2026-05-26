@@ -17,6 +17,7 @@ import MapTileLayer from '../../../../components/shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../components/shared/map/MapInvalidateSize';
 import { updateDriverLocation, startDemo, stopDemo } from '../../../../services/api';
 import { generateRouteWaypoints, simulateMovement, stopSimulation } from '../../../../services/demoModeService';
+import { resolveDemoEndpoints } from '../../../../utils/driverDemoMode';
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -77,6 +78,19 @@ function DeliveryConfirmation() {
             const response = await getDonationTracking(donationId);
 
             if (response.success && response.tracking) {
+                const status = response.tracking?.donation?.status;
+                if (status === 'delivered') {
+                    navigate('/driver/delivery', { replace: true });
+                    return;
+                }
+                if (status === 'assigned') {
+                    navigate(`/driver/pickup?donationId=${donationId}`, { replace: true });
+                    return;
+                }
+                if (status !== 'picked_up') {
+                    navigate('/driver/delivery', { replace: true });
+                    return;
+                }
                 setDonationData(response.tracking);
             } else {
                 setError('Failed to load donation data');
@@ -92,7 +106,7 @@ function DeliveryConfirmation() {
     // Fetch donation data on mount and when donationId changes
     useEffect(() => {
         fetchDonationData();
-    }, [donationId]);
+    }, [donationId, navigate]);
 
     // Refetch when page gains focus (e.g. after driver confirms pickup on Pickup page and returns)
     useEffect(() => {
@@ -165,107 +179,49 @@ function DeliveryConfirmation() {
                 });
             }
         } else {
-            // Enable demo mode
             if (!donationData) {
                 alert('Please wait for donation data to load');
                 return;
             }
 
-            // Stop real GPS tracking
             stopLocationTracking();
+            setRouteLoading(true);
 
-            // First, get driver's current location from server
-            // Since pickup is confirmed, driver should be at donor location
-            let startLocation = null;
-            
-            // Priority 1: Use donor location as starting point (since pickup is confirmed, driver is at donor location)
-            if (donationData?.donor?.location) {
-                startLocation = {
-                    lat: donationData.donor.location.latitude,
-                    lng: donationData.donor.location.longitude
-                };
-                console.log('[DeliveryConfirmation] Using donor location as starting point (pickup confirmed):', startLocation);
-            }
-            // Priority 2: Use driver location from tracking data
-            else if (donationData?.driver?.location) {
-                startLocation = {
-                    lat: donationData.driver.location.latitude,
-                    lng: donationData.driver.location.longitude
-                };
-                console.log('[DeliveryConfirmation] Using driver location from tracking data:', startLocation);
-            }
-            // Priority 3: Use current driverLocation state if available
-            else if (driverLocation && driverLocation.length === 2) {
-                startLocation = {
-                    lat: driverLocation[0],
-                    lng: driverLocation[1]
-                };
-                console.log('[DeliveryConfirmation] Using driver location from state:', startLocation);
-            }
-            // Priority 4: Try to get from browser geolocation as fallback
-            else {
-                try {
-                    const location = await new Promise((resolve, reject) => {
-                        if (!navigator.geolocation) {
-                            reject(new Error('Geolocation not supported'));
-                            return;
-                        }
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => resolve({
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                            }),
-                            reject,
-                            { timeout: 5000 }
-                        );
-                    });
-                    startLocation = location;
-                    console.log('[DeliveryConfirmation] Using driver location from browser geolocation:', startLocation);
-                } catch (err) {
-                    console.warn('[DeliveryConfirmation] Could not get driver location from geolocation:', err);
-                }
-            }
-            
-            const endLocation = donationData?.receiver?.location
-                ? { lat: donationData.receiver.location.latitude, lng: donationData.receiver.location.longitude }
-                : null;
+            const { start, end, error: endpointError } = await resolveDemoEndpoints(
+                'delivery',
+                donationData,
+                driverLocation
+            );
 
-            if (!startLocation || !endLocation) {
-                alert(`Cannot start demo mode: Missing location data.\nStart: ${startLocation ? 'OK' : 'Missing'}\nEnd (Receiver): ${endLocation ? 'OK' : 'Missing'}`);
+            if (endpointError || !start || !end) {
+                setRouteLoading(false);
+                alert(endpointError || 'Cannot start demo: missing location data.');
                 return;
             }
 
-            // Update driver location state with starting location
-            setDriverLocation([startLocation.lat, startLocation.lng]);
+            setIsDemoMode(true);
+            setDriverLocation([start.lat, start.lng]);
 
-            try {
-                await updateDriverLocation(startLocation.lat, startLocation.lng);
-            } catch (err) {
-                console.error('[DeliveryConfirmation] Error updating starting location:', err);
-            }
-
-            setRouteLoading(true);
             try {
                 const waypoints = await generateRouteWaypoints(
-                    startLocation.lat,
-                    startLocation.lng,
-                    endLocation.lat,
-                    endLocation.lng
+                    start.lat,
+                    start.lng,
+                    end.lat,
+                    end.lng
                 );
 
                 if (waypoints.length === 0) {
-                    alert('Failed to generate path waypoints');
+                    setIsDemoMode(false);
+                    alert('Failed to generate path waypoints. Check receiver and driver coordinates.');
                     return;
                 }
 
                 setDemoRouteWaypoints(waypoints.map((w) => [w.latitude, w.longitude]));
 
-                console.log(`[DeliveryConfirmation] Starting demo mode: ${waypoints.length} waypoints from driver to receiver`);
-
                 try {
                     await startDemo(waypoints);
                 } catch (err) {
-                    console.error('[DeliveryConfirmation] Error starting server demo (movement will only show while you stay on this page):', err);
+                    console.warn('[DeliveryConfirmation] Server demo unavailable, using client simulation only:', err.message);
                 }
 
                 const success = simulateMovement(
@@ -278,16 +234,14 @@ function DeliveryConfirmation() {
                         } catch (err) {
                             console.error('[DeliveryConfirmation] Error updating driver location in demo mode:', err);
                         }
-                        if (waypoint.index === waypoint.total - 1) {
-                            console.log('[DeliveryConfirmation] Demo mode: Reached receiver location');
-                        }
                     },
                     2500
                 );
 
-                if (success) {
-                    setIsDemoMode(true);
-                } else {
+                if (!success) {
+                    setIsDemoMode(false);
+                    setDemoRouteWaypoints([]);
+                    await stopDemo().catch(() => {});
                     alert('Failed to start demo mode');
                 }
             } finally {
@@ -329,11 +283,7 @@ function DeliveryConfirmation() {
             const response = await confirmDelivery(donationId);
             if (response.success) {
                 setIsConfirmed(true);
-                alert('Delivery confirmed! Emails have been sent to donor and receiver.');
-                // Redirect after a delay
-                setTimeout(() => {
-                    navigate('/driver/delivery');
-                }, 2000);
+                navigate('/driver/delivery', { replace: true });
             } else {
                 alert(response.message || 'Failed to confirm delivery');
             }
@@ -394,10 +344,12 @@ function DeliveryConfirmation() {
         ? [donationData.driver.location.latitude, donationData.driver.location.longitude]
         : [6.860, 79.925]); // Default fallback
 
-    // Build route path: use road route waypoints when in demo, else simple segment
-    const routePath = demoRouteWaypoints.length > 0
-        ? demoRouteWaypoints
-        : [currentLocation, receiverLocation];
+    let routePath = [];
+    if (demoRouteWaypoints.length > 0) {
+        routePath = demoRouteWaypoints;
+    } else if (donationStatus === 'picked_up' || receiverLocation) {
+        routePath = [currentLocation, receiverLocation];
+    }
 
     // Custom icons
     const receiverIcon = new L.DivIcon({
@@ -470,7 +422,7 @@ function DeliveryConfirmation() {
                                 </Popup>
                             </Marker>
                         )}
-                        {driverLocation && (
+                        {(isDemoMode || driverLocation) && (
                             <Marker position={currentLocation} icon={driverIcon}>
                                 <Popup>
                                     <strong>Your Location</strong><br/>

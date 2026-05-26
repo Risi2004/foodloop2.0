@@ -8,8 +8,15 @@ import LookingForReceiverCard from "../../../../components/afterLogin/donor/myDo
 import LookingForDriverCard from "../../../../components/afterLogin/donor/myDonation/LookingForDriverCard";
 import CompletedHistoryCard from "../../../../components/afterLogin/donor/myDonation/CompletedHistoryCard";
 import { useNavigate } from 'react-router-dom';
-import { getMyDonations, deleteDonation } from '../../../../services/donationApi';
-import { getSocket, onDonationInTransit, onDeliveryConfirmed } from '../../../../services/socket';
+import { getMyDonations, deleteDonation, cancelClaim } from '../../../../services/donationApi';
+import { getUser } from '../../../../utils/auth';
+import {
+    getSocket,
+    onDonationInTransit,
+    onDeliveryConfirmed,
+    onDonationClaimedForDonor,
+    onDonationClaimCancelledForDonor,
+} from '../../../../services/socket';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
 
 const DonorMyDonationDashboard = () => {
@@ -69,12 +76,25 @@ const DonorMyDonationDashboard = () => {
             fetchDonations();
         };
 
+        const handleClaimedForDonor = (payload) => {
+            const user = getUser();
+            const myId = user?.id || user?._id;
+            const donorId = payload?.donorId;
+            if (myId && donorId && String(myId) === String(donorId)) {
+                fetchDonations();
+            }
+        };
+
         const unsubInTransit = onDonationInTransit(handleInTransit);
         const unsubDeliveryConfirmed = onDeliveryConfirmed(handleDeliveryConfirmed);
+        const unsubClaimedForDonor = onDonationClaimedForDonor(handleClaimedForDonor);
+        const unsubClaimCancelledForDonor = onDonationClaimCancelledForDonor(handleClaimedForDonor);
 
         return () => {
             unsubInTransit();
             unsubDeliveryConfirmed();
+            unsubClaimedForDonor();
+            unsubClaimCancelledForDonor();
         };
     }, [navigate]);
 
@@ -87,16 +107,33 @@ const DonorMyDonationDashboard = () => {
         !d.assignedReceiverId &&
         d.status !== 'cancelled'
     );
-    const lookingForDriver = donations.filter(d =>
-        d.status === 'assigned' && d.assignedReceiverId && !d.assignedDriverId
+    const lookingForDriver = donations.filter(
+        (d) => d.status === 'claimed' && d.receiverId
     );
-    const inTransit = donations.filter(d =>
-        (d.status === 'assigned' && d.assignedDriverId) || d.status === 'picked_up'
+    const inTransit = donations.filter(
+        (d) => d.status === 'driver_assigned' || d.status === 'in_transit'
     );
     const completed = donations.filter(d => d.status === 'delivered');
 
     const handleEdit = (donation) => {
         navigate(`/donor/edit-donation/${donation.id}`);
+    };
+
+    const handleCancelClaim = async (donation) => {
+        if (
+            !window.confirm(
+                'Cancel this claim? The listing will return to looking for a receiver. This is only allowed before a driver is assigned.'
+            )
+        ) {
+            return;
+        }
+        try {
+            await cancelClaim(donation.id);
+            await fetchDonations();
+        } catch (err) {
+            console.error('[DonorMyDonationDashboard] Error cancelling claim:', err);
+            alert(err.message || 'Failed to cancel claim');
+        }
     };
 
     const handleDelete = async (donation) => {
@@ -184,7 +221,11 @@ const DonorMyDonationDashboard = () => {
                             <div className="donation-cards">
                                 {lookingForDriver.length > 0 ? (
                                     lookingForDriver.map((donation) => (
-                                        <LookingForDriverCard key={donation.id} donation={donation} />
+                                        <LookingForDriverCard
+                                            key={donation.id}
+                                            donation={donation}
+                                            onCancelClaim={handleCancelClaim}
+                                        />
                                     ))
                                 ) : (
                                     <p style={{ color: '#fff', padding: '20px', textAlign: 'center' }}>

@@ -75,6 +75,47 @@
     object-fit: cover;
 }
 
+.marker-pin--selected {
+    background: #2d6a4f;
+    box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.45), 0 4px 12px rgba(0, 0, 0, 0.35);
+    transform: rotate(-45deg) scale(1.08);
+}
+
+.selected-donation-panel {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    max-width: 360px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.selected-donation-panel__title {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: #1b4332;
+    font-weight: 700;
+}
+
+.selected-donation-panel__distance {
+    margin: 0 0 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2d6a4f;
+}
+
+.selected-donation-panel__row {
+    margin: 0 0 4px;
+    font-size: 0.8rem;
+    color: #444;
+    line-height: 1.4;
+}
+
 /* Current Location Overlay */
 .current-location-overlay {
     position: absolute;

@@ -5,7 +5,7 @@ import ReceiverFooter from "../../../../components/afterLogin/dashboard/Receiver
 import InTransitCard from "../../../../components/afterLogin/receiver/myClaims/InTransitCard";
 import LookingForDriverCard from "../../../../components/afterLogin/receiver/myClaims/LookingForDriverCard";
 import CompletedHistoryCard from "../../../../components/afterLogin/receiver/myClaims/CompletedHistoryCard";
-import { getMyClaims } from '../../../../services/donationApi';
+import { getMyClaims, cancelClaim } from '../../../../services/donationApi';
 import { getSocket, onDonationInTransit, onDeliveryConfirmed } from '../../../../services/socket';
 import { useNavigate } from 'react-router-dom';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
@@ -17,6 +17,7 @@ const Myclaims = () => {
     const [donations, setDonations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [cancellingId, setCancellingId] = useState(null);
 
     // Fetch claimed donations - only on initial load
     useEffect(() => {
@@ -92,11 +93,39 @@ const Myclaims = () => {
 
     const allDonations = [...donations, ...transformedVendorClaims];
 
-    const lookingForDriver = allDonations.filter(d => d.status === 'assigned' && !d.assignedDriverId);
-    const inTransit = allDonations.filter(d =>
-        (d.status === 'assigned' && d.assignedDriverId) || d.status === 'picked_up'
+    const lookingForDriver = allDonations.filter(
+        (d) => d.status === 'claimed' && !d.isVendor
+    );
+    const inTransit = allDonations.filter(
+        (d) =>
+            !d.isVendor &&
+            (d.status === 'driver_assigned' || d.status === 'in_transit' || d.status === 'picked_up')
     );
     const completed = allDonations.filter(d => d.status === 'delivered');
+
+    const handleCancelClaim = async (donation) => {
+        const donationId = donation?.id || donation?._id;
+        if (!donationId) return;
+        if (
+            !window.confirm(
+                'Cancel this claim? The listing will be available for other receivers. You can only do this before a driver is assigned.'
+            )
+        ) {
+            return;
+        }
+        try {
+            setCancellingId(donationId);
+            await cancelClaim(donationId);
+            setDonations((prev) =>
+                prev.filter((d) => (d.id || d._id) !== donationId)
+            );
+        } catch (err) {
+            console.error('[MyClaims] Error cancelling claim:', err);
+            alert(err.message || 'Failed to cancel claim');
+        } finally {
+            setCancellingId(null);
+        }
+    };
 
     if (loading) {
         return <PageLoader message="Loading your claims..." />;
@@ -163,7 +192,12 @@ const Myclaims = () => {
                     <div className="donation-cards">
                         {lookingForDriver.length > 0 ? (
                             lookingForDriver.map((donation) => (
-                                <LookingForDriverCard key={donation.id} donation={donation} />
+                                <LookingForDriverCard
+                                    key={donation.id}
+                                    donation={donation}
+                                    onCancelClaim={handleCancelClaim}
+                                    cancelling={cancellingId === donation.id}
+                                />
                             ))
                         ) : (
                             <p style={{ color: '#666', padding: '20px', textAlign: 'center' }}>

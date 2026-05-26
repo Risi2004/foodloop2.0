@@ -5,8 +5,8 @@ import L from 'leaflet';
 import { useEffect, useRef } from 'react';
 import MapTileLayer from '../../../../shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
+import { formatListingPrice, getDonationExpiryDisplay } from '../../../../../utils/donationDisplay';
 
-// Fix for default marker icons in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -19,21 +19,20 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Custom Icon function to match the design (Image inside a pin)
-const createCustomIcon = (imageUrl) => {
+const createCustomIcon = (imageUrl, selected = false) => {
+    const selectedClass = selected ? ' marker-pin--selected' : '';
     return L.divIcon({
         className: 'custom-map-marker',
-        html: `<div class="marker-pin"><img src="${imageUrl}" class="marker-img" /></div>`,
+        html: `<div class="marker-pin${selectedClass}"><img src="${imageUrl}" class="marker-img" alt="" /></div>`,
         iconSize: [50, 60],
         iconAnchor: [25, 60],
         popupAnchor: [0, -60]
     });
 };
 
-// Component to center map on all markers (and receiver if set)
 const MapController = ({ items, receiverPosition }) => {
     const map = useMap();
-    
+
     useEffect(() => {
         const positions = items
             .filter(item => item.position && Array.isArray(item.position) && item.position.length === 2)
@@ -48,11 +47,21 @@ const MapController = ({ items, receiverPosition }) => {
             map.setView([7.0873, 80.0144], 8);
         }
     }, [map, items, receiverPosition]);
-    
+
     return null;
 };
 
-// When map container scrolls into view (e.g. on mobile), tell Leaflet to recalc size so tiles render
+const FlyToSelected = ({ selectedItem }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!selectedItem?.position || selectedItem.position.length !== 2) return;
+        map.flyTo(selectedItem.position, 15, { animate: true, duration: 0.5 });
+    }, [map, selectedItem?.id, selectedItem?.position]);
+
+    return null;
+};
+
 const MapResizeWhenVisible = ({ wrapperRef }) => {
     const map = useMap();
     useEffect(() => {
@@ -76,8 +85,7 @@ const MapResizeWhenVisible = ({ wrapperRef }) => {
     return null;
 };
 
-// Current Location Overlay: dynamic with "Use my location" / "Select location" or address
-const CurrentLocationOverlay = ({ receiverPosition, receiverAddress, onSelectLocation, onUseMyLocation, locationLoading, locationError }) => {
+const CurrentLocationOverlay = ({ receiverPosition, receiverAddress, onSelectLocation }) => {
     return (
         <div className="current-location-overlay">
             <div className="location-icon">📍</div>
@@ -86,24 +94,30 @@ const CurrentLocationOverlay = ({ receiverPosition, receiverAddress, onSelectLoc
                     <>
                         <span className="label">Current Location</span>
                         <span className="value">{receiverAddress}</span>
+                        <div className="location-actions">
+                            <button type="button" className="location-action-btn" onClick={onSelectLocation}>
+                                Change location
+                            </button>
+                        </div>
                     </>
                 ) : receiverPosition ? (
                     <>
                         <span className="label">Current Location</span>
                         <span className="value">Location set</span>
+                        <div className="location-actions">
+                            <button type="button" className="location-action-btn" onClick={onSelectLocation}>
+                                Change location
+                            </button>
+                        </div>
                     </>
                 ) : (
                     <>
                         <span className="label">Set your location</span>
                         <div className="location-actions">
-                            <button type="button" className="location-action-btn" onClick={onUseMyLocation} disabled={locationLoading}>
-                                {locationLoading ? 'Getting...' : 'Use my location'}
-                            </button>
-                            <button type="button" className="location-action-btn" onClick={onSelectLocation} disabled={locationLoading}>
-                                Select location
+                            <button type="button" className="location-action-btn" onClick={onSelectLocation}>
+                                Set location
                             </button>
                         </div>
-                        {locationError && <span className="location-error">{locationError}</span>}
                     </>
                 )}
             </div>
@@ -111,34 +125,71 @@ const CurrentLocationOverlay = ({ receiverPosition, receiverAddress, onSelectLoc
     );
 };
 
-// Format date for display
 const formatDate = (date) => {
     if (!date) return 'N/A';
     const d = new Date(date);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Format expiry date for display
-const formatExpiryDate = (date) => {
-    if (!date) return 'N/A';
-    const expiryDate = new Date(date);
-    const month = (expiryDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = expiryDate.getFullYear();
-    return `${month}/${year}`;
-};
-
-// Format time for display
 const formatTime = (time) => {
     if (!time) return 'N/A';
     return time;
 };
 
-const MapSection = ({ items, receiverPosition, receiverAddress, onSelectLocation, onUseMyLocation, locationLoading, locationError }) => {
+const SelectedDonationPanel = ({ selectedItem }) => {
+    if (!selectedItem) return null;
+    const donation = selectedItem.donation || selectedItem;
+    const priceText = selectedItem.priceLabel || formatListingPrice(donation);
+
+    return (
+        <div className="selected-donation-panel">
+            <h3 className="selected-donation-panel__title">
+                {selectedItem.title || donation.itemName}
+            </h3>
+            {selectedItem.distanceLabel && (
+                <p className="selected-donation-panel__distance">{selectedItem.distanceLabel} away</p>
+            )}
+            {priceText && (
+                <p className="selected-donation-panel__row selected-donation-panel__price">
+                    <strong>Price:</strong> {priceText}
+                </p>
+            )}
+            {donation.donorAddress && (
+                <p className="selected-donation-panel__row">
+                    <strong>Pickup:</strong> {donation.donorAddress}
+                </p>
+            )}
+            {donation.preferredPickupDate && (
+                <p className="selected-donation-panel__row">
+                    <strong>Date:</strong> {formatDate(donation.preferredPickupDate)}
+                    {donation.preferredPickupTimeFrom && donation.preferredPickupTimeTo && (
+                        <> · {formatTime(donation.preferredPickupTimeFrom)} – {formatTime(donation.preferredPickupTimeTo)}</>
+                    )}
+                </p>
+            )}
+            <p className="selected-donation-panel__row">
+                <strong>Expiry:</strong> {selectedItem.expiry || getDonationExpiryDisplay(donation)}
+            </p>
+            {donation.donorName && (
+                <p className="selected-donation-panel__row">
+                    <strong>Donor:</strong> {donation.donorName}
+                </p>
+            )}
+        </div>
+    );
+};
+
+const MapSection = ({
+    items,
+    receiverPosition,
+    receiverAddress,
+    selectedItemId,
+    selectedItem,
+    onSelectLocation,
+}) => {
     const mapWrapperRef = useRef(null);
-    // Default center (Sri Lanka)
     const defaultPosition = [7.0873, 80.0144];
-    
-    // Calculate center based on items (and receiver if set)
+
     const calculateCenter = () => {
         const validPositions = items
             .filter(item => item.position && Array.isArray(item.position) && item.position.length === 2)
@@ -162,22 +213,25 @@ const MapSection = ({ items, receiverPosition, receiverAddress, onSelectLocation
                 <MapInvalidateSize />
                 <MapResizeWhenVisible wrapperRef={mapWrapperRef} />
                 <MapController items={items} receiverPosition={receiverPosition} />
-                <ZoomButtons />
+                <FlyToSelected selectedItem={selectedItem} />
 
                 {items.map((item, index) => {
-                    // Show all items - position should always be set (default if geocoding failed)
                     if (!item.position || !Array.isArray(item.position) || item.position.length !== 2) {
-                        console.warn(`[MapSection] Item ${item.id} has invalid position, skipping marker`);
                         return null;
                     }
-                    
+
                     const donation = item.donation || item;
-                    
+                    const isSelected = item.id === selectedItemId;
+                    const priceText = item.priceLabel || formatListingPrice(donation);
+
                     return (
                         <Marker
                             key={item.id || index}
                             position={item.position}
-                            icon={createCustomIcon(item.image || '/placeholder-food.jpg')}
+                            icon={createCustomIcon(item.image || '/placeholder-food.jpg', isSelected)}
+                            eventHandlers={{
+                                click: () => {},
+                            }}
                         >
                             <Tooltip permanent={false} direction="top" offset={[0, -60]}>
                                 <div className="tooltip-content" style={{
@@ -189,40 +243,25 @@ const MapSection = ({ items, receiverPosition, receiverAddress, onSelectLocation
                                     <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#1b4332', fontSize: '13px' }}>
                                         {item.title || donation.itemName || 'Food Item'}
                                     </div>
+                                    {item.distanceLabel && (
+                                        <div style={{ marginBottom: '2px' }}>
+                                            <strong>Distance:</strong> {item.distanceLabel}
+                                        </div>
+                                    )}
+                                    {priceText && (
+                                        <div style={{ marginBottom: '2px', color: '#047857', fontWeight: 600 }}>
+                                            <strong>Price:</strong> {priceText}
+                                        </div>
+                                    )}
                                     <div style={{ marginBottom: '2px' }}>
                                         <strong>Quantity:</strong> {item.quantity || donation.quantity || 'N/A'}
                                     </div>
                                     <div style={{ marginBottom: '2px' }}>
-                                        <strong>Expiry:</strong> {item.expiry || formatExpiryDate(donation.expiryDate) || 'N/A'}
+                                        <strong>Expiry:</strong> {item.expiry || getDonationExpiryDisplay(donation)}
                                     </div>
-                                    {donation.donorName && (
-                                        <div style={{ marginBottom: '2px' }}>
-                                            <strong>Donor:</strong> {donation.donorName}
-                                        </div>
-                                    )}
                                     {donation.donorAddress && (
                                         <div style={{ marginBottom: '2px', fontSize: '11px', color: '#666' }}>
-                                            📍 {donation.donorAddress}
-                                        </div>
-                                    )}
-                                    {donation.preferredPickupDate && (
-                                        <div style={{ marginBottom: '2px' }}>
-                                            <strong>Pickup:</strong> {formatDate(donation.preferredPickupDate)}
-                                        </div>
-                                    )}
-                                    {donation.preferredPickupTimeFrom && donation.preferredPickupTimeTo && (
-                                        <div style={{ marginBottom: '2px' }}>
-                                            <strong>Time:</strong> {formatTime(donation.preferredPickupTimeFrom)} - {formatTime(donation.preferredPickupTimeTo)}
-                                        </div>
-                                    )}
-                                    {donation.storageRecommendation && (
-                                        <div>
-                                            <strong>Storage:</strong> {donation.storageRecommendation}
-                                        </div>
-                                    )}
-                                    {!item.hasValidCoordinates && (
-                                        <div style={{ marginTop: '4px', fontSize: '10px', color: '#ff9800', fontStyle: 'italic' }}>
-                                            ⚠️ Approximate location
+                                            {donation.donorAddress}
                                         </div>
                                     )}
                                 </div>
@@ -236,22 +275,22 @@ const MapSection = ({ items, receiverPosition, receiverAddress, onSelectLocation
                         <Tooltip permanent={false} direction="top">Your location</Tooltip>
                     </Marker>
                 )}
+
+                <ZoomButtons />
             </MapContainer>
 
             <CurrentLocationOverlay
                 receiverPosition={receiverPosition}
                 receiverAddress={receiverAddress}
                 onSelectLocation={onSelectLocation}
-                onUseMyLocation={onUseMyLocation}
-                locationLoading={locationLoading}
-                locationError={locationError}
             />
+
+            <SelectedDonationPanel selectedItem={selectedItem} />
         </div>
     );
 };
 
-// Zoom buttons component (must be inside MapContainer to use useMap)
-const ZoomButtons = () => {
+function ZoomButtons() {
     const map = useMap();
 
     const handleZoomIn = (e) => {
@@ -281,6 +320,6 @@ const ZoomButtons = () => {
             </button>
         </div>
     );
-};
+}
 
 export default MapSection;

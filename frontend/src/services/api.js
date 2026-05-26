@@ -175,8 +175,28 @@ export const updateDriverProfile = async (profile) => {
   return { success: true, user: { ...me.user, ...profile } };
 };
 
-export const updateDriverLocation = async () => ({ success: true });
+export const updateDriverLocation = async (latitude, longitude) => {
+  const response = await fetch(buildUrl('/api/driver/location'), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ latitude, longitude }),
+  });
+  return parseResponse(response);
+};
 
-export const startDemo = async () => ({ success: true });
+export const startDemo = async (waypoints) => {
+  const response = await fetch(buildUrl('/api/driver/demo/start'), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ waypoints }),
+  });
+  return parseResponse(response);
+};
 
-export const stopDemo = async () => ({ success: true });
+export const stopDemo = async () => {
+  const response = await fetch(buildUrl('/api/driver/demo/stop'), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};

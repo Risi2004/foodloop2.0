@@ -1,6 +1,8 @@
 import foodImage from "../../../../assets/icons/afterLogin/receiver/img.png";
 import organicFoodIcon from "../../../../assets/icons/afterLogin/receiver/Organic Food.svg";
 import './DonationCards.css';
+import ListingPriceLine from '../../../common/ListingPriceLine/ListingPriceLine';
+import { getDonationExpiryDisplay } from '../../../../utils/donationDisplay';
 
 const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
     if (!donation) {
@@ -20,15 +22,6 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
         return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''} ago`;
     };
 
-    // Format expiry date
-    const formatExpiryDate = (date) => {
-        if (!date) return 'N/A';
-        const expiryDate = new Date(date);
-        const month = (expiryDate.getMonth() + 1).toString().padStart(2, '0');
-        const year = expiryDate.getFullYear();
-        return `${month}/${year}`;
-    };
-
     // Format quantity display
     const formatQuantity = (quantity) => {
         if (!quantity) return 'N/A';
@@ -38,7 +31,7 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
     const itemName = donation.itemName || 'Food Item';
     const quantity = donation.quantity || 0;
     const listedTime = getTimeAgo(donation.createdAt);
-    const expiryDate = formatExpiryDate(donation.expiryDate);
+    const expiryDate = getDonationExpiryDisplay(donation);
     const imageUrl = donation.imageUrl || foodImage;
 
     // Show edit/delete when pending or approved (no receiver yet)
@@ -90,6 +83,7 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
                         <div className="bag-of-fuji-apples">{itemName} ({formatQuantity(quantity)})</div>
                         <div className="listed-2-mins-ago">Listed {listedTime}</div>
                         <div className="listed-2-mins-ago">EXP: {expiryDate}</div>
+                        <ListingPriceLine donation={donation} className="listed-2-mins-ago listing-price-line" />
                     </div>
                     <div className="wight">
                         <div className="wight2">

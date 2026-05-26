@@ -3,6 +3,7 @@ import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import LocationBox from './LocationBox';
+import { computeRouteDistances } from '../../../../utils/driverRoute';
 import MapTileLayer from '../../../shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../shared/map/MapInvalidateSize';
 import './DeliveryMap.css';
@@ -90,7 +91,15 @@ const ZoomButtons = () => {
     );
 };
 
-function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
+function DeliveryMap({ selectedPickup, driverLocation, driverAddress, onOpenLocationModal }) {
+    const pickupForDisplay =
+        selectedPickup && driverLocation?.latitude != null && driverLocation?.longitude != null
+            ? computeRouteDistances(
+                  selectedPickup,
+                  driverLocation.latitude,
+                  driverLocation.longitude
+              )
+            : selectedPickup;
     // Default center (Sri Lanka center)
     const defaultCenter = [7.0873, 80.0144];
 
@@ -100,13 +109,13 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
         : null;
 
     // Get donor position
-    const donorPos = selectedPickup?.donorLatitude && selectedPickup?.donorLongitude
-        ? [selectedPickup.donorLatitude, selectedPickup.donorLongitude]
+    const donorPos = pickupForDisplay?.donorLatitude && pickupForDisplay?.donorLongitude
+        ? [pickupForDisplay.donorLatitude, pickupForDisplay.donorLongitude]
         : null;
 
     // Get receiver position
-    const receiverPos = selectedPickup?.receiverLatitude && selectedPickup?.receiverLongitude
-        ? [selectedPickup.receiverLatitude, selectedPickup.receiverLongitude]
+    const receiverPos = pickupForDisplay?.receiverLatitude && pickupForDisplay?.receiverLongitude
+        ? [pickupForDisplay.receiverLatitude, pickupForDisplay.receiverLongitude]
         : null;
 
     // Calculate map center and bounds
@@ -125,18 +134,22 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
     }
 
     // Distance information
-    const driverToDonorDistance = selectedPickup?.driverToDonorDistanceFormatted || null;
-    const donorToReceiverDistance = selectedPickup?.donorToReceiverDistanceFormatted || null;
-    const totalRouteDistance = selectedPickup?.totalRouteDistanceFormatted || null;
+    const driverToDonorDistance = pickupForDisplay?.driverToDonorDistanceFormatted || null;
+    const donorToReceiverDistance = pickupForDisplay?.donorToReceiverDistanceFormatted || null;
+    const totalRouteDistance = pickupForDisplay?.totalRouteDistanceFormatted || null;
 
     return (
         <div className="delivery-map-container">
             {/* Fixed overlay layer – does not move when map is panned */}
             <div className="delivery-map-overlay">
-                <LocationBox driverLocation={driverLocation} onLocationUpdate={onLocationUpdate} />
+                <LocationBox
+                    driverLocation={driverLocation}
+                    driverAddress={driverAddress}
+                    onOpenLocationModal={onOpenLocationModal}
+                />
 
                 {/* Distance Information Box */}
-                {selectedPickup && (donorPos || receiverPos) && (
+                {pickupForDisplay && (donorPos || receiverPos) && (
                 <div className="distance-info-box">
                     <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#1F4E36' }}>Route Information</h3>
                     {driverToDonorDistance && (
@@ -171,7 +184,7 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
                     )}
                 </div>
                 )}
-                {!selectedPickup && (
+                {!pickupForDisplay && (
                     <div className="no-pickup-message" style={{
                         padding: '20px',
                         textAlign: 'center',
@@ -184,7 +197,7 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
                         {driverPos ? (
                             <p>Select a pickup from the list to view route and distances</p>
                         ) : (
-                            <p>Set your location and select a pickup to view route</p>
+                            <p>Tap Set location to open the map and confirm your position</p>
                         )}
                     </div>
                 )}
@@ -223,11 +236,11 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
                     <Marker position={donorPos} icon={donorIcon}>
                         <Popup>
                             <div>
-                                <strong>Donor: {selectedPickup.donorName}</strong>
+                                <strong>Donor: {pickupForDisplay.donorName}</strong>
                                 <br />
-                                {selectedPickup.donorAddress}
+                                {pickupForDisplay.donorAddress}
                                 <br />
-                                {selectedPickup.itemName} ({selectedPickup.quantity} servings)
+                                {pickupForDisplay.itemName} ({pickupForDisplay.quantity} servings)
                             </div>
                         </Popup>
                     </Marker>
@@ -238,9 +251,9 @@ function DeliveryMap({ selectedPickup, driverLocation, onLocationUpdate }) {
                     <Marker position={receiverPos} icon={receiverIcon}>
                         <Popup>
                             <div>
-                                <strong>Receiver: {selectedPickup.receiverName}</strong>
+                                <strong>Receiver: {pickupForDisplay.receiverName}</strong>
                                 <br />
-                                {selectedPickup.receiverAddress}
+                                {pickupForDisplay.receiverAddress}
                             </div>
                         </Popup>
                     </Marker>

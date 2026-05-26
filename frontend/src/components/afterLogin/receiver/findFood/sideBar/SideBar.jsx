@@ -4,7 +4,14 @@ import FoodCard from '../../../../../components/afterLogin/receiver/findFood/foo
 import searchIcon from '../../../../../assets/icons/search_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg';
 import settingsIcon from '../../../../../assets/icons/settings_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg';
 
-const Sidebar = ({ items, onCardClick, onClaim }) => {
+const Sidebar = ({
+    items,
+    onCardClick,
+    onClaim,
+    selectedItemId,
+    locationRequired = false,
+    maxRadiusKm = 25,
+}) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedStorage, setSelectedStorage] = useState(null);
@@ -96,7 +103,15 @@ const Sidebar = ({ items, onCardClick, onClaim }) => {
             }
 
             return true;
-        });
+        })
+            .sort((a, b) => {
+                const da = a.distanceKm;
+                const db = b.distanceKm;
+                if (da == null && db == null) return 0;
+                if (da == null) return 1;
+                if (db == null) return -1;
+                return da - db;
+            });
     }, [items, searchQuery, selectedCategory, selectedStorage, selectedExpiry, minServings]);
 
     const handleCategoryClick = (category) => {
@@ -306,7 +321,14 @@ const Sidebar = ({ items, onCardClick, onClaim }) => {
             </div>
 
             <div className="food-list">
-                {filteredItems.length === 0 ? (
+                {locationRequired ? (
+                    <div className="sidebar-location-prompt">
+                        <p className="sidebar-location-prompt__title">Set your location</p>
+                        <p className="sidebar-location-prompt__text">
+                            Tap &quot;Set location&quot; on the map to fetch your live location and see food within {maxRadiusKm} km.
+                        </p>
+                    </div>
+                ) : filteredItems.length === 0 ? (
                     <div style={{
                         padding: '40px 20px',
                         textAlign: 'center',
@@ -314,8 +336,8 @@ const Sidebar = ({ items, onCardClick, onClaim }) => {
                     }}>
                         {items.length === 0 ? (
                             <>
-                                <p style={{ fontSize: '16px', marginBottom: '8px', color: 'white' }}>No donations available</p>
-                                <p style={{ fontSize: '12px', color: 'white' }}>Check back later for new food donations</p>
+                                <p style={{ fontSize: '16px', marginBottom: '8px', color: 'white' }}>No food within {maxRadiusKm} km</p>
+                                <p style={{ fontSize: '12px', color: 'white' }}>Check back later for new donations near you</p>
                             </>
                         ) : (
                             <>
@@ -331,6 +353,7 @@ const Sidebar = ({ items, onCardClick, onClaim }) => {
                             item={item}
                             onCardClick={onCardClick}
                             onClaim={onClaim}
+                            selected={item.id === selectedItemId}
                         />
                     ))
                 )}

@@ -1,8 +1,10 @@
 import foodImage from "../../../../assets/icons/afterLogin/receiver/img.png";
 import organicFoodIcon from "../../../../assets/icons/afterLogin/receiver/Organic Food.svg";
 import './DonationCards.css';
+import ListingPriceLine from '../../../common/ListingPriceLine/ListingPriceLine';
+import { getDonationExpiryDisplay } from '../../../../utils/donationDisplay';
 
-const LookingForDriverCard = ({ donation }) => {
+const LookingForDriverCard = ({ donation, onCancelClaim }) => {
     if (!donation) {
         return null;
     }
@@ -20,15 +22,6 @@ const LookingForDriverCard = ({ donation }) => {
         return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''} ago`;
     };
 
-    // Format expiry date
-    const formatExpiryDate = (date) => {
-        if (!date) return 'N/A';
-        const expiryDate = new Date(date);
-        const month = (expiryDate.getMonth() + 1).toString().padStart(2, '0');
-        const year = expiryDate.getFullYear();
-        return `${month}/${year}`;
-    };
-
     // Format quantity display
     const formatQuantity = (quantity) => {
         if (!quantity) return 'N/A';
@@ -38,7 +31,7 @@ const LookingForDriverCard = ({ donation }) => {
     const itemName = donation.itemName || 'Food Item';
     const quantity = donation.quantity || 0;
     const listedTime = getTimeAgo(donation.createdAt);
-    const expiryDate = formatExpiryDate(donation.expiryDate);
+    const expiryDate = getDonationExpiryDisplay(donation);
     const imageUrl = donation.imageUrl || foodImage;
 
     return (
@@ -50,6 +43,16 @@ const LookingForDriverCard = ({ donation }) => {
                         <div className="in-transit-orange">Looking for Driver</div>
                     </div>
                 </div>
+                {onCancelClaim && (
+                    <button
+                        type="button"
+                        className="claim-cancel-btn"
+                        onClick={() => onCancelClaim(donation)}
+                        title="Cancel claim before driver pickup"
+                    >
+                        Cancel claim
+                    </button>
+                )}
             </div>
             <div className="fed">
                 <img 
@@ -65,6 +68,7 @@ const LookingForDriverCard = ({ donation }) => {
                         <div className="bag-of-fuji-apples">{itemName} ({formatQuantity(quantity)})</div>
                         <div className="listed-2-mins-ago">Listed {listedTime}</div>
                         <div className="listed-2-mins-ago">EXP: {expiryDate}</div>
+                        <ListingPriceLine donation={donation} className="listed-2-mins-ago listing-price-line" />
                     </div>
                     <div className="wight">
                         <div className="wight2">

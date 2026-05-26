@@ -18,6 +18,24 @@
     margin-bottom: 16px;
 }
 
+.sidebar-location-prompt {
+    padding: 32px 20px;
+    text-align: center;
+    color: white;
+}
+
+.sidebar-location-prompt__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.sidebar-location-prompt__text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
 .search-bar-container {
     position: relative;
     margin-bottom: 12px;

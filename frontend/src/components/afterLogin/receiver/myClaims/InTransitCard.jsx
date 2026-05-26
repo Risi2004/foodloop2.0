@@ -2,6 +2,7 @@ import foodImage from "../../../../assets/icons/afterLogin/receiver/img.png";
 import organicFoodIcon from "../../../../assets/icons/afterLogin/receiver/Organic Food.svg";
 import swapIcon from "../../../../assets/icons/afterLogin/receiver/Swap.svg";
 import './MyClaimsCards.css';
+import ListingPriceLine from '../../../common/ListingPriceLine/ListingPriceLine';
 import { Link } from 'react-router-dom';
 
 const InTransitCard = ({ donation }) => {
@@ -52,6 +53,7 @@ const InTransitCard = ({ donation }) => {
                     <div className="name">
                         <div className="bag-of-fuji-apples">{itemName} ({formatQuantity(quantity)})</div>
                         <div className="listed-2-mins-ago">Picked up by {driverName}</div>
+                        <ListingPriceLine donation={donation} className="listed-2-mins-ago listing-price-line" />
                     </div>
                     <div className="wight">
                         <div className="wight2">

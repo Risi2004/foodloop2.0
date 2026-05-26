@@ -166,6 +166,610 @@ function accountDeactivatedEmail({ name, loginUrl }) {
   };
 }
 
+function formatDonationListingType(listingType) {
+  return (listingType || 'donate').toLowerCase() === 'sell' ? 'Sell (paid)' : 'Donate (free)';
+}
+
+function formatDonationPrice(donation) {
+  const currency = donation.priceCurrency || 'LKR';
+  const raw = donation.priceAmount;
+  const amount =
+    raw != null && !Number.isNaN(Number(raw)) ? Math.max(0, Number(raw)) : 0;
+  return `${currency} ${amount.toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatDonationQualityScore(score) {
+  if (score == null || Number.isNaN(Number(score))) return '—';
+  return `${Math.round(Number(score) * 100)}%`;
+}
+
+function buildDonationDetailRows(donation, extraRows = [], options = {}) {
+  const { includeTrackingId = true } = options;
+  const d = donation;
+  const detectedItems =
+    Array.isArray(d.aiDetectedItems) && d.aiDetectedItems.length > 0
+      ? d.aiDetectedItems.join(', ')
+      : '—';
+  const pickupWindow = `${d.preferredPickupDate || '—'}, ${d.preferredPickupTimeFrom || '—'} – ${d.preferredPickupTimeTo || '—'}`;
+  const expiry = d.userProvidedExpiryDate || d.expiryDate || '—';
+
+  const trackingRow = includeTrackingId ? [['Tracking ID', d.trackingId || '—']] : [];
+
+  return [
+    ...extraRows,
+    ...trackingRow,
+    ['Item', d.itemName || '—'],
+    ['Category', d.foodCategory || '—'],
+    ['Quantity', d.quantity != null ? String(d.quantity) : '—'],
+    ['Listing type', formatDonationListingType(d.listingType)],
+    ['Price', formatDonationPrice(d)],
+    ['Expiry date', expiry],
+    ['Storage', d.storageRecommendation || '—'],
+    ['Pickup address', d.pickupAddress || '—'],
+    ['Pickup window', pickupWindow],
+    ['Status', d.status || 'available'],
+    ['AI freshness', d.aiFreshness || '—'],
+    ['AI quality score', formatDonationQualityScore(d.aiQualityScore)],
+    ['AI detected items', detectedItems],
+    ['Product type', d.productType || '—'],
+  ];
+}
+
+function donationDetailsTableHtml(rows) {
+  return rows
+    .map(
+      ([label, value]) =>
+        `<tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; color: #666; font-weight: 600; vertical-align: top; width: 38%;">${label}</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; color: #333;">${value}</td>
+        </tr>`
+    )
+    .join('');
+}
+
+function donationImageHtml(donation) {
+  const d = donation;
+  if (!d.imageUrl) return '';
+  return `<p style="margin: 16px 0;"><img src="${d.imageUrl}" alt="${d.itemName || 'Food'}" style="max-width: 100%; border-radius: 8px; max-height: 200px; object-fit: cover;" /></p>`;
+}
+
+function donationPostedEmail({ name, donation, myDonationsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d);
+  const tableRows = donationDetailsTableHtml(rows);
+  const imageBlock = donationImageHtml(d);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Your food listing is live</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Thank you for posting on FoodLoop. Your donation has been published and is now visible to receivers. Here are the details:</p>
+      ${imageBlock}
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        Manage your listings: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a>
+      </p>
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">Thank you for helping reduce food waste.</p>
+    </div>
+  `;
+
+  const textLines = [
+    `Hello ${name},`,
+    '',
+    'Your food listing is live on FoodLoop. Details:',
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Manage listings: ${myDonationsUrl}`,
+    '',
+    'Thank you for helping reduce food waste.',
+  ];
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — Your listing is live${itemLabel}`,
+    html,
+    text: textLines.join('\n'),
+  };
+}
+
+function newDonationAvailableEmail({ name, donation, donorName, findFoodUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [['Posted by', donorName || '—']], {
+    includeTrackingId: false,
+  });
+  const tableRows = donationDetailsTableHtml(rows);
+  const imageBlock = donationImageHtml(d);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">New food available near you</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A donor has posted new surplus food on FoodLoop. You can view and claim it from Find Food. Details:</p>
+      ${imageBlock}
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        Browse available food: <a href="${findFoodUrl}" style="color: #4CAF50;">${findFoodUrl}</a>
+      </p>
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">Thank you for helping reduce food waste.</p>
+    </div>
+  `;
+
+  const textLines = [
+    `Hello ${name},`,
+    '',
+    'New surplus food is available on FoodLoop. Details:',
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Browse food: ${findFoodUrl}`,
+    '',
+    'Thank you for helping reduce food waste.',
+  ];
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — New food available${itemLabel}`,
+    html,
+    text: textLines.join('\n'),
+  };
+}
+
+function donationClaimedDonorEmail({ name, donation, receiverName, myDonationsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [['Claimed by', receiverName || '—']]);
+  const tableRows = donationDetailsTableHtml(rows);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Your listing was claimed</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A receiver has claimed your food listing. It is now <strong>looking for a driver</strong> for pickup and delivery.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        View your donations: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Your listing "${d.itemName || 'Food'}" was claimed by ${receiverName || 'a receiver'}.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `View donations: ${myDonationsUrl}`,
+  ].join('\n');
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — Your listing was claimed${itemLabel}`,
+    html,
+    text,
+  };
+}
+
+function donationClaimedReceiverEmail({ name, donation, myClaimsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(
+    d,
+    [
+      ['Delivery address', d.receiverAddress || '—'],
+      ['Donor', d.donorName || '—'],
+    ],
+    { includeTrackingId: false }
+  );
+  const tableRows = donationDetailsTableHtml(rows);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Claim confirmed</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">You have successfully claimed this food listing. We are now looking for a driver to complete pickup and delivery.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        Track your claims: <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `You claimed "${d.itemName || 'Food'}".`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `My claims: ${myClaimsUrl}`,
+  ].join('\n');
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — Claim confirmed${itemLabel}`,
+    html,
+    text,
+  };
+}
+
+function donationClaimCancelledDonorEmail({ name, donation, receiverName, myDonationsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [
+    ['Previously claimed by', receiverName || '—'],
+    ['Note', 'The claim was cancelled before a driver was assigned. Your listing is available for receivers again.'],
+  ]);
+  const tableRows = donationDetailsTableHtml(rows);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Claim cancelled</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">The claim on your food listing was cancelled before driver pickup. Your listing is back to <strong>looking for a receiver</strong>.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        View your donations: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `The claim on "${d.itemName || 'Food'}" was cancelled before driver pickup.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `View donations: ${myDonationsUrl}`,
+  ].join('\n');
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — Claim cancelled on your listing${itemLabel}`,
+    html,
+    text,
+  };
+}
+
+function donationClaimCancelledReceiverEmail({ name, donation, myClaimsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [
+    ['Note', 'You cancelled this claim before a driver was assigned.'],
+  ], { includeTrackingId: false });
+  const tableRows = donationDetailsTableHtml(rows);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Claim cancelled</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your claim has been cancelled. This listing is no longer reserved for you.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        Browse food: <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `You cancelled your claim on "${d.itemName || 'Food'}".`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `My claims: ${myClaimsUrl}`,
+  ].join('\n');
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — Your claim was cancelled${itemLabel}`,
+    html,
+    text,
+  };
+}
+
+function donationNewPickupDriverEmail({ name, donation, driverPickupsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(
+    d,
+    [['Pickup address', d.pickupAddress || d.donorAddress || '—']],
+    { includeTrackingId: false }
+  );
+  const tableRows = donationDetailsTableHtml(rows);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">New pickup available</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A food listing has been claimed and is ready for driver pickup. Details:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        View pickups: <a href="${driverPickupsUrl}" style="color: #4CAF50;">${driverPickupsUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `New pickup available: ${d.itemName || 'Food'}.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Driver pickups: ${driverPickupsUrl}`,
+  ].join('\n');
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — New pickup available${itemLabel}`,
+    html,
+    text,
+  };
+}
+
+function donationDriverAssignedDonorEmail({
+  name,
+  donation,
+  driverName,
+  receiverName,
+  trackOrderUrl,
+  myDonationsUrl,
+}) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [
+    ['Driver', driverName || '—'],
+    ['Delivering to', receiverName || '—'],
+    ['Status', 'Driver assigned — on the way to pickup'],
+  ]);
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">A driver accepted your order</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A driver has accepted your food listing and is heading to your pickup location.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">Track live progress: <a href="${trackOrderUrl}" style="color: #4CAF50;">${trackOrderUrl}</a></p>
+      <p style="color: #444; line-height: 1.5;">My donations: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `A driver (${driverName || 'assigned'}) accepted your listing "${d.itemName || 'Food'}" and is on the way to pickup.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Track: ${trackOrderUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Driver assigned to your order${itemLabel}`, html, text };
+}
+
+function donationDriverAssignedReceiverEmail({
+  name,
+  donation,
+  driverName,
+  trackOrderUrl,
+  myClaimsUrl,
+}) {
+  const d = donation;
+  const rows = buildDonationDetailRows(
+    d,
+    [
+      ['Driver', driverName || '—'],
+      ['Your delivery address', d.receiverAddress || '—'],
+      ['Status', 'Driver assigned — heading to donor for pickup'],
+    ],
+    { includeTrackingId: false }
+  );
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Driver assigned to your order</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A driver has accepted the food you claimed and will pick it up from the donor soon.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">Track delivery: <a href="${trackOrderUrl}" style="color: #4CAF50;">${trackOrderUrl}</a></p>
+      <p style="color: #444; line-height: 1.5;">My claims: <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Driver ${driverName || 'assigned'} is handling your order "${d.itemName || 'Food'}".`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Track: ${trackOrderUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Driver assigned to your claim${itemLabel}`, html, text };
+}
+
+function donationDriverAssignedDriverEmail({ name, donation, donorName, receiverName, pickupUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(
+    d,
+    [
+      ['Pickup from', donorName || '—'],
+      ['Deliver to', receiverName || '—'],
+      ['Pickup address', d.pickupAddress || '—'],
+    ],
+    { includeTrackingId: false }
+  );
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Order accepted — start pickup</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">You have accepted this delivery. Head to the donor for pickup, then deliver to the receiver.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">Open pickup &amp; map: <a href="${pickupUrl}" style="color: #4CAF50;">${pickupUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `You accepted "${d.itemName || 'Food'}". Pickup from ${donorName || 'donor'}, deliver to ${receiverName || 'receiver'}.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Pickup page: ${pickupUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Order details for pickup${itemLabel}`, html, text };
+}
+
+function donationPickupConfirmedDonorEmail({ name, donation, driverName, trackOrderUrl, myDonationsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [
+    ['Driver', driverName || '—'],
+    ['Status', 'Picked up — on the way to receiver'],
+  ]);
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Pickup confirmed</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">The driver has picked up your food and is now delivering it to the receiver.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">Track: <a href="${trackOrderUrl}" style="color: #4CAF50;">${trackOrderUrl}</a></p>
+      <p style="color: #444; line-height: 1.5;">My donations: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Pickup confirmed for "${d.itemName || 'Food'}". Driver ${driverName || ''} is en route to the receiver.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Track: ${trackOrderUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Pickup confirmed${itemLabel}`, html, text };
+}
+
+function donationPickupConfirmedReceiverEmail({ name, donation, driverName, trackOrderUrl, myClaimsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(
+    d,
+    [
+      ['Driver', driverName || '—'],
+      ['Status', 'Picked up — on the way to you'],
+    ],
+    { includeTrackingId: false }
+  );
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Your food is on the way</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">The driver has picked up your order and is heading to your delivery address.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">Track: <a href="${trackOrderUrl}" style="color: #4CAF50;">${trackOrderUrl}</a></p>
+      <p style="color: #444; line-height: 1.5;">My claims: <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Your order "${d.itemName || 'Food'}" was picked up. Driver ${driverName || ''} is on the way.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `Track: ${trackOrderUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Your order is on the way${itemLabel}`, html, text };
+}
+
+function donationDeliveredDonorEmail({ name, donation, driverName, receiverName, myDonationsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [
+    ['Driver', driverName || '—'],
+    ['Delivered to', receiverName || '—'],
+    ['Status', 'Delivered'],
+  ]);
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Delivery completed</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your food listing has been successfully delivered to the receiver. Thank you for reducing food waste with FoodLoop.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">My donations: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `"${d.itemName || 'Food'}" was delivered to ${receiverName || 'the receiver'}.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `My donations: ${myDonationsUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Delivery completed${itemLabel}`, html, text };
+}
+
+function donationDeliveredReceiverEmail({ name, donation, driverName, myClaimsUrl }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(
+    d,
+    [
+      ['Driver', driverName || '—'],
+      ['Status', 'Delivered'],
+    ],
+    { includeTrackingId: false }
+  );
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Delivery completed</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your claimed food has been delivered. Thank you for using FoodLoop.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">My claims: <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Your order "${d.itemName || 'Food'}" was delivered.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `My claims: ${myClaimsUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Your order was delivered${itemLabel}`, html, text };
+}
+
 function accountRejectedEmail({ name }) {
   const html = layoutHtml(
     'Registration update',
@@ -188,6 +792,8 @@ function accountRejectedEmail({ name }) {
 module.exports = {
   otpEmailHtml,
   otpEmailText,
+  donationPostedEmail,
+  newDonationAvailableEmail,
   accountCreatedEmail,
   pendingApprovalEmail,
   accountApprovedEmail,
@@ -196,4 +802,16 @@ module.exports = {
   accountReactivatedEmail,
   passwordResetOtpEmail,
   passwordChangedEmail,
+  donationClaimedDonorEmail,
+  donationClaimedReceiverEmail,
+  donationClaimCancelledDonorEmail,
+  donationClaimCancelledReceiverEmail,
+  donationNewPickupDriverEmail,
+  donationDriverAssignedDonorEmail,
+  donationDriverAssignedReceiverEmail,
+  donationDriverAssignedDriverEmail,
+  donationPickupConfirmedDonorEmail,
+  donationPickupConfirmedReceiverEmail,
+  donationDeliveredDonorEmail,
+  donationDeliveredReceiverEmail,
 };

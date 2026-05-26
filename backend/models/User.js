@@ -47,6 +47,9 @@ const userSchema = new mongoose.Schema(
     driverName: { type: String, trim: true },
     vehicleNumber: { type: String, trim: true },
     vehicleType: { type: String, trim: true },
+    driverLatitude: { type: Number, default: null },
+    driverLongitude: { type: Number, default: null },
+    driverLocationUpdatedAt: { type: Date, default: null },
 
     businessRegFile: { type: String, default: null },
     addressProofFile: { type: String, default: null },

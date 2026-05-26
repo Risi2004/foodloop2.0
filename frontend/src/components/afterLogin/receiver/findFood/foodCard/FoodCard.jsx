@@ -3,8 +3,9 @@ import { useState } from 'react';
 import sunIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Sun.svg';
 import winterIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Winter.svg';
 import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Blur.svg';
+import { formatListingPrice } from '../../../../../utils/donationDisplay';
 
-const FoodCard = ({ item, onCardClick, onClaim }) => {
+const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
     const donation = item.donation || item;
     const [isClaiming, setIsClaiming] = useState(false);
     const storageText = donation.storageRecommendation || 'N/A';
@@ -16,6 +17,7 @@ const FoodCard = ({ item, onCardClick, onClaim }) => {
     const showAIBadge = donation.aiQualityScore !== null && 
                        donation.aiQualityScore !== undefined && 
                        donation.aiQualityScore >= 0.8;
+    const priceText = item.priceLabel || formatListingPrice(donation);
 
     const handleCardClick = () => {
         if (onCardClick) {
@@ -48,15 +50,25 @@ const FoodCard = ({ item, onCardClick, onClaim }) => {
     };
 
     return (
-        <div className="food-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+        <div
+            className={`food-card${selected ? ' food-card--selected' : ''}`}
+            onClick={handleCardClick}
+            style={{ cursor: 'pointer' }}
+        >
             {showAIBadge && (
                 <div className="card-badge verified">
                     <span className="card-badge-text">AI Verified</span>
                 </div>
             )}
-            <div className="card-badge delivery-fee">
-                <span className="card-badge-text">Delivery: LKR 200</span>
-            </div>
+            {priceText ? (
+                <div className="card-badge card-badge--price">
+                    <span className="card-badge-text">{priceText}</span>
+                </div>
+            ) : (
+                <div className="card-badge delivery-fee">
+                    <span className="card-badge-text">Delivery: LKR 200</span>
+                </div>
+            )}
             <button 
                 className="claim-btn" 
                 onClick={handleClaimClick}
@@ -85,6 +97,12 @@ const FoodCard = ({ item, onCardClick, onClaim }) => {
                     <h3 className="card-title">{item.title || donation.itemName || 'Food Item'}</h3>
                     <p className="card-meta">Listed {item.listedTime || 'Recently'}</p>
                     <p className="card-meta highlight">EXP: {item.expiry || 'N/A'}</p>
+                    {item.distanceLabel && (
+                        <p className="card-meta card-meta--distance">{item.distanceLabel} away</p>
+                    )}
+                    {priceText && (
+                        <p className="card-meta card-meta--price">Price: {priceText}</p>
+                    )}
 
                     <div className="card-qty">
                         <span className="icon">🟢</span> {item.quantity || 'N/A'}
