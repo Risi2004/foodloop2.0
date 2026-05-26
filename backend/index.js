@@ -17,8 +17,27 @@ const { setIO, attachSocketAuth } = require('./socket');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const MONGO_URI = process.env.MONGO_URI;
+
+/** Allowed browser origins for CORS and Socket.IO (FRONTEND_URL + optional CORS_ORIGINS). */
+function getAllowedOrigins() {
+  const raw = process.env.CORS_ORIGINS;
+  if (raw && String(raw).trim()) {
+    return [...new Set(String(raw).split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean))];
+  }
+  const front = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return [front];
+}
+
+const allowedOrigins = getAllowedOrigins();
+
+function corsOriginCheck(origin, callback) {
+  if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+    callback(null, true);
+  } else {
+    callback(null, false);
+  }
+}
 
 if (!MONGO_URI) {
   console.error('MONGO_URI is required. Set it in backend/.env');
@@ -32,7 +51,7 @@ if (!process.env.JWT_SECRET) {
 
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: corsOriginCheck,
     credentials: true,
   })
 );
@@ -71,7 +90,7 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 const socketServer = new Server(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
     credentials: true,
   },
 });
@@ -85,6 +104,7 @@ mongoose
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log('Socket.IO enabled');
+      console.log('CORS origins:', allowedOrigins.join(', '));
     });
   })
   .catch((err) => {

@@ -1,5 +1,7 @@
 # FoodLoop Backend
 
+**Production hosting:** deploy this folder to [Render](https://render.com) with root directory `backend`. See [../DEPLOYMENT.md](../DEPLOYMENT.md) for full steps (Vercel frontend, Atlas, env vars).
+
 ## Setup
 
 1. Copy environment file:
