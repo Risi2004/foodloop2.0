@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Donation = require('../models/Donation');
 const Payment = require('../models/Payment');
 const CustomerOrder = require('../models/CustomerOrder');
+const CustomerDiscountUsage = require('../models/CustomerDiscountUsage');
 const { isReceiverRole } = require('../utils/donationHelpers');
 const {
   sendPaymentInvoiceEmail,
@@ -9,6 +10,8 @@ const {
 } = require('../utils/sendNotificationEmail');
 
 const CHECKOUT_TTL_MS = 30 * 60 * 1000;
+const LOW_INCOME_MONTHLY_DISCOUNT_LIMIT = 20;
+const LOW_INCOME_DISCOUNT_RATE = 0.2;
 
 function requireReceiver(req, res) {
   if (!isReceiverRole(req.user.role)) {
@@ -101,6 +104,148 @@ function validateCustomerCheckoutPayload(body = {}) {
       address,
       paymentMethod,
     },
+  };
+}
+
+function getCurrentYearMonth() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${now.getFullYear()}-${month}`;
+}
+
+function toMoney(value) {
+  return Number(Number(value || 0).toFixed(2));
+}
+
+function buildLowIncomeOfferSummary(summary, offerPayload, eligible, remainingUnits) {
+  const enabled = !!offerPayload?.enabled;
+  const selectedItemIds = Array.isArray(offerPayload?.selectedItemIds)
+    ? offerPayload.selectedItemIds.map((id) => String(id))
+    : [];
+  const selectedIdSet = new Set(selectedItemIds);
+  const items = Array.isArray(summary.items) ? summary.items : [];
+
+  if (!enabled) {
+    return {
+      ok: true,
+      summary,
+      discountOffer: {
+        enabled: false,
+        eligible: !!eligible,
+        discountedUnitsRequested: 0,
+        discountAmount: 0,
+        selectedItemIds: [],
+        remainingUnitsAtCheckout: remainingUnits,
+      },
+    };
+  }
+
+  if (!eligible) {
+    return { ok: false, message: 'Low-income monthly offer is not enabled for your account.' };
+  }
+
+  let discountedUnitsRequested = 0;
+  let discountAmount = 0;
+  const adjustedItems = items.map((item) => {
+    const id = item.id != null ? String(item.id) : '';
+    const isSelected = id && selectedIdSet.has(id);
+    const qty = Number(item.quantity || 0);
+    const lineTotal = Number(item.lineTotal || 0);
+    if (!isSelected || qty <= 0 || lineTotal <= 0) {
+      return { ...item, discounted: false, discountedLineTotal: toMoney(lineTotal) };
+    }
+    discountedUnitsRequested += qty;
+    const discountedLineTotal = toMoney(lineTotal * (1 - LOW_INCOME_DISCOUNT_RATE));
+    discountAmount += lineTotal - discountedLineTotal;
+    return { ...item, discounted: true, discountedLineTotal };
+  });
+
+  if (discountedUnitsRequested > remainingUnits) {
+    return {
+      ok: false,
+      message: `Monthly offer limit exceeded. You can discount only ${remainingUnits} more product(s) this month.`,
+    };
+  }
+
+  const adjustedSubtotal = toMoney(adjustedItems.reduce((acc, item) => acc + Number(item.discountedLineTotal || 0), 0));
+  const adjustedTotal = toMoney(adjustedSubtotal + Number(summary.deliveryFee || 0));
+
+  return {
+    ok: true,
+    summary: {
+      ...summary,
+      items: adjustedItems.map((item) => ({
+        ...item,
+        lineTotal: Number(item.discountedLineTotal || item.lineTotal || 0),
+      })),
+      subtotal: adjustedSubtotal,
+      total: adjustedTotal,
+    },
+    discountOffer: {
+      enabled: true,
+      eligible: true,
+      discountedUnitsRequested,
+      discountAmount: toMoney(discountAmount),
+      selectedItemIds: selectedItemIds.filter(Boolean),
+      remainingUnitsAtCheckout: remainingUnits,
+    },
+  };
+}
+
+async function getDiscountOfferStatusForUser(user) {
+  const yearMonth = getCurrentYearMonth();
+  const eligible = String(user?.customerIncomeLevel || '').toLowerCase() === 'low';
+  if (!eligible) {
+    return {
+      eligible: false,
+      yearMonth,
+      monthlyLimit: LOW_INCOME_MONTHLY_DISCOUNT_LIMIT,
+      used: 0,
+      remaining: 0,
+    };
+  }
+
+  const usage = await CustomerDiscountUsage.findOne({
+    customerId: user._id,
+    yearMonth,
+  }).lean();
+  const used = Math.max(0, Number(usage?.discountedUnitsUsed || 0));
+  const remaining = Math.max(0, LOW_INCOME_MONTHLY_DISCOUNT_LIMIT - used);
+  return {
+    eligible: true,
+    yearMonth,
+    monthlyLimit: LOW_INCOME_MONTHLY_DISCOUNT_LIMIT,
+    used,
+    remaining,
+  };
+}
+
+async function consumeDiscountUnits(customerId, yearMonth, units) {
+  const consume = Number(units || 0);
+  if (consume <= 0) return { ok: true, used: null, remaining: null };
+
+  const current = await CustomerDiscountUsage.findOne({ customerId, yearMonth });
+  const used = Math.max(0, Number(current?.discountedUnitsUsed || 0));
+  if (used + consume > LOW_INCOME_MONTHLY_DISCOUNT_LIMIT) {
+    return {
+      ok: false,
+      message: `Monthly offer limit exceeded. You can discount only ${Math.max(0, LOW_INCOME_MONTHLY_DISCOUNT_LIMIT - used)} more product(s) this month.`,
+    };
+  }
+
+  await CustomerDiscountUsage.updateOne(
+    { customerId, yearMonth },
+    {
+      $setOnInsert: { customerId, yearMonth, discountedUnitsUsed: 0 },
+      $inc: { discountedUnitsUsed: consume },
+    },
+    { upsert: true }
+  );
+  const nextUsed = used + consume;
+  return {
+    ok: true,
+    used: nextUsed,
+    remaining: Math.max(0, LOW_INCOME_MONTHLY_DISCOUNT_LIMIT - nextUsed),
   };
 }
 
@@ -315,6 +460,17 @@ exports.createCustomerCheckout = async (req, res) => {
     }
 
     const customerId = req.user._id;
+    const offerStatus = await getDiscountOfferStatusForUser(req.user);
+    const offerBuild = buildLowIncomeOfferSummary(
+      check.summary,
+      req.body?.discountOffer || {},
+      offerStatus.eligible,
+      offerStatus.remaining
+    );
+    if (!offerBuild.ok) {
+      return res.status(400).json({ success: false, message: offerBuild.message });
+    }
+    const finalSummary = offerBuild.summary;
 
     await Payment.updateMany(
       {
@@ -327,7 +483,7 @@ exports.createCustomerCheckout = async (req, res) => {
     );
 
     const orderId = generateOrderId(customerId);
-    const amount = check.summary.total;
+    const amount = finalSummary.total;
     const currency = 'LKR';
     const paymentMethod = check.summary.paymentMethod;
 
@@ -337,7 +493,13 @@ exports.createCustomerCheckout = async (req, res) => {
       customerId,
       amount,
       currency,
-      orderSummary: check.summary,
+      orderSummary: {
+        ...finalSummary,
+        discountOffer: {
+          ...offerBuild.discountOffer,
+          yearMonth: offerStatus.yearMonth,
+        },
+      },
       status: paymentMethod === 'cod' ? 'paid' : 'pending',
       cardLast4: paymentMethod === 'cod' ? null : undefined,
       expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
@@ -352,7 +514,7 @@ exports.createCustomerCheckout = async (req, res) => {
       orderId,
       amount,
       currency,
-      itemCount: check.summary.items.length,
+      itemCount: finalSummary.items.length,
       paymentMethod,
       status: paymentMethod === 'cod' ? 'paid' : 'pending',
       reused: false,
@@ -414,6 +576,18 @@ exports.confirmCustomerCheckout = async (req, res) => {
         ? String(bodyLast4).replace(/\D/g, '').slice(-4)
         : cardCheck.cardLast4;
 
+    const discountOffer = payment.orderSummary?.discountOffer || {};
+    if (discountOffer.enabled && Number(discountOffer.discountedUnitsRequested || 0) > 0) {
+      const consume = await consumeDiscountUnits(
+        payment.customerId,
+        discountOffer.yearMonth || getCurrentYearMonth(),
+        Number(discountOffer.discountedUnitsRequested || 0)
+      );
+      if (!consume.ok) {
+        return res.status(400).json({ success: false, message: consume.message });
+      }
+    }
+
     payment.status = 'paid';
     payment.cardLast4 = last4;
     await payment.save();
@@ -448,8 +622,35 @@ exports.placeCustomerCodOrder = async (req, res) => {
     }
 
     const customerId = req.user._id;
+    const offerStatus = await getDiscountOfferStatusForUser(req.user);
+    const offerBuild = buildLowIncomeOfferSummary(
+      check.summary,
+      req.body?.discountOffer || {},
+      offerStatus.eligible,
+      offerStatus.remaining
+    );
+    if (!offerBuild.ok) {
+      return res.status(400).json({ success: false, message: offerBuild.message });
+    }
+    const finalSummary = offerBuild.summary;
+    const discountOffer = {
+      ...offerBuild.discountOffer,
+      yearMonth: offerStatus.yearMonth,
+    };
+
+    if (discountOffer.enabled && Number(discountOffer.discountedUnitsRequested || 0) > 0) {
+      const consume = await consumeDiscountUnits(
+        customerId,
+        discountOffer.yearMonth,
+        Number(discountOffer.discountedUnitsRequested || 0)
+      );
+      if (!consume.ok) {
+        return res.status(400).json({ success: false, message: consume.message });
+      }
+    }
+
     const orderId = generateOrderId(customerId);
-    const amount = check.summary.total;
+    const amount = finalSummary.total;
     const currency = 'LKR';
     const payment = await Payment.create({
       orderId,
@@ -457,7 +658,11 @@ exports.placeCustomerCodOrder = async (req, res) => {
       customerId,
       amount,
       currency,
-      orderSummary: { ...check.summary, paymentMethod: 'cod' },
+      orderSummary: {
+        ...finalSummary,
+        paymentMethod: 'cod',
+        discountOffer,
+      },
       status: 'paid',
       expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
     });
@@ -468,7 +673,7 @@ exports.placeCustomerCodOrder = async (req, res) => {
       orderId,
       amount,
       currency,
-      itemCount: check.summary.items.length,
+      itemCount: finalSummary.items.length,
       paymentMethod: 'cod',
       status: 'paid',
       reused: false,
@@ -511,6 +716,7 @@ exports.getCustomerPaymentHistory = async (req, res) => {
         total: payment.orderSummary?.total ?? payment.amount ?? 0,
         address: payment.orderSummary?.address || '',
         paymentMethod: payment.orderSummary?.paymentMethod || 'card',
+        discountOffer: payment.orderSummary?.discountOffer || null,
       },
     }));
 
@@ -564,3 +770,17 @@ async function verifyPaidPaymentForClaim({ paymentOrderId, donationId, receiverI
 }
 
 exports.verifyPaidPaymentForClaim = verifyPaidPaymentForClaim;
+
+exports.getCustomerDiscountOfferStatus = async (req, res) => {
+  try {
+    if (!requireCustomer(req, res)) return;
+    const status = await getDiscountOfferStatusForUser(req.user);
+    return res.json({ success: true, ...status });
+  } catch (err) {
+    console.error('getCustomerDiscountOfferStatus error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to load discount offer status',
+    });
+  }
+};

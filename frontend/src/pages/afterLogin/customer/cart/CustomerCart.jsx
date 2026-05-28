@@ -1,13 +1,47 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { customerRoutes } from '../../../../constants/customerRoutes';
+import { getCustomerDiscountOfferStatus } from '../../../../services/paymentApi';
 import './CustomerCart.css';
 
 const CustomerCart = () => {
-  const { cart, updateQuantity, removeFromCart, getCartTotal, getDeliveryFee } = useMarketplace();
+  const {
+    cart,
+    updateQuantity,
+    removeFromCart,
+    getCartTotal,
+    getDiscountedSubtotal,
+    getDeliveryFee,
+    discountOfferEnabled,
+    setOfferEnabled,
+    discountOfferSelections,
+    toggleOfferSelection,
+  } = useMarketplace();
   const navigate = useNavigate();
+  const [offerStatus, setOfferStatus] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCustomerDiscountOfferStatus()
+      .then((res) => {
+        if (!cancelled) setOfferStatus(res);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const discountedUnitsSelected = useMemo(
+    () =>
+      cart.reduce((acc, item) => {
+        if (!discountOfferEnabled) return acc;
+        return discountOfferSelections[String(item.id)] ? acc + Number(item.quantity || 0) : acc;
+      }, 0),
+    [cart, discountOfferEnabled, discountOfferSelections]
+  );
 
   const handleCheckout = () => {
     navigate(customerRoutes.payment());
@@ -38,6 +72,30 @@ const CustomerCart = () => {
         ) : (
           <div className="cart-content">
             <div className="cart-items">
+              {offerStatus?.eligible && (
+                <div className="cart-offer-banner customer-panel">
+                  <label className="cart-offer-toggle">
+                    <input
+                      type="checkbox"
+                      checked={discountOfferEnabled}
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+                        if (enabled && !window.confirm('Enable low-income monthly 20% discount offer now?')) return;
+                        setOfferEnabled(enabled);
+                      }}
+                    />
+                    <span>Enable low-income offer (20% off selected products)</span>
+                  </label>
+                  <p>
+                    Remaining this month: <strong>{offerStatus.remaining}</strong> / {offerStatus.monthlyLimit}
+                  </p>
+                  {discountOfferEnabled && (
+                    <p className="cart-offer-hint">
+                      Selected discounted units: {discountedUnitsSelected}
+                    </p>
+                  )}
+                </div>
+              )}
               {cart.map((item) => (
                 <div key={item.id} className="cart-item customer-panel">
                   <div className="cart-item-img">
@@ -46,6 +104,16 @@ const CustomerCart = () => {
                   <div className="cart-item-details">
                     <h3>{item.name}</h3>
                     <p>{item.vendorName}</p>
+                    {offerStatus?.eligible && discountOfferEnabled && (
+                      <label className="cart-item-offer-select">
+                        <input
+                          type="checkbox"
+                          checked={!!discountOfferSelections[String(item.id)]}
+                          onChange={() => toggleOfferSelection(item.id)}
+                        />
+                        Apply 20% offer to this product
+                      </label>
+                    )}
                   </div>
                   <div className="cart-item-quantity">
                     <button type="button" onClick={() => updateQuantity(item.id, -1)} aria-label="Decrease quantity">
@@ -56,7 +124,20 @@ const CustomerCart = () => {
                       +
                     </button>
                   </div>
-                  <div className="cart-item-price">LKR {(item.price * item.quantity).toLocaleString()}</div>
+                  <div className="cart-item-price">
+                    {offerStatus?.eligible &&
+                    discountOfferEnabled &&
+                    discountOfferSelections[String(item.id)] ? (
+                      <>
+                        <span className="cart-item-price-old">
+                          LKR {(item.price * item.quantity).toLocaleString()}
+                        </span>
+                        <span>LKR {(item.price * item.quantity * 0.8).toLocaleString()}</span>
+                      </>
+                    ) : (
+                      <>LKR {(item.price * item.quantity).toLocaleString()}</>
+                    )}
+                  </div>
                   <button
                     type="button"
                     className="remove-btn"
@@ -73,7 +154,7 @@ const CustomerCart = () => {
               <h3>Order Summary</h3>
               <div className="summary-row">
                 <span>Subtotal</span>
-                <span>LKR {getCartTotal().toLocaleString()}</span>
+                <span>LKR {(discountOfferEnabled ? getDiscountedSubtotal() : getCartTotal()).toLocaleString()}</span>
               </div>
               <div className="summary-row">
                 <span>Delivery Fee</span>
@@ -81,7 +162,9 @@ const CustomerCart = () => {
               </div>
               <div className="summary-row total">
                 <span>Total</span>
-                <span>LKR {(getCartTotal() + getDeliveryFee()).toLocaleString()}</span>
+                <span>
+                  LKR {((discountOfferEnabled ? getDiscountedSubtotal() : getCartTotal()) + getDeliveryFee()).toLocaleString()}
+                </span>
               </div>
               <button type="button" className="customer-btn-primary checkout-btn" onClick={handleCheckout}>
                 Proceed to Checkout

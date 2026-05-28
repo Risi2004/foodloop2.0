@@ -12,6 +12,8 @@ export const MarketplaceProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
 
     const [cart, setCart] = useState([]);
+    const [discountOfferEnabled, setDiscountOfferEnabled] = useState(false);
+    const [discountOfferSelections, setDiscountOfferSelections] = useState({});
 
     // --- Product Management ---
     const addProduct = (product) => {
@@ -58,6 +60,11 @@ export const MarketplaceProvider = ({ children }) => {
 
     const removeFromCart = (id) => {
         setCart(prev => prev.filter(item => item.id !== id));
+        setDiscountOfferSelections((prev) => {
+            const next = { ...prev };
+            delete next[String(id)];
+            return next;
+        });
     };
 
     const updateQuantity = (id, amount) => {
@@ -70,10 +77,43 @@ export const MarketplaceProvider = ({ children }) => {
         }));
     };
 
-    const clearCart = () => setCart([]);
+    const clearCart = () => {
+        setCart([]);
+        setDiscountOfferSelections({});
+        setDiscountOfferEnabled(false);
+    };
+
+    const setOfferEnabled = (enabled) => {
+        const on = !!enabled;
+        setDiscountOfferEnabled(on);
+        if (!on) setDiscountOfferSelections({});
+    };
+
+    const toggleOfferSelection = (itemId) => {
+        const id = String(itemId);
+        setDiscountOfferSelections((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
+    const getSelectedDiscountItemIds = () =>
+        Object.entries(discountOfferSelections)
+            .filter(([, selected]) => !!selected)
+            .map(([id]) => id);
 
     const getCartTotal = () => {
         return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    };
+
+    const getDiscountedSubtotal = () => {
+        if (!discountOfferEnabled) return getCartTotal();
+        const selected = new Set(getSelectedDiscountItemIds());
+        return cart.reduce((total, item) => {
+            const line = item.price * item.quantity;
+            if (selected.has(String(item.id))) return total + line * 0.8;
+            return total + line;
+        }, 0);
     };
 
     const getDeliveryFee = () => {
@@ -94,7 +134,13 @@ export const MarketplaceProvider = ({ children }) => {
         updateQuantity,
         clearCart,
         getCartTotal,
-        getDeliveryFee
+        getDiscountedSubtotal,
+        getDeliveryFee,
+        discountOfferEnabled,
+        discountOfferSelections,
+        setOfferEnabled,
+        toggleOfferSelection,
+        getSelectedDiscountItemIds,
     };
 
     return (

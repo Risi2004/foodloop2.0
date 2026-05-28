@@ -6,11 +6,23 @@ import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { getUser } from '../../../../utils/auth';
 import { customerRoutes } from '../../../../constants/customerRoutes';
 import CustomerPaymentModal from '../../../../components/afterLogin/customer/payment/CustomerPaymentModal';
-import { createCustomerCheckout, placeCustomerCodOrder } from '../../../../services/paymentApi';
+import {
+  createCustomerCheckout,
+  placeCustomerCodOrder,
+  getCustomerDiscountOfferStatus,
+} from '../../../../services/paymentApi';
 import './CustomerPayment.css';
 
 const CustomerPayment = () => {
-  const { cart, getCartTotal, getDeliveryFee, clearCart } = useMarketplace();
+  const {
+    cart,
+    getCartTotal,
+    getDiscountedSubtotal,
+    getDeliveryFee,
+    clearCart,
+    discountOfferEnabled,
+    getSelectedDiscountItemIds,
+  } = useMarketplace();
   const navigate = useNavigate();
   const user = getUser();
 
@@ -24,6 +36,30 @@ const CustomerPayment = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pageError, setPageError] = useState('');
   const [placedOrderId, setPlacedOrderId] = useState('');
+  const [offerStatus, setOfferStatus] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCustomerDiscountOfferStatus()
+      .then((res) => {
+        if (!cancelled) setOfferStatus(res);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const discountOfferPayload =
+    offerStatus?.eligible && discountOfferEnabled
+      ? {
+          enabled: true,
+          selectedItemIds: getSelectedDiscountItemIds(),
+        }
+      : { enabled: false, selectedItemIds: [] };
+
+  const subtotal = discountOfferPayload.enabled ? getDiscountedSubtotal() : getCartTotal();
+  const total = subtotal + getDeliveryFee();
 
   useEffect(() => {
     if (cart.length === 0 && !showSuccess) {
@@ -40,11 +76,12 @@ const CustomerPayment = () => {
     }));
     return {
       items,
-      subtotal: getCartTotal(),
+      subtotal,
       deliveryFee: getDeliveryFee(),
-      total: getCartTotal() + getDeliveryFee(),
+      total,
       address,
       paymentMethod: method,
+      discountOffer: discountOfferPayload,
     };
   };
 
@@ -182,9 +219,15 @@ const CustomerPayment = () => {
                 <div className="cod-info">
                   <h3>Cash on Delivery</h3>
                   <p>
-                    Pay exactly <strong>LKR {(getCartTotal() + getDeliveryFee()).toLocaleString()}</strong> when
-                    your items are delivered to your doorstep.
+                    Pay exactly <strong>LKR {total.toLocaleString()}</strong> when
+                    {' '}
+                    delivered to your doorstep.
                   </p>
+                  {discountOfferPayload.enabled && (
+                    <p className="payment-offer-note">
+                      Low-income offer applied to selected items.
+                    </p>
+                  )}
                   <div className="cod-notice">
                     <span className="info-icon">ℹ️</span>
                     <p>Please have the exact amount ready to speed up delivery.</p>
@@ -205,6 +248,12 @@ const CustomerPayment = () => {
                       <p className="mini-name">{item.name}</p>
                       <p className="mini-price">
                         x{item.quantity} • LKR {(item.price * item.quantity).toLocaleString()}
+                        {discountOfferPayload.enabled &&
+                          discountOfferPayload.selectedItemIds.includes(String(item.id)) && (
+                            <span className="mini-discounted-price">
+                              {' '}→ LKR {(item.price * item.quantity * 0.8).toLocaleString()}
+                            </span>
+                          )}
                       </p>
                     </div>
                   </div>
@@ -215,7 +264,7 @@ const CustomerPayment = () => {
 
               <div className="summary-row">
                 <span>Subtotal</span>
-                <span>LKR {getCartTotal().toLocaleString()}</span>
+                <span>LKR {subtotal.toLocaleString()}</span>
               </div>
               <div className="summary-row">
                 <span>Delivery Fee</span>
@@ -223,8 +272,13 @@ const CustomerPayment = () => {
               </div>
               <div className="summary-row total">
                 <span>Total to Pay</span>
-                <span>LKR {(getCartTotal() + getDeliveryFee()).toLocaleString()}</span>
+                <span>LKR {total.toLocaleString()}</span>
               </div>
+              {offerStatus?.eligible && (
+                <p className="payment-offer-remaining">
+                  Offer remaining this month: {offerStatus.remaining} / {offerStatus.monthlyLimit}
+                </p>
+              )}
 
               <button
                 type="button"

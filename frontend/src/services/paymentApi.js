@@ -54,6 +54,14 @@ export const getCustomerPaymentHistory = async () => {
   return parseResponse(response);
 };
 
+export const getCustomerDiscountOfferStatus = async () => {
+  const response = await fetch(buildUrl('/api/payments/customer/discount-offer-status'), {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
 export const getCustomerOrders = async () => {
   const response = await fetch(buildUrl('/api/customer-orders/mine'), {
     method: 'GET',

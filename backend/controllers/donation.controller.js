@@ -49,18 +49,35 @@ function requireSupplierAccess(role) {
 }
 
 const EDITABLE_STATUSES = ['available', 'draft'];
+const MARKETPLACE_COMMISSION_RATE = 0.2;
 
 function isDonorOwner(donation, userId) {
   return donation.donorId.toString() === userId.toString();
+}
+
+function roundCurrency(value) {
+  const n = Number(value);
+  if (Number.isNaN(n)) return NaN;
+  return Math.round(n * 100) / 100;
+}
+
+function applyMarketplaceCommission(basePrice) {
+  const base = Number(basePrice);
+  if (Number.isNaN(base) || base <= 0) return NaN;
+  return roundCurrency(base * (1 + MARKETPLACE_COMMISSION_RATE));
 }
 
 function parseListingAndPrice(listingType, priceAmount) {
   const listing = (listingType || 'donate').toLowerCase() === 'sell' ? 'sell' : 'donate';
   let price = null;
   if (listing === 'sell') {
-    price = Number(priceAmount);
-    if (Number.isNaN(price) || price <= 0) {
+    const basePrice = Number(priceAmount);
+    if (Number.isNaN(basePrice) || basePrice <= 0) {
       return { error: 'Please enter a valid price (LKR) for cash listings.' };
+    }
+    price = applyMarketplaceCommission(basePrice);
+    if (Number.isNaN(price) || price <= 0) {
+      return { error: 'Failed to apply marketplace commission for this listing.' };
     }
   }
   return { listing, price };
@@ -181,16 +198,12 @@ exports.createDonation = async (req, res) => {
       });
     }
 
-    const listing = (listingType || 'donate').toLowerCase() === 'sell' ? 'sell' : 'donate';
-    let price = null;
-    if (listing === 'sell') {
-      price = Number(priceAmount);
-      if (Number.isNaN(price) || price <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please enter a valid price (LKR) for cash listings.',
-        });
-      }
+    const parsedListing = parseListingAndPrice(listingType, priceAmount);
+    if (parsedListing.error) {
+      return res.status(400).json({
+        success: false,
+        message: parsedListing.error,
+      });
     }
 
     const aiPrice =
@@ -215,9 +228,9 @@ exports.createDonation = async (req, res) => {
       aiDetectedItems: Array.isArray(aiDetectedItems) ? aiDetectedItems : [],
       productType: productType || null,
       expiryDateFromPackage: expiryDateFromPackage || null,
-      listingType: listing,
-      priceAmount: listing === 'sell' ? price : null,
-      priceCurrency: listing === 'sell' ? (priceCurrency || 'LKR').trim() : 'LKR',
+      listingType: parsedListing.listing,
+      priceAmount: parsedListing.listing === 'sell' ? parsedListing.price : null,
+      priceCurrency: parsedListing.listing === 'sell' ? (priceCurrency || 'LKR').trim() : 'LKR',
       aiSuggestedPrice: aiPrice,
       pickupAddress: pickupAddress.trim(),
       donorLatitude: lat,
@@ -680,14 +693,29 @@ exports.updateDonation = async (req, res) => {
     }
     if (listingType !== undefined || priceAmount !== undefined) {
       const listingInput = listingType !== undefined ? listingType : donation.listingType;
-      const priceInput = priceAmount !== undefined ? priceAmount : donation.priceAmount;
-      const parsed = parseListingAndPrice(listingInput, priceInput);
-      if (parsed.error) {
-        return res.status(400).json({ success: false, message: parsed.error });
+      const nextListing = (listingInput || 'donate').toLowerCase() === 'sell' ? 'sell' : 'donate';
+
+      if (nextListing === 'donate') {
+        donation.listingType = 'donate';
+        donation.priceAmount = null;
+        donation.priceCurrency = 'LKR';
+      } else {
+        // Re-apply commission only when supplier explicitly provides a new base price.
+        if (priceAmount !== undefined) {
+          const parsed = parseListingAndPrice(nextListing, priceAmount);
+          if (parsed.error) {
+            return res.status(400).json({ success: false, message: parsed.error });
+          }
+          donation.priceAmount = parsed.price;
+        } else if (donation.listingType !== 'sell' || !donation.priceAmount || donation.priceAmount <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Please enter a valid price (LKR) for cash listings.',
+          });
+        }
+        donation.listingType = 'sell';
+        donation.priceCurrency = (priceCurrency || donation.priceCurrency || 'LKR').trim();
       }
-      donation.listingType = parsed.listing;
-      donation.priceAmount = parsed.listing === 'sell' ? parsed.price : null;
-      donation.priceCurrency = parsed.listing === 'sell' ? (priceCurrency || 'LKR').trim() : 'LKR';
     }
     if (pickupAddress !== undefined) {
       if (!pickupAddress?.trim()) {

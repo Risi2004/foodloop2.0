@@ -226,6 +226,24 @@
   font-weight: 600;
 }
 
+.mini-discounted-price {
+  color: #86efac;
+  font-weight: 700;
+}
+
+.payment-offer-note {
+  color: #166534 !important;
+  font-weight: 700 !important;
+}
+
+.payment-offer-remaining {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+}
+
 .summary-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.15);
