@@ -3,7 +3,8 @@ import defaultProfileIcon from "../../../../../assets/icons/afterLogin/navbar/pr
 import './DriverDetails.css';
 
 function DriverDetails({ tracking, driverProfileImageUrl }) {
-    const donorName = tracking?.donor?.name ?? 'Donor';
+    const isCustomerOrder = tracking?.donation?.sourceType === 'customer_order';
+    const donorName = tracking?.donor?.name ?? 'Supplier';
     const donorContact = tracking?.donor?.contactNo || tracking?.donor?.email || '';
     const receiverName = tracking?.receiver?.name ?? 'Receiver';
     const vehicleType = tracking?.driver?.vehicleType ?? 'Scooter';
@@ -17,7 +18,7 @@ function DriverDetails({ tracking, driverProfileImageUrl }) {
                     <img src={vehicleIcon} alt="Vehicle" />
                     <div className="driver__details__s1__sub1__sub">
                         <h5>Current Location</h5>
-                        <p>Pickup at {donorName}</p>
+                        <p>{isCustomerOrder ? `Pickup for ${receiverName}` : `Pickup at ${donorName}`}</p>
                         <p className="driver__details__contact">
                             Contact: {donorContact ? (
                                 /^[\d\s+()-]+$/.test(donorContact.trim()) ? (

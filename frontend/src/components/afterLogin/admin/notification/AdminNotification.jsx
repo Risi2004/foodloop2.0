@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { getAdminNotifications, createNotification } from "../../../../services/notificationApi";
 import "./AdminNotification.css";
 
-const ROLE_OPTIONS = ['Donor', 'Receiver', 'Driver', 'All'];
+const ROLE_OPTIONS = [
+  { value: 'Donor', label: 'Supplier' },
+  { value: 'Receiver', label: 'Receiver' },
+  { value: 'Driver', label: 'Driver' },
+  { value: 'All', label: 'All' },
+];
 
 const AdminNotification = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -172,13 +177,13 @@ const AdminNotification = () => {
             <span className="recent-donations5">Role</span>
             <div className="admin-notification-checkboxes">
               {ROLE_OPTIONS.map((role) => (
-                <label key={role} className="admin-notification-role-label">
+                <label key={role.value} className="admin-notification-role-label">
                   <input
                     type="checkbox"
-                    checked={selectedRoles.includes(role)}
-                    onChange={() => toggleRole(role)}
+                    checked={selectedRoles.includes(role.value)}
+                    onChange={() => toggleRole(role.value)}
                   />
-                  {role}
+                  {role.label}
                 </label>
               ))}
             </div>

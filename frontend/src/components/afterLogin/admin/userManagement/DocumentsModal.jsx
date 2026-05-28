@@ -1,4 +1,5 @@
 import './AdminUserManagement.css';
+import { getAdminRoleLabel } from '../../../../utils/adminUserDisplay';
 
 const DocumentsModal = ({ user, isOpen, onClose }) => {
     if (!isOpen || !user) return null;
@@ -138,7 +139,7 @@ const DocumentsModal = ({ user, isOpen, onClose }) => {
                             <p>No documents submitted</p>
                             <div style={{ fontSize: '12px', color: '#a0a0a0', marginTop: '15px', textAlign: 'left', maxWidth: '500px', margin: '15px auto 0' }}>
                                 <p style={{ marginBottom: '10px' }}>
-                                    <strong>Expected documents for {user.role}:</strong>
+                                    <strong>Expected documents for {getAdminRoleLabel(user.role)}:</strong>
                                 </p>
                                 {user.role === 'Donor' && user.donorType === 'Business' && (
                                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -147,11 +148,14 @@ const DocumentsModal = ({ user, isOpen, onClose }) => {
                                         <li>• Address Proof Document</li>
                                     </ul>
                                 )}
-                                {user.role === 'Donor' && user.donorType === 'Individual' && (
+                                {(user.role === 'Donor' && user.donorType === 'Individual') ||
+                                (user.role || '').toLowerCase() === 'individual' ? (
                                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                                         <li>• Profile Image (optional)</li>
+                                        <li>• NIC Document (PDF)</li>
+                                        <li>• Startup / business details on file</li>
                                     </ul>
-                                )}
+                                ) : null}
                                 {user.role === 'Receiver' && (
                                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                                         <li>• Profile Image (optional)</li>

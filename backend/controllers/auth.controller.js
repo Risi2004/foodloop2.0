@@ -18,9 +18,12 @@ const {
   isValidEmail,
   isValidContactNo,
   isValidPassword,
+  isValidNicNumber,
+  normalizeNicNumber,
   normalizeContactNo,
   contactLookupVariants,
   PASSWORD_INVALID_MSG,
+  NIC_INVALID_MSG,
 } = require('../utils/signupValidation');
 const { normalizeVenueType, isValidVenueType } = require('../constants/venueTypes');
 
@@ -169,6 +172,27 @@ exports.signup = async (req, res) => {
       }
     }
 
+    if (role === 'individual') {
+      if (!(body.username || '').trim()) {
+        errors.push({ field: 'username', message: 'Name is required' });
+      }
+      const nicNumber = normalizeNicNumber(body.nicNumber);
+      if (!nicNumber) {
+        errors.push({ field: 'nicNumber', message: 'NIC number is required' });
+      } else if (!isValidNicNumber(nicNumber)) {
+        errors.push({ field: 'nicNumber', message: NIC_INVALID_MSG });
+      }
+      if (!(body.businessName || '').trim()) {
+        errors.push({ field: 'businessName', message: 'Startup/business name is required' });
+      }
+      if (!(body.startupDetails || '').trim()) {
+        errors.push({ field: 'startupDetails', message: 'Startup details are required' });
+      }
+      if (!req.files?.nicFile?.[0]) {
+        errors.push({ field: 'nicFile', message: 'NIC document (PDF) is required' });
+      }
+    }
+
     if (role === 'driver') {
       if (!req.files?.nicFile?.[0]) {
         errors.push({ field: 'nicFile', message: 'NIC file is required' });
@@ -217,8 +241,8 @@ exports.signup = async (req, res) => {
 
     if (role === 'individual' || role === 'customer') {
       userData.username = (body.username || '').trim();
-      if (role === 'individual' && body.isStartup === 'true') {
-        userData.isStartup = true;
+      if (role === 'individual') {
+        userData.nicNumber = normalizeNicNumber(body.nicNumber);
         userData.businessName = (body.businessName || '').trim();
         userData.startupDetails = (body.startupDetails || '').trim();
       }

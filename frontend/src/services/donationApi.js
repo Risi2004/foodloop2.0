@@ -58,6 +58,24 @@ export const getAvailableDonations = async (lat, lng) => {
   return parseResponse(response);
 };
 
+const DEFAULT_MARKETPLACE_LOCATION = {
+  lat: 6.9271,
+  lng: 79.8612,
+};
+
+export const getCustomerMarketplaceListings = async (options = {}) => {
+  const rawLat = options?.lat;
+  const rawLng = options?.lng;
+
+  const latitude = Number(rawLat);
+  const longitude = Number(rawLng);
+
+  const lat = Number.isNaN(latitude) ? DEFAULT_MARKETPLACE_LOCATION.lat : latitude;
+  const lng = Number.isNaN(longitude) ? DEFAULT_MARKETPLACE_LOCATION.lng : longitude;
+
+  return getAvailableDonations(lat, lng);
+};
+
 export const claimDonation = async (donationId, payload = {}) => {
   const response = await fetch(buildUrl(`/api/donations/${donationId}/claim`), {
     method: 'POST',

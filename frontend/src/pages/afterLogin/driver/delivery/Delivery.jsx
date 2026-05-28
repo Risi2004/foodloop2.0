@@ -183,11 +183,15 @@ function Delivery() {
 
     const handleAcceptOrder = async (pickup) => {
         if (!pickup?.id) return;
+        const isCustomerOrder = pickup?.sourceType === 'customer_order';
         if (activeDeliveries.length > 0) {
             alert('You can only have 1 order at a time. Complete your current delivery first.');
             return;
         }
-        if (!driverLocation || (!pickup.totalRouteDistanceFormatted && !pickup.totalEtaFormatted)) {
+        if (
+            !driverLocation ||
+            (!isCustomerOrder && !pickup.totalRouteDistanceFormatted && !pickup.totalEtaFormatted)
+        ) {
             alert('Set your location and select this order to view route distance before accepting.');
             return;
         }
@@ -256,7 +260,8 @@ function Delivery() {
 
     const canAcceptSelected =
         !!driverLocation &&
-        !!(selectedPickup?.totalRouteDistanceFormatted || selectedPickup?.totalEtaFormatted) &&
+        (!!(selectedPickup?.totalRouteDistanceFormatted || selectedPickup?.totalEtaFormatted) ||
+            selectedPickup?.sourceType === 'customer_order') &&
         activeDeliveries.length === 0;
 
     if (loading) {

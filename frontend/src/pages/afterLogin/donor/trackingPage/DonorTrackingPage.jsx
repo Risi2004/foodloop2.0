@@ -26,7 +26,7 @@ function DonorTrackingPage() {
     useEffect(() => {
         if (!donationId) {
             alert('No donation ID provided');
-            navigate('/donor/my-donation');
+            navigate('/supplier/my-donation');
         }
     }, [donationId, navigate]);
 
@@ -36,7 +36,7 @@ function DonorTrackingPage() {
 
         const unsubscribe = onDeliveryConfirmed((payload) => {
             if (payload?.donationId === donationId) {
-                navigate('/donor/my-donation');
+                navigate('/supplier/my-donation');
             }
         });
 

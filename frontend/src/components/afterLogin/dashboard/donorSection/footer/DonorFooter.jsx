@@ -9,7 +9,7 @@ function DonorFooter() {
     const location = useLocation();
 
     const handleHomeClick = (e) => {
-        if (location.pathname === '/donor/dashboard') {
+        if (location.pathname === '/supplier/dashboard' || location.pathname === '/donor/dashboard') {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -35,15 +35,15 @@ function DonorFooter() {
                     </div>
                     <div className="footer__s3">
                         <h1>Quick Links</h1>
-                        <Link to="/donor/dashboard" onClick={handleHomeClick}>Home</Link>
-                        <Link to="/donor/about">About Us</Link>
-                        <Link to="/donor/dashboard#contact">Contact Us</Link>
-                        <Link to="/donor/my-donation">My Donations</Link>
+                        <Link to="/supplier/dashboard" onClick={handleHomeClick}>Home</Link>
+                        <Link to="/supplier/about">About Us</Link>
+                        <Link to="/supplier/dashboard#contact">Contact Us</Link>
+                        <Link to="/supplier/my-donation">My Listings</Link>
                     </div>
                     <div className="footer__s4">
                         <h1>Legal</h1>
-                        <Link to="/donor/privacy-policy">Privacy Policy</Link>
-                        <Link to="/donor/terms-&-conditions">Terms & Conditions</Link>
+                        <Link to="/supplier/privacy-policy">Privacy Policy</Link>
+                        <Link to="/supplier/terms-&-conditions">Terms & Conditions</Link>
                     </div>
                     <div className="footer__s5">
                         <h1>Designed & Developed</h1>

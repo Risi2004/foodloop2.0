@@ -58,7 +58,7 @@ function DonorEditDonation() {
                             <p style={{ color: '#d32f2f', textAlign: 'center' }}>{error || 'Donation not found'}</p>
                             <button
                                 type="button"
-                                onClick={() => navigate('/donor/my-donation')}
+                                onClick={() => navigate('/supplier/my-donation')}
                                 style={{
                                     padding: '10px 20px',
                                     backgroundColor: '#1b4332',
@@ -69,7 +69,7 @@ function DonorEditDonation() {
                                     fontSize: '14px'
                                 }}
                             >
-                                Back to My Donations
+                                Back to My Listings
                             </button>
                         </div>
                     </div>

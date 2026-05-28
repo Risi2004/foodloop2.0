@@ -23,7 +23,7 @@ const DigitalReceipt = () => {
     useEffect(() => {
         if (!donationId || donationId === 'undefined' || donationId.trim() === '') {
             setLoading(false);
-            navigate('/donor/my-donation');
+            navigate('/supplier/my-donation');
             return;
         }
         let cancelled = false;
@@ -78,7 +78,7 @@ const DigitalReceipt = () => {
                 <div className="digital-receipt-container">
                     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                         <p style={{ color: '#c53030', marginBottom: '16px' }}>{error}</p>
-                        <Link to="/donor/my-donation" style={{ color: '#1F4E36', fontWeight: 600 }}>Go to My Donations</Link>
+                        <Link to="/supplier/my-donation" style={{ color: '#1F4E36', fontWeight: 600 }}>Go to My Listings</Link>
                     </div>
                 </div>
                 <DonorFooter />

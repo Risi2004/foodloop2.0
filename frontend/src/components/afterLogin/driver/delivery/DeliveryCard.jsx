@@ -20,7 +20,7 @@ function DeliveryCard({
         return `${quantity} ${quantity === 1 ? 'serving' : 'servings'}`;
     };
 
-    const donorName = donation.donorName || 'Donor';
+    const donorName = donation.donorName || 'Supplier';
     const itemName = donation.itemName || 'Food Item';
     const quantity = formatQuantity(donation.quantity);
     const expiryText = donation.expiryText || 'Expiry unknown';

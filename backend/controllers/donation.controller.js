@@ -244,10 +244,11 @@ exports.createDonation = async (req, res) => {
 
 exports.getAvailableDonations = async (req, res) => {
   try {
-    if (!isReceiverRole(req.user.role)) {
+    const role = (req.user.role || '').toLowerCase();
+    if (!(isReceiverRole(req.user.role) || role === 'customer')) {
       return res.status(403).json({
         success: false,
-        message: 'Only receivers can browse available donations.',
+        message: 'Only receivers and customers can browse available donations.',
       });
     }
 

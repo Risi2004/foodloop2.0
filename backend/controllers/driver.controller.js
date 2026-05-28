@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const Donation = require('../models/Donation');
+const CustomerOrder = require('../models/CustomerOrder');
 const User = require('../models/User');
 const {
   MAX_DRIVER_RADIUS_KM,
   calculateDistanceKm,
   isDonationExpired,
+  DRIVER_EARNINGS_LKR,
 } = require('../utils/distance');
 const {
   isDriverRole,
@@ -36,6 +38,7 @@ const TRACKING_POPULATE = [
 ];
 
 const ACTIVE_DRIVER_STATUSES = ['driver_assigned', 'picked_up'];
+const ACTIVE_CUSTOMER_ORDER_STATUSES = ['driver_assigned', 'picked_up', 'in_transit'];
 
 /** @type {Map<string, { intervalId: NodeJS.Timeout, timeoutId: NodeJS.Timeout | null }>} */
 const demoSessions = new Map();
@@ -58,6 +61,85 @@ function getDriverCoords(user, queryLat, queryLng) {
     return { lat: user.driverLatitude, lng: user.driverLongitude };
   }
   return { lat: null, lng: null };
+}
+
+function toDriverCustomerOrderJSON(order) {
+  const base = typeof order.toPublicJSON === 'function' ? order.toPublicJSON() : order;
+  const customer = order.customerId && typeof order.customerId === 'object' ? order.customerId : null;
+  const driver = order.driverId && typeof order.driverId === 'object' ? order.driverId : null;
+
+  const mappedStatus = base.status === 'driver_assigned' ? 'assigned' : base.status;
+  const items = Array.isArray(base.orderSummary?.items) ? base.orderSummary.items : [];
+  const totalQty = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const firstItemName = items[0]?.name || 'Customer order';
+  const title =
+    items.length > 1 ? `${firstItemName} + ${items.length - 1} more item(s)` : firstItemName;
+
+  return {
+    id: base._id?.toString?.() || base.id,
+    _id: base._id?.toString?.() || base.id,
+    sourceType: 'customer_order',
+    orderId: base.orderId,
+    itemName: title,
+    quantity: totalQty,
+    donorName: 'FoodLoop Customer',
+    receiverName: customer?.username || customer?.email || 'Customer',
+    receiverAddress: base.customerAddress || base.orderSummary?.address || '',
+    receiverLatitude: base.customerLatitude ?? null,
+    receiverLongitude: base.customerLongitude ?? null,
+    status: mappedStatus,
+    paymentMethod: base.paymentMethod || 'card',
+    codAmount: Number(base.codAmount || 0),
+    currency: base.currency || 'LKR',
+    totalAmount: Number(base.orderSummary?.total || 0),
+    earnings: DRIVER_EARNINGS_LKR,
+    expiryText: 'Customer order ready for delivery',
+    createdAt: base.createdAt,
+    updatedAt: base.updatedAt,
+    assignedAt: base.assignedAt || null,
+    pickedUpAt: base.pickedUpAt || null,
+    deliveredAt: base.deliveredAt || null,
+    driver: driver
+      ? {
+          name: driver.driverName || driver.username || 'Driver',
+          contactNo: driver.contactNo || null,
+          email: driver.email || null,
+          location:
+            driver.driverLatitude != null && driver.driverLongitude != null
+              ? { latitude: driver.driverLatitude, longitude: driver.driverLongitude }
+              : null,
+        }
+      : null,
+    donor: {
+      name: 'FoodLoop Customer',
+      address: 'Online customer order',
+      location: null,
+    },
+    receiver: {
+      name: customer?.username || 'Customer',
+      contactNo: customer?.contactNo || null,
+      email: customer?.email || null,
+      address: base.customerAddress || base.orderSummary?.address || '',
+      location:
+        base.customerLatitude != null && base.customerLongitude != null
+          ? { latitude: base.customerLatitude, longitude: base.customerLongitude }
+          : null,
+    },
+    donation: {
+      id: base._id?.toString?.() || base.id,
+      trackingId: base.orderId,
+      itemName: `Customer order (${(base.orderSummary?.items || []).length} items)`,
+      quantity: totalQty,
+      itemCount: items.length,
+      items,
+      status: mappedStatus,
+      sourceType: 'customer_order',
+      paymentMethod: base.paymentMethod || 'card',
+      codAmount: Number(base.codAmount || 0),
+      currency: base.currency || 'LKR',
+      totalAmount: Number(base.orderSummary?.total || 0),
+    },
+  };
 }
 
 function stopDemoSession(driverId) {
@@ -214,11 +296,17 @@ exports.getAvailablePickups = async (req, res) => {
     const { lat, lng } = getDriverCoords(req.user, req.query.lat, req.query.lng);
 
     if (lat == null || lng == null) {
+      const customerOrdersNoLoc = await CustomerOrder.find({
+        status: 'finding_driver',
+        driverId: null,
+      })
+        .populate('customerId', 'username email contactNo')
+        .sort({ createdAt: -1 });
       return res.json({
         success: true,
-        pickups: [],
+        pickups: customerOrdersNoLoc.map((order) => toDriverCustomerOrderJSON(order)),
         driverLocation: null,
-        message: 'Set your location to see available pickups.',
+        message: 'Set your location to see nearby donation pickups. Customer orders are shown below.',
       });
     }
 
@@ -248,9 +336,17 @@ exports.getAvailablePickups = async (req, res) => {
       pickups.push(toDriverPickupJSON(donation, lat, lng));
     }
 
+    const customerOrders = await CustomerOrder.find({
+      status: 'finding_driver',
+      driverId: null,
+    })
+      .populate('customerId', 'username email contactNo')
+      .sort({ createdAt: -1 });
+
+    const customerPickups = customerOrders.map((order) => toDriverCustomerOrderJSON(order));
     return res.json({
       success: true,
-      pickups,
+      pickups: [...pickups, ...customerPickups],
       driverLocation: { latitude: lat, longitude: lng },
     });
   } catch (err) {
@@ -277,16 +373,24 @@ exports.getActiveDeliveries = async (req, res) => {
       .populate('driverId', 'username driverName')
       .sort({ assignedAt: -1, updatedAt: -1 });
 
-    const deliveries = donations.map((d) =>
+    const donationDeliveries = donations.map((d) =>
       toDriverActiveDeliveryJSON(d, lat, lng)
     );
+    const customerOrders = await CustomerOrder.find({
+      driverId: req.user._id,
+      status: { $in: ACTIVE_CUSTOMER_ORDER_STATUSES },
+    })
+      .populate('customerId', 'username email contactNo')
+      .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude')
+      .sort({ updatedAt: -1 });
+    const customerDeliveries = customerOrders.map((order) => toDriverCustomerOrderJSON(order));
 
     const driverLocation =
       lat != null && lng != null ? { latitude: lat, longitude: lng } : null;
 
     return res.json({
       success: true,
-      deliveries,
+      deliveries: [...donationDeliveries, ...customerDeliveries],
       driverLocation,
     });
   } catch (err) {
@@ -311,7 +415,11 @@ exports.acceptPickup = async (req, res) => {
       driverId: req.user._id,
       status: { $in: ACTIVE_DRIVER_STATUSES },
     });
-    if (existingActive) {
+    const existingCustomerOrder = await CustomerOrder.findOne({
+      driverId: req.user._id,
+      status: { $in: ACTIVE_CUSTOMER_ORDER_STATUSES },
+    });
+    if (existingActive || existingCustomerOrder) {
       return res.status(400).json({
         success: false,
         message: 'You can only have one active delivery at a time. Complete it first.',
@@ -320,7 +428,32 @@ exports.acceptPickup = async (req, res) => {
 
     const donation = await Donation.findById(donationId);
     if (!donation) {
-      return res.status(404).json({ success: false, message: 'Donation not found.' });
+      const customerOrder = await CustomerOrder.findById(donationId)
+        .populate('customerId', 'username email contactNo')
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+      if (!customerOrder) {
+        return res.status(404).json({ success: false, message: 'Pickup not found.' });
+      }
+      if (customerOrder.status !== 'finding_driver' || customerOrder.driverId) {
+        return res.status(400).json({
+          success: false,
+          message: 'This customer order is no longer available.',
+        });
+      }
+
+      customerOrder.driverId = req.user._id;
+      customerOrder.status = 'driver_assigned';
+      customerOrder.assignedAt = new Date();
+      await customerOrder.save();
+      await customerOrder.populate('customerId', 'username email contactNo');
+      await customerOrder.populate(
+        'driverId',
+        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+      );
+      return res.json({
+        success: true,
+        donation: toDriverCustomerOrderJSON(customerOrder),
+      });
     }
     if (donation.status !== 'claimed' || donation.driverId) {
       return res.status(400).json({
@@ -392,7 +525,25 @@ exports.getDonationTracking = async (req, res) => {
 
     const donation = await loadDonationForTracking(donationId);
     if (!donation) {
-      return res.status(404).json({ success: false, message: 'Donation not found.' });
+      const customerOrder = await CustomerOrder.findById(donationId)
+        .populate('customerId', 'username email contactNo')
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+      if (!customerOrder) {
+        return res.status(404).json({ success: false, message: 'Tracking item not found.' });
+      }
+      const customerId = customerOrder.customerId?._id?.toString?.() || customerOrder.customerId?.toString?.();
+      const driverId = customerOrder.driverId?._id?.toString?.() || customerOrder.driverId?.toString?.();
+      const userId = req.user._id.toString();
+      if (![customerId, driverId].includes(userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not allowed to view tracking for this customer order.',
+        });
+      }
+      return res.json({
+        success: true,
+        tracking: toDriverCustomerOrderJSON(customerOrder),
+      });
     }
     if (!userCanViewTracking(donation, req.user._id)) {
       return res.status(403).json({
@@ -439,7 +590,34 @@ exports.confirmPickup = async (req, res) => {
 
     const donation = await Donation.findById(donationId);
     if (!donation) {
-      return res.status(404).json({ success: false, message: 'Donation not found.' });
+      const customerOrder = await CustomerOrder.findById(donationId)
+        .populate('customerId', 'username email contactNo')
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+      if (!customerOrder) {
+        return res.status(404).json({ success: false, message: 'Pickup not found.' });
+      }
+      if (customerOrder.driverId?._id?.toString?.() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Not your assigned order.' });
+      }
+      if (customerOrder.status !== 'driver_assigned') {
+        return res.status(400).json({
+          success: false,
+          message: 'Pickup can only be confirmed while heading to customer.',
+        });
+      }
+      customerOrder.status = 'picked_up';
+      customerOrder.pickedUpAt = new Date();
+      await customerOrder.save();
+      await customerOrder.populate('customerId', 'username email contactNo');
+      await customerOrder.populate(
+        'driverId',
+        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+      );
+      return res.json({
+        success: true,
+        message: 'Pickup confirmed.',
+        tracking: toDriverCustomerOrderJSON(customerOrder),
+      });
     }
     if (donation.driverId?.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not your assigned delivery.' });
@@ -500,7 +678,34 @@ exports.confirmDelivery = async (req, res) => {
 
     const donation = await Donation.findById(donationId);
     if (!donation) {
-      return res.status(404).json({ success: false, message: 'Donation not found.' });
+      const customerOrder = await CustomerOrder.findById(donationId)
+        .populate('customerId', 'username email contactNo')
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+      if (!customerOrder) {
+        return res.status(404).json({ success: false, message: 'Delivery item not found.' });
+      }
+      if (customerOrder.driverId?._id?.toString?.() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Not your assigned order.' });
+      }
+      if (!['picked_up', 'in_transit'].includes(customerOrder.status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Delivery can only be confirmed after pickup.',
+        });
+      }
+      customerOrder.status = 'delivered';
+      customerOrder.deliveredAt = new Date();
+      await customerOrder.save();
+      await customerOrder.populate('customerId', 'username email contactNo');
+      await customerOrder.populate(
+        'driverId',
+        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+      );
+      return res.json({
+        success: true,
+        message: 'Delivery confirmed.',
+        tracking: toDriverCustomerOrderJSON(customerOrder),
+      });
     }
     if (donation.driverId?.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not your assigned delivery.' });

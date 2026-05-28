@@ -53,12 +53,12 @@ const userSchema = new mongoose.Schema(
 
     businessRegFile: { type: String, default: null },
     addressProofFile: { type: String, default: null },
+    nicNumber: { type: String, default: null, trim: true },
     nicFile: { type: String, default: null },
     licenseFile: { type: String, default: null },
     gramaNiladhariLetter: { type: String, default: null },
 
     customerIncomeLevel: { type: String, enum: ['normal', 'low'], default: null },
-    isStartup: { type: Boolean, default: false },
     startupDetails: { type: String, default: null },
   },
   { timestamps: true }

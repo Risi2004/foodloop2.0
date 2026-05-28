@@ -10,7 +10,7 @@ import { getPublicStats } from "../../../services/statsApi";
 import "./StatsCardPage.css"
 
 const defaultStats = [
-    { id: 1, icon: icon1, count: "12,540", title: "Donors Registered" },
+    { id: 1, icon: icon1, count: "12,540", title: "Suppliers Registered" },
     { id: 2, icon: icon2, count: "3,280", title: "Volunteer Drivers Registered" },
     { id: 3, icon: icon3, count: "1,120", title: "NGOs Registered" },
     { id: 4, icon: icon4, count: "45600 Kg", title: "Food Saved" },
@@ -33,7 +33,7 @@ function StatsCardPage() {
                 if (cancelled || !res?.stats) return;
                 const s = res.stats;
                 setStatsData([
-                    { id: 1, icon: icon1, count: formatNumber(s.donors), title: "Donors Registered" },
+                    { id: 1, icon: icon1, count: formatNumber(s.donors), title: "Suppliers Registered" },
                     { id: 2, icon: icon2, count: formatNumber(s.drivers), title: "Volunteer Drivers Registered" },
                     { id: 3, icon: icon3, count: formatNumber(s.receivers), title: "NGOs Registered" },
                     { id: 4, icon: icon4, count: `${formatNumber(s.foodSavedKg)} Kg`, title: "Food Saved" },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './AdminUserManagement.css';
 import { getPendingUsers, updateUserStatus } from '../../../../services/api';
-import { getAdminUserName, getAdminUserOrganization } from '../../../../utils/adminUserDisplay';
+import { getAdminUserName, getAdminUserOrganization, getAdminRoleLabel } from '../../../../utils/adminUserDisplay';
 import DocumentsModal from './DocumentsModal';
 
 const RecentRequestsTable = ({ onUserStatusChange }) => {
@@ -169,7 +169,7 @@ const RecentRequestsTable = ({ onUserStatusChange }) => {
                                     </td>
                                     <td className="date-cell">{formatDate(req.createdAt)}</td>
                                     <td className="role-cell">
-                                        <div className="role-main">{req.role}</div>
+                                        <div className="role-main">{getAdminRoleLabel(req.role)}</div>
                                         <div className="role-sub">{getAdminUserOrganization(req)}</div>
                                     </td>
                                     <td className="action-cell">

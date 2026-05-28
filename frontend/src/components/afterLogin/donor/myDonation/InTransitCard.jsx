@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 const InTransitCard = ({ donation }) => {
     const donationId = donation?.id || donation?._id || '';
-    const trackOrderUrl = donationId ? `/donor/track-order?donationId=${donationId}` : '#';
+    const trackOrderUrl = donationId ? `/supplier/track-order?donationId=${donationId}` : '#';
 
     if (!donation) {
         return null;

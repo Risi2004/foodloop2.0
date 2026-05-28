@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './AdminUserManagement.css';
 import { getAllUsers, updateUserStatus } from '../../../../services/api';
-import { getAdminUserName, getAdminUserOrganization } from '../../../../utils/adminUserDisplay';
+import { getAdminUserName, getAdminUserOrganization, getAdminRoleLabel } from '../../../../utils/adminUserDisplay';
 import DocumentsModal from './DocumentsModal';
 
 const itemsPerPage = 10;
@@ -201,7 +201,7 @@ const MembersTable = ({ refreshTrigger, searchTerm = '', roleFilter = '', status
                                             </td>
                                             <td className="details-text">{member.contactNo || '—'}</td>
                                             <td className="role-cell">
-                                                <div className="role-main">{member.role}</div>
+                                                <div className="role-main">{getAdminRoleLabel(member.role)}</div>
                                                 <div className="role-sub">{getAdminUserOrganization(member)}</div>
                                             </td>
                                             <td className="details-text" title={member.address}>

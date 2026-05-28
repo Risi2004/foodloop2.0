@@ -14,9 +14,9 @@ function Header() {
                     <h1>Turn Your Surplus into</h1>
                     <h1>Social Impact</h1>
                     <p>FoodLoop uses AI-powered vision to help restaurants, wedding halls, and supermarkets donate surplus food seamlessly. Close the loop today.</p>
-                    <button className="header__s1__btn" onClick={() => navigate('/donor/my-donation')}>
+                    <button className="header__s1__btn" onClick={() => navigate('/supplier/my-donation')}>
                         <img src={camera} alt="cmaera-icon" />
-                        <p>Start Donating With AI</p>
+                        <p>List Food With AI</p>
                     </button>
                 </div>
                 <img className="header__image1" src={headerImage1} alt="Header-1" />

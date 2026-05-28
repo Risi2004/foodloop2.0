@@ -37,7 +37,7 @@ function RecentDonations({ donations = [] }) {
         <div className="recent-donations-section">
             <div className="section-header">
                 <h3>Recent Donations</h3>
-                <Link to="/donor/my-donation" className="view-all-btn">View All</Link>
+                <Link to="/supplier/my-donation" className="view-all-btn">View All</Link>
             </div>
 
             <div className="donations-table-container">

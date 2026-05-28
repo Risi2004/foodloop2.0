@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import LandingPage from "./pages/beforeLogin/landingPage/LandingPage";
 import DonorDashboard from "./pages/afterLogin/donor/dashboard/DonorDashboard"
 import LoginPage from "./pages/beforeLogin/loginPage/LoginPage";
@@ -54,13 +54,25 @@ import ReceiverTrackingPage from "./pages/afterLogin/receiver/trackingPage/Recei
 import CustomerMarketplace from "./pages/afterLogin/customer/marketplace/CustomerMarketplace";
 import CustomerCart from "./pages/afterLogin/customer/cart/CustomerCart";
 import CustomerPayment from "./pages/afterLogin/customer/payment/CustomerPayment";
+import CustomerOrderHistory from "./pages/afterLogin/customer/orderHistory/CustomerOrderHistory";
+import CustomerOrderTracking from "./pages/afterLogin/customer/orderTracking/CustomerOrderTracking";
 import CustomerProfile from "./pages/afterLogin/customer/profile/CustomerProfile";
+import CustomerAbout from "./pages/afterLogin/customer/about/CustomerAbout";
+import CustomerNotifications from "./pages/afterLogin/customer/notifications/CustomerNotifications";
+import CustomerPrivacyPolicy from "./pages/afterLogin/customer/privacyPolicy/CustomerPrivacyPolicy";
+import CustomerTermsAndConditions from "./pages/afterLogin/customer/termsAndConditions/CustomerTermsAndConditions";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import RoleLayout from "./components/afterLogin/RoleLayout/RoleLayout";
 import { MarketplaceProvider } from "./contexts/MarketplaceContext";
 import { DONOR_DASHBOARD_ROLES } from "./utils/auth";
+import { legacyDonorToSupplier } from "./constants/supplierRoutes";
+
+function LegacyDonorRedirect() {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate to={legacyDonorToSupplier(pathname) + search + hash} replace />;
+}
 
 function ProtectedRoleRoute({ allowedRoles }) {
   return (
@@ -95,8 +107,8 @@ function App() {
 
         {/* After Signin - Protected Routes */}
 
-        {/* Donor Routes — Donor + restaurant / supermarket / business / individual */}
-        <Route path="/donor" element={<ProtectedRoleRoute allowedRoles={DONOR_DASHBOARD_ROLES} />}>
+        {/* Supplier routes — Donor role + restaurant / supermarket / business / individual */}
+        <Route path="/supplier" element={<ProtectedRoleRoute allowedRoles={DONOR_DASHBOARD_ROLES} />}>
           <Route path="dashboard" element={<DonorDashboard />} />
           <Route path="about" element={<DonorAbout />} />
           <Route path="privacy-policy" element={<DonorPrivacyPolicy />} />
@@ -111,6 +123,8 @@ function App() {
           <Route path="digital-receipt" element={<DigitalReceipt />} />
           <Route path="individual-edit-profile" element={<IndividualEditProfile />} />
         </Route>
+
+        <Route path="/donor/*" element={<LegacyDonorRedirect />} />
 
         {/* Receiver Routes - Only accessible by Receiver role */}
         <Route path="/receiver" element={<ProtectedRoleRoute allowedRoles={['Receiver']} />}>
@@ -156,7 +170,13 @@ function App() {
           <Route path="marketplace" element={<CustomerMarketplace />} />
           <Route path="cart" element={<CustomerCart />} />
           <Route path="payment" element={<CustomerPayment />} />
+          <Route path="order-history" element={<CustomerOrderHistory />} />
+          <Route path="order-tracking" element={<CustomerOrderTracking />} />
           <Route path="profile" element={<CustomerProfile />} />
+          <Route path="about" element={<CustomerAbout />} />
+          <Route path="notifications" element={<CustomerNotifications />} />
+          <Route path="privacy-policy" element={<CustomerPrivacyPolicy />} />
+          <Route path="terms-&-conditions" element={<CustomerTermsAndConditions />} />
         </Route>
 
       </Routes>

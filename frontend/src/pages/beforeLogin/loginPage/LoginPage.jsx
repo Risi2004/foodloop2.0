@@ -205,7 +205,7 @@ function LoginPage() {
 
                     <div className="login__footer">
                         <p>Don't have an account?</p>
-                        <Link to="/signup">Sign up as a Donor, Volunteer or NGO</Link>
+                        <Link to="/signup">Sign up as a Supplier, Volunteer or NGO</Link>
                     </div>
                 </div>
 

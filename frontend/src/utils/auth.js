@@ -1,5 +1,7 @@
 // Token management utilities
 
+import { supplierRoutes } from '../constants/supplierRoutes';
+
 const TOKEN_KEY = 'foodloop_token';
 const USER_KEY = 'foodloop_user';
 
@@ -13,14 +15,14 @@ export function isDonorDashboardRole(role) {
   return key === 'donor' || VENDOR_ROLES.includes(key);
 }
 
-/** Display name for donor dashboard navbar (business name, not email) */
-export function getDonorDisplayName(user) {
+/** Display name for supplier dashboard navbar (business name, not email) */
+export function getSupplierDisplayName(user) {
   if (!user) return 'User';
   const role = (user.role || '').toLowerCase();
 
   if (role === 'donor') {
     if (user.donorType === 'Business') return user.businessName?.trim() || user.username?.trim() || 'Business';
-    return user.username?.trim() || 'Donor';
+    return user.username?.trim() || 'Supplier';
   }
 
   if (['restaurant', 'supermarket', 'business'].includes(role)) {
@@ -33,6 +35,9 @@ export function getDonorDisplayName(user) {
 
   return user.businessName?.trim() || user.username?.trim() || 'User';
 }
+
+/** @deprecated Use getSupplierDisplayName */
+export const getDonorDisplayName = getSupplierDisplayName;
 
 /** Resolved profile photo URL from login/signup user object (R2, /uploads, or blob preview) */
 export function getUserProfileImageUrl(user) {
@@ -130,7 +135,7 @@ export const normalizeRole = (role) => {
 export const getDashboardPath = (role) => {
   const key = normalizeRole(role).toLowerCase();
 
-  if (isDonorDashboardRole(role)) return '/donor/dashboard';
+  if (isDonorDashboardRole(role)) return supplierRoutes.dashboard();
   if (key === 'receiver') return '/receiver/dashboard';
   if (key === 'driver') return '/driver/dashboard';
   if (key === 'admin') return '/admin/dashboard';

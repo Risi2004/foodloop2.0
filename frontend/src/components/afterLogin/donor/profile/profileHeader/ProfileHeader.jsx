@@ -15,7 +15,7 @@ function formatMemberSince(createdAt) {
 function ProfileHeader({ user }) {
     const displayName = user?.donorType === 'Business'
         ? (user?.businessName || 'Business Donor')
-        : (user?.username || user?.email || 'Donor');
+        : (user?.username || user?.email || 'Supplier');
     const displayType = user?.donorType === 'Business'
         ? (user?.businessType || 'business')
         : 'Individual';
@@ -32,7 +32,7 @@ function ProfileHeader({ user }) {
                     <div className="profile-title-row">
                         <h1 className="profile-name">{displayName}</h1>
                         {/* Edit button shown inline where the verified badge used to be */}
-                        <Link to="/donor/edit-profile" className="inline-edit-link">
+                        <Link to="/supplier/edit-profile" className="inline-edit-link">
                             <button className="edit-btn inline-edit-btn">Edit</button>
                         </Link>
                     </div>

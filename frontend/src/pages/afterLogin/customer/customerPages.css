@@ -1,0 +1,144 @@
+/* Shared customer inner-page layout (navbar unchanged) */
+.customer-page {
+  font-family: 'Montserrat', sans-serif;
+  max-width: 1440px; /* Increased from 1200px to cover more content width */
+  margin: 1.25rem auto 0; /* Leaves a beautiful 20px gap below the navbar */
+  padding: 0 1.5rem 3rem;
+}
+
+.customer-page-hero {
+  margin: 0 -1.5rem 2rem;
+  padding: 2rem 1.5rem 2.25rem;
+  background: linear-gradient(135deg, #1f4e36 0%, #3d8b5e 55%, #48b47d 100%);
+  border-radius: 24px; /* Fully rounded elegant corners */
+  box-shadow: 0 12px 32px rgba(31, 78, 54, 0.18);
+}
+
+.customer-page-hero .back-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.customer-page-hero .back-link:hover {
+  color: #fff;
+  transform: translateX(-4px);
+}
+
+.customer-page-hero h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.customer-page-hero p {
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.customer-panel {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #e2ebe6;
+  box-shadow: 0 4px 20px rgba(31, 78, 54, 0.06);
+}
+
+.customer-panel--elevated {
+  box-shadow: 0 8px 28px rgba(31, 78, 54, 0.1);
+}
+
+.customer-summary-panel {
+  background: linear-gradient(160deg, #1f4e36 0%, #2e5c45 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(31, 78, 54, 0.2);
+  position: sticky;
+  top: 110px;
+}
+
+.customer-summary-panel h3 {
+  color: #fff;
+  font-weight: 800;
+  margin: 0 0 1.5rem;
+  font-size: 1.35rem;
+}
+
+.customer-summary-panel .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+}
+
+.customer-summary-panel .summary-row span:last-child {
+  color: #fff;
+  font-weight: 700;
+}
+
+.customer-summary-panel .summary-row.total {
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+  padding-top: 1.25rem;
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.customer-btn-primary {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  font-family: inherit;
+  background: #fff;
+  color: #1f4e36;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.customer-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  background: #f0faf4;
+}
+
+.customer-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.customer-contact-wrap {
+  margin-top: 2rem;
+  padding: 2rem 1.5rem 0;
+  background: linear-gradient(180deg, #eef4f0 0%, #f6f8f7 100%);
+  border-top: 1px solid #dbe6e0;
+}
+
+.customer-notifications-page .notifications-panel-wrap {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.customer-notifications-page .notificationPanel {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
+}

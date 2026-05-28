@@ -9,12 +9,12 @@ function DonorStatusBatch() {
         <>
             <div className="donor__status__heading">
                 <h1>Earn Your Status</h1>
-                <p>Join our tiered donor program and showcase your commitment to the circular economy.</p>
+                <p>Join our tiered supplier program and showcase your commitment to the circular economy.</p>
             </div>
             <div className='donor__status__batch'>
                 <div className='donor__status__batch__card'>
                     <img src={icon1} alt="silver" />
-                    <h1>Silver Donor</h1>
+                    <h1>Silver Supplier</h1>
                     <p>25+ Verified Donations</p>
                     <div className="donor__status__batch__card__points__section">
                         <div className="donor__status__batch__card__points">
@@ -29,7 +29,7 @@ function DonorStatusBatch() {
                 </div>
                 <div className='donor__status__batch__card'>
                     <img src={icon2} alt="silver" />
-                    <h1>Gold Donor</h1>
+                    <h1>Gold Supplier</h1>
                     <p>50+ Verified Donations</p>
                     <div className="donor__status__batch__card__points__section">
                         <div className="donor__status__batch__card__points">
@@ -48,7 +48,7 @@ function DonorStatusBatch() {
                 </div>
                 <div className='donor__status__batch__card'>
                     <img src={icon3} alt="silver" />
-                    <h1>Centurion Donor</h1>
+                    <h1>Centurion Supplier</h1>
                     <p>100+ Verified Donations</p>
                     <div className="donor__status__batch__card__points__section">
                         <div className="donor__status__batch__card__points">

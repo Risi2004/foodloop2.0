@@ -139,7 +139,7 @@ function TrackingMap({ trackingData, driverLocation: liveDriverLocation }) {
                     <Marker position={donorLocation} icon={donorIcon}>
                         <Popup>
                             <strong>Pickup Location</strong><br/>
-                            {trackingData?.donor?.name || 'Donor'}<br/>
+                            {trackingData?.donor?.name || 'Supplier'}<br/>
                             {trackingData?.donor?.address || ''}
                         </Popup>
                     </Marker>

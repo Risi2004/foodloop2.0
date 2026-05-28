@@ -67,7 +67,7 @@ const DonorMyDonationDashboard = () => {
             const donationId = payload?.donationId;
             if (donationId) {
                 // Driver accepted the order: go to live tracking for this donation
-                navigate(`/donor/track-order?donationId=${donationId}`);
+                navigate(`/supplier/track-order?donationId=${donationId}`);
             }
         };
 
@@ -116,7 +116,7 @@ const DonorMyDonationDashboard = () => {
     const completed = donations.filter(d => d.status === 'delivered');
 
     const handleEdit = (donation) => {
-        navigate(`/donor/edit-donation/${donation.id}`);
+        navigate(`/supplier/edit-donation/${donation.id}`);
     };
 
     const handleCancelClaim = async (donation) => {

@@ -7,6 +7,7 @@ import {
     CONTACT_DUPLICATE_MSG,
     isValidEmail,
     isValidContactNo,
+    isValidNicNumber,
     normalizeEmail,
     getContactDigits,
     buildContactNo,
@@ -55,15 +56,20 @@ function SignupPage() {
         
         businessRegFile: null,
         addressProofFile: null,
+        nicNumber: '',
         nicFile: null,
         licenseFile: null,
         gramaNiladhariLetter: null,
-        isStartup: false,
         startupDetails: '',
         venueType: '',
     });
 
     const isBusiness = ['restaurant', 'supermarket', 'business'].includes(roleType);
+
+    const showNicDocumentUpload = (nic) => {
+        if (isValidNicNumber(nic)) return true;
+        return String(nic || '').replace(/\s/g, '').length >= 9;
+    };
 
     const needsAdminApprovalNotice =
         ['receiver', 'driver', 'restaurant', 'supermarket', 'business', 'individual'].includes(roleType) ||
@@ -330,10 +336,15 @@ function SignupPage() {
         if (roleType === 'individual' || roleType === 'customer') {
             const usernameErr = validateField('username', formData.username);
             if (usernameErr) newErrors.username = usernameErr;
-            if (roleType === 'individual' && formData.isStartup) {
+            if (roleType === 'individual') {
+                const nicErr = validateField('nicNumber', formData.nicNumber);
+                if (nicErr) newErrors.nicNumber = nicErr;
                 const bizErr = validateField('businessName', formData.businessName);
                 if (bizErr) newErrors.businessName = bizErr;
-                if (!formData.startupDetails?.trim()) newErrors.startupDetails = 'Startup details are required';
+                if (!formData.startupDetails?.trim()) {
+                    newErrors.startupDetails = 'Startup details are required';
+                }
+                if (!formData.nicFile) newErrors.nicFile = 'NIC document (PDF) is required';
             }
         } else if (isBusiness) {
             if (roleType === 'restaurant' && !formData.venueType) {
@@ -412,10 +423,11 @@ function SignupPage() {
 
             if (roleType === 'individual' || roleType === 'customer') {
                 submitFormData.append('username', formData.username);
-                if (roleType === 'individual' && formData.isStartup) {
-                    submitFormData.append('isStartup', 'true');
+                if (roleType === 'individual') {
+                    submitFormData.append('nicNumber', formData.nicNumber.replace(/\s/g, '').toUpperCase());
                     submitFormData.append('businessName', formData.businessName);
                     submitFormData.append('startupDetails', formData.startupDetails);
+                    if (formData.nicFile) submitFormData.append('nicFile', formData.nicFile);
                 }
             } else if (isBusiness) {
                 submitFormData.append('businessName', formData.businessName);
@@ -591,21 +603,44 @@ function SignupPage() {
                                     {errors.username && <span className="error-message">{errors.username}</span>}
                                 </div>
                                 {roleType === 'individual' && (
-                                    <div className="input__group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                                        <input type="checkbox" id="isStartup" checked={formData.isStartup} onChange={handleInputChange} style={{ width: 'auto' }} />
-                                        <label htmlFor="isStartup" style={{ margin: 0, fontWeight: 'normal' }}>I am a startup business</label>
-                                    </div>
-                                )}
-                                {roleType === 'individual' && formData.isStartup && (
                                     <>
                                         <div className="input__group">
-                                            <label htmlFor="businessName">Startup/Business Name</label>
+                                            <label htmlFor="nicNumber">NIC number</label>
+                                            <input
+                                                type="text"
+                                                id="nicNumber"
+                                                placeholder="Eg: 123456789V or 200012345678"
+                                                value={formData.nicNumber}
+                                                onChange={handleInputChange}
+                                                onBlur={handleBlur}
+                                            />
+                                            {errors.nicNumber && <span className="error-message">{errors.nicNumber}</span>}
+                                            {!showNicDocumentUpload(formData.nicNumber) && formData.nicNumber.trim() && (
+                                                <span className="file__hint" style={{ marginTop: '6px' }}>
+                                                    Enter at least 9 digits (or full NIC) to upload your document.
+                                                </span>
+                                            )}
+                                        </div>
+                                        {showNicDocumentUpload(formData.nicNumber) && (
+                                            <div className="input__group border__group">
+                                                <label>NIC document (front &amp; back)</label>
+                                                <span className="file__hint">Upload PDF only (max 10 MB)</span>
+                                                <div className="file__drop" onClick={() => triggerFileUpload('individual-nic-file')}>
+                                                    <span>{formData.nicFile ? formData.nicFile.name : 'Import or Drag File'}</span>
+                                                    <button className="add__file__btn" type="button">Add File</button>
+                                                </div>
+                                                <input type="file" id="individual-nic-file" accept="application/pdf" hidden onChange={(e) => handleFileChange(e, 'nicFile')} />
+                                                {errors.nicFile && <span className="error-message">{errors.nicFile}</span>}
+                                            </div>
+                                        )}
+                                        <div className="input__group">
+                                            <label htmlFor="businessName">Startup / business name</label>
                                             <input type="text" id="businessName" placeholder="Eg: John Bites" value={formData.businessName} onChange={handleInputChange} onBlur={handleBlur} />
                                             {errors.businessName && <span className="error-message">{errors.businessName}</span>}
                                         </div>
                                         <div className="input__group">
-                                            <label htmlFor="startupDetails">Startup Details</label>
-                                            <textarea id="startupDetails" placeholder="Tell us about your startup..." value={formData.startupDetails} onChange={handleInputChange} onBlur={handleBlur} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #ccc', outline: 'none', resize: 'vertical' }} rows="3" />
+                                            <label htmlFor="startupDetails">Startup details</label>
+                                            <textarea id="startupDetails" placeholder="Describe your home startup (what you sell, hours, etc.)" value={formData.startupDetails} onChange={handleInputChange} onBlur={handleBlur} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #ccc', outline: 'none', resize: 'vertical' }} rows="3" />
                                             {errors.startupDetails && <span className="error-message">{errors.startupDetails}</span>}
                                         </div>
                                     </>

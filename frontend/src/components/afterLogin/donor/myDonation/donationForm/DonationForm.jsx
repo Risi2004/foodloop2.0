@@ -381,7 +381,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 );
                 if (response?.success) {
                     setShowLocationModal(false);
-                    navigate('/donor/my-donation', { replace: true });
+                    navigate('/supplier/my-donation', { replace: true });
                 } else {
                     throw new Error(response?.message || 'Failed to update donation');
                 }
@@ -396,7 +396,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 setShowLocationModal(false);
                 setSubmitSuccess('Donation saved successfully. Redirecting…');
                 setTimeout(() => {
-                    navigate('/donor/my-donation', { replace: true });
+                    navigate('/supplier/my-donation', { replace: true });
                 }, 600);
             } else {
                 throw new Error(response?.message || 'Failed to submit donation');

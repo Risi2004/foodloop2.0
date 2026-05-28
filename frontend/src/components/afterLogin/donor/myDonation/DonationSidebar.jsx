@@ -10,7 +10,7 @@ const DonationSidebar = ({ impactStats }) => {
       <div className="sidebar-content">
         <h1 className="sidebar-title">
           <span className="sidebar-title--dark">My</span>{' '}
-          <span className="sidebar-title--accent">Donation</span>
+          <span className="sidebar-title--accent">Listings</span>
         </h1>
         <p className="sidebar-description">
           Manage your contributions and track their impact
@@ -41,8 +41,8 @@ const DonationSidebar = ({ impactStats }) => {
           </div>
         </div>
 
-        <Link to="/donor/new-donation" className="new-donation-button">
-          New Donation
+        <Link to="/supplier/new-donation" className="new-donation-button">
+          New Listing
         </Link>
       </div>
     </aside>

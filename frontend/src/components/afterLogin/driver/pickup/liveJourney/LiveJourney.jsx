@@ -12,9 +12,11 @@ function formatDate(date) {
 }
 
 function LiveJourney({ tracking, isConfirmed, impactProgress, routeEta, trafficLabel }) {
-    const createdAt = tracking?.timestamps?.createdAt;
-    const actualPickupDate = tracking?.timestamps?.actualPickupDate;
+    const isCustomerOrder = tracking?.donation?.sourceType === 'customer_order';
+    const createdAt = tracking?.donation?.createdAt || tracking?.createdAt || null;
+    const actualPickupDate = tracking?.donation?.pickedUpAt || tracking?.pickedUpAt || null;
     const driverName = tracking?.driver?.name ?? 'Driver';
+    const customerName = tracking?.receiver?.name ?? 'Customer';
     const status = tracking?.donation?.status;
     const withVolunteer = status === 'picked_up' || isConfirmed;
 
@@ -40,8 +42,10 @@ function LiveJourney({ tracking, isConfirmed, impactProgress, routeEta, trafficL
                             <img src={locationIcon} alt="Location" />
                         </div>
                         <div className="timeline-content">
-                            <p className="step-status green-text">Item Listed</p>
-                            <h4 className="step-title">Donation confirmed by Donor</h4>
+                            <p className="step-status green-text">{isCustomerOrder ? 'Order Placed' : 'Item Listed'}</p>
+                            <h4 className="step-title">
+                                {isCustomerOrder ? `Customer order confirmed by ${customerName}` : 'Donation confirmed by Donor'}
+                            </h4>
                             <p className="step-meta">{formatDate(createdAt)}</p>
                         </div>
                     </div>
@@ -54,7 +58,11 @@ function LiveJourney({ tracking, isConfirmed, impactProgress, routeEta, trafficL
                         <div className="timeline-content">
                             <p className="step-status blue-text">With Volunteer</p>
                             <h4 className="step-title">{withVolunteer ? `Picked up by ${driverName}` : 'Pending pickup'}</h4>
-                            <p className="step-meta">{withVolunteer ? `${formatDate(actualPickupDate)} • On the way` : 'Confirm when you collect'}</p>
+                            <p className="step-meta">
+                                {withVolunteer
+                                    ? `${formatDate(actualPickupDate)} • On the way to ${customerName}`
+                                    : 'Confirm when you collect'}
+                            </p>
                         </div>
                     </div>
 

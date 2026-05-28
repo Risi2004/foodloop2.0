@@ -1,0 +1,57 @@
+.customer__shell {
+  min-height: 100vh;
+  background: #eef4f0;
+  position: relative;
+}
+
+/* Soft header band behind navbar only */
+.customer__shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(180deg, #1f4e36 0%, #2d6a4a 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.customer__shell > .navbar,
+.customer__shell > .responsive__navbar {
+  position: relative;
+  z-index: 2;
+}
+
+.customer__shell > *:not(.navbar):not(.responsive__navbar) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Legal / about / notifications content area */
+.customer__shell .customer-about-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 3rem;
+}
+
+.customer__shell .customer-about-wrap > * {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #e2ebe6;
+  box-shadow: 0 4px 20px rgba(31, 78, 54, 0.06);
+  overflow: hidden;
+}
+
+.customer-legal-page {
+  padding-bottom: 2rem;
+}
+
+.customer-legal-content {
+  padding: 1.5rem 2rem 2rem;
+  overflow: hidden;
+}
+
+.customer-legal-content > * {
+  max-width: 100%;
+}

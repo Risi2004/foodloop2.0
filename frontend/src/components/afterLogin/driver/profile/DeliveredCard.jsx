@@ -44,7 +44,7 @@ function DeliveredCard({ donation }) {
 
     const itemName = donation.itemName || 'Food Item';
     const quantity = donation.quantity || 0;
-    const donorName = donation.donorName || 'Donor';
+    const donorName = donation.donorName || 'Supplier';
     const deliveryDate = formatDeliveryDate(donation.deliveredAt);
 
     return (

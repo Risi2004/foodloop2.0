@@ -48,7 +48,7 @@ const MapLegend = () => (
             <div className="legend__icon legend__icon--donor">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             </div>
-            <span>Donors</span>
+            <span>Suppliers</span>
         </div>
         <div className="legend__item">
             <div className="legend__icon legend__icon--receiver">
@@ -110,7 +110,7 @@ function Map() {
         <div className="map">
             <div className='map__s1'>
                 <h1>Live Impact Map</h1>
-                <p>See our community in action. Green markers show donors in our network, and red markers show receivers feeding those in need.</p>
+                <p>See our community in action. Green markers show suppliers in our network, and red markers show receivers feeding those in need.</p>
             </div>
             <div className='map__s2'>
                 <div className="map__container">
@@ -127,7 +127,7 @@ function Map() {
                         {locations.donors.map((d, i) => (
                             <Marker key={`donor-${i}`} position={[d.lat, d.lng]} icon={donorIcon}>
                                 <Popup>
-                                    <strong>Donor</strong><br />{d.displayName}
+                                    <strong>Supplier</strong><br />{d.displayName}
                                 </Popup>
                             </Marker>
                         ))}

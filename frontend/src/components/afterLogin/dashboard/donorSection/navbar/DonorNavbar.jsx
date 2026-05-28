@@ -4,7 +4,7 @@ import "./DonorNavbar.css"
 import notification from "../../../../../assets/icons/afterLogin/navbar/notification.svg"
 import profile from "../../../../../assets/icons/afterLogin/navbar/profile.svg"
 import menu from "../../../../../assets/icons/navbar/menu-bar.svg"
-import { clearAuth, getUser, setUser, getDonorDisplayName, getUserProfileImageUrl } from "../../../../../utils/auth";
+import { clearAuth, getUser, setUser, getSupplierDisplayName, getUserProfileImageUrl } from "../../../../../utils/auth";
 import { getUnreadCount, NOTIFICATIONS_READ_EVENT } from "../../../../../services/notificationApi";
 import { getSocket, onNewNotification } from "../../../../../services/socket";
 import { deleteAccount, getCurrentUser } from "../../../../../services/api";
@@ -61,7 +61,7 @@ function Navbar() {
         };
     }, []);
     
-    const displayName = getDonorDisplayName(user);
+    const displayName = getSupplierDisplayName(user);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -129,14 +129,14 @@ function Navbar() {
                 </div>
 
                 <div className="navbar__s2">
-                    <Link to="/donor/dashboard">Home</Link>
-                    <Link to="/donor/about">About Us</Link>
-                    <Link to="/donor/dashboard#contact">Contact Us</Link>
-                    <Link to="/donor/my-donation">My Donation</Link>
+                    <Link to="/supplier/dashboard">Home</Link>
+                    <Link to="/supplier/about">About Us</Link>
+                    <Link to="/supplier/dashboard#contact">Contact Us</Link>
+                    <Link to="/supplier/my-donation">My Listings</Link>
                 </div>
 
                 <div className="navbar__s3">
-                    <Link to="/donor/notifications" className="navbar__notification-wrap">
+                    <Link to="/supplier/notifications" className="navbar__notification-wrap">
                         <img className="navbar__s3__img1" src={notification} alt="notification-icon" />
                         {unreadCount > 0 && (
                             <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
@@ -165,7 +165,7 @@ function Navbar() {
                 {isProfileOpen && (
                     <div className="navbar__s3__profile__popup">
                         <p onClick={toggleProfile}>X</p>
-                        <Link to="/donor/profile" onClick={toggleProfile}>View Profile</Link>
+                        <Link to="/supplier/profile" onClick={toggleProfile}>View Profile</Link>
                         <div className="navbar__popup__action">
                             <button type="button" className="navbar__delete-account-btn" onClick={openDeleteModal}>
                                 Delete Account
@@ -187,7 +187,7 @@ function Navbar() {
                     <p>Zero Waste. Infinite Impact</p>
                 </div>
                 <div className="responsive__navbar__s3">
-                    <Link to="/donor/notifications" className="navbar__notification-wrap">
+                    <Link to="/supplier/notifications" className="navbar__notification-wrap">
                         <img src={notification} alt="notification-icon" />
                         {unreadCount > 0 && (
                             <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
@@ -203,11 +203,11 @@ function Navbar() {
                         className="responsive__navbar__popup"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <Link to="/donor/dashboard" onClick={toggleMenu}>Home</Link>
-                        <Link to="/donor/about" onClick={toggleMenu}>About Us</Link>
-                        <Link to="/donor/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
-                        <Link to="/donor/my-donation" onClick={toggleMenu}>My Donation</Link>
-                        <Link to="/donor/profile" onClick={toggleMenu}>View Profile</Link>
+                        <Link to="/supplier/dashboard" onClick={toggleMenu}>Home</Link>
+                        <Link to="/supplier/about" onClick={toggleMenu}>About Us</Link>
+                        <Link to="/supplier/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
+                        <Link to="/supplier/my-donation" onClick={toggleMenu}>My Listings</Link>
+                        <Link to="/supplier/profile" onClick={toggleMenu}>View Profile</Link>
                         <div className="navbar__popup__action">
                             <button
                                 type="button"

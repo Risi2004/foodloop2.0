@@ -2,7 +2,7 @@ import breakableIcon from '../../../../../assets/impact-receipt/Breakable.svg';
 import './ReceiptInfo.css';
 
 const ReceiptInfo = ({ donor, receiver, deliveryDate, receipt }) => {
-    const donorName = donor?.name || 'Donor';
+    const donorName = donor?.name || 'Supplier';
     const donorEmail = donor?.email || '';
     const receiverName = receiver?.name || 'Receiver';
     const dropLocation = receipt?.dropLocation || receiver?.address || '—';

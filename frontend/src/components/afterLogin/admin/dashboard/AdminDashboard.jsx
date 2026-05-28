@@ -102,7 +102,7 @@ const AdminDashboard = () => {
 
             <div className="stats-section">
                 <StatsCard
-                    title="Donors Registered"
+                    title="Suppliers Registered"
                     count={stats ? formatCount(stats.donors) : '0'}
                     icon={<DonorIcon />}
                     type="donors"

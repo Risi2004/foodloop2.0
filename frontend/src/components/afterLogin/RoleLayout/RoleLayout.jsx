@@ -5,9 +5,9 @@ import { ResourceLoadProvider } from "../../../contexts/ResourceLoadContext";
 import { usePageResourcesReady } from "../../../hooks/usePageResourcesReady";
 import "./RoleLayout.css";
 
-/** True only for /donor/dashboard, /receiver/dashboard, /driver/dashboard, /admin/dashboard */
+/** True only for /supplier/dashboard, /receiver/dashboard, /driver/dashboard, /admin/dashboard */
 function isDashboardRoute(pathname) {
-  return /^\/(donor|receiver|driver|admin)\/dashboard\/?$/.test(pathname);
+  return /^\/(supplier|donor|receiver|driver|admin)\/dashboard\/?$/.test(pathname);
 }
 
 /**

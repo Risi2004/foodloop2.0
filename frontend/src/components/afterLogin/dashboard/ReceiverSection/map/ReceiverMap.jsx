@@ -81,7 +81,7 @@ function DonorMap() {
                                 allDonorLocations.push({
                                     lat,
                                     lng,
-                                    displayName: d.donorName || d.itemName || 'Donor',
+                                    displayName: d.donorName || d.itemName || 'Supplier',
                                 });
                             }
                         }

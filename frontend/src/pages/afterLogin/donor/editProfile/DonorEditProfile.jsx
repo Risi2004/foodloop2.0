@@ -40,7 +40,7 @@ function DonorEditProfile() {
     useEffect(() => {
         if (!user) return;
         if (user.donorType === 'Individual') {
-            navigate('/donor/individual-edit-profile', { replace: true });
+            navigate('/supplier/individual-edit-profile', { replace: true });
         }
     }, [user, navigate]);
 
@@ -79,7 +79,7 @@ function DonorEditProfile() {
                 setUser(res.user);
                 setUserState(res.user);
                 alert('Profile updated successfully.');
-                navigate('/donor/profile');
+                navigate('/supplier/profile');
             } else {
                 alert(res?.message || 'Failed to update profile');
             }
@@ -92,7 +92,7 @@ function DonorEditProfile() {
     };
 
     const handleCancelProfile = () => {
-        navigate('/donor/profile');
+        navigate('/supplier/profile');
     };
 
     if (loading) {

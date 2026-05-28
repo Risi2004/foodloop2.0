@@ -9,6 +9,17 @@ export const PASSWORD_INVALID_MSG =
   'Password must be at least 8 characters and include letters, numbers, and special characters';
 export const NAME_REGEX = /^[a-zA-Z\s]+$/;
 export const VEHICLE_NUMBER_REGEX = /^[a-zA-Z0-9\s]+$/;
+/** Sri Lankan NIC: 9 digits + optional V/X, or 12 digits. */
+export const NIC_NUMBER_REGEX = /^(\d{9}[vVxX]?|\d{12})$/;
+export const NIC_INVALID_MSG = 'Enter a valid NIC (9 digits + V/X, or 12 digits)';
+
+export function normalizeNicNumber(value) {
+  return String(value || '').replace(/\s/g, '').toUpperCase();
+}
+
+export function isValidNicNumber(value) {
+  return NIC_NUMBER_REGEX.test(normalizeNicNumber(value));
+}
 
 export const EMAIL_DUPLICATE_MSG = 'This email is already registered.';
 export const CONTACT_DUPLICATE_MSG = 'This contact number is already registered.';
@@ -83,6 +94,12 @@ export function validateSignupField(fieldId, value, context = {}) {
         return 'Vehicle number can contain only letters, numbers and spaces';
       }
       return null;
+    case 'nicNumber': {
+      const nic = normalizeNicNumber(value);
+      if (!nic) return 'NIC number is required';
+      if (!isValidNicNumber(nic)) return NIC_INVALID_MSG;
+      return null;
+    }
     case 'password':
       if (!value) return 'Password is required';
       if (!isValidPassword(value)) {

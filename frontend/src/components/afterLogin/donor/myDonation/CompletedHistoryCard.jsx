@@ -47,7 +47,7 @@ const CompletedHistoryCard = ({ donation }) => {
                     </div>
                 </div>
                 <div className="tool">
-                    <Link to={`/donor/digital-receipt?donationId=${donation.id}`}>
+                    <Link to={`/supplier/digital-receipt?donationId=${donation.id}`}>
                         <div className="edit">
                             <img
                                 className="receipt"

@@ -24,6 +24,7 @@ const {
   donationDeliveredDonorEmail,
   donationDeliveredReceiverEmail,
   paymentInvoiceEmail,
+  customerOrderNewPickupDriverEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -39,9 +40,12 @@ function getLoginUrl() {
   return `${getFrontendBase()}/login`;
 }
 
-function getDonorMyDonationsUrl() {
-  return `${getFrontendBase()}/donor/my-donation`;
+function getSupplierMyDonationsUrl() {
+  return `${getFrontendBase()}/supplier/my-donation`;
 }
+
+/** @deprecated Use getSupplierMyDonationsUrl */
+const getDonorMyDonationsUrl = getSupplierMyDonationsUrl;
 
 function getReceiverFindFoodUrl() {
   return `${getFrontendBase()}/receiver/find-food`;
@@ -55,9 +59,12 @@ function getDriverMyPickupsUrl() {
   return `${getFrontendBase()}/driver/my-pickups`;
 }
 
-function getDonorTrackOrderUrl(donationId) {
-  return `${getFrontendBase()}/donor/track-order?donationId=${donationId}`;
+function getSupplierTrackOrderUrl(donationId) {
+  return `${getFrontendBase()}/supplier/track-order?donationId=${donationId}`;
 }
+
+/** @deprecated Use getSupplierTrackOrderUrl */
+const getDonorTrackOrderUrl = getSupplierTrackOrderUrl;
 
 function getReceiverTrackOrderUrl(donationId) {
   return `${getFrontendBase()}/receiver/track-order?donationId=${donationId}`;
@@ -459,12 +466,53 @@ async function sendPaymentInvoiceEmail(user, { payment, donation }) {
   }
 }
 
+async function sendCustomerOrderNewPickupToDrivers(customerOrder) {
+  if (!customerOrder) return;
+  try {
+    const drivers = await User.find({
+      role: { $regex: /^driver$/i },
+      isEmailVerified: true,
+      accountStatus: 'active',
+    })
+      .select('email driverName username')
+      .lean();
+
+    const driverPickupsUrl = getDriverMyPickupsUrl();
+    let sent = 0;
+    for (const driver of drivers) {
+      if (!driver.email) continue;
+      try {
+        const name = getUserDisplayName(driver);
+        const { subject, html, text } = customerOrderNewPickupDriverEmail({
+          name,
+          orderId: customerOrder.orderId,
+          itemCount: customerOrder.orderSummary?.items?.length || 0,
+          paymentMethod: customerOrder.paymentMethod || 'card',
+          amount: customerOrder.orderSummary?.total ?? customerOrder.codAmount ?? 0,
+          currency: customerOrder.currency || 'LKR',
+          deliveryAddress: customerOrder.customerAddress || customerOrder.orderSummary?.address || '',
+          driverPickupsUrl,
+        });
+        await sendMail({ to: driver.email, subject, text, html });
+        sent += 1;
+      } catch (err) {
+        console.error(`[email] Failed to send customer order alert to ${driver.email}:`, err.message);
+      }
+    }
+    console.log(`[email] Customer-order pickup alerts sent to ${sent}/${drivers.length} driver(s)`);
+  } catch (err) {
+    console.error('[email] Failed to notify drivers for customer order:', err.message);
+  }
+}
+
 module.exports = {
   getLoginUrl,
+  getSupplierMyDonationsUrl,
   getDonorMyDonationsUrl,
   getReceiverFindFoodUrl,
   getReceiverMyClaimsUrl,
   getDriverMyPickupsUrl,
+  getSupplierTrackOrderUrl,
   getDonorTrackOrderUrl,
   getReceiverTrackOrderUrl,
   getDriverPickupUrl,
@@ -485,4 +533,5 @@ module.exports = {
   sendDonationPickupConfirmedEmails,
   sendDonationDeliveredEmails,
   sendPaymentInvoiceEmail,
+  sendCustomerOrderNewPickupToDrivers,
 };

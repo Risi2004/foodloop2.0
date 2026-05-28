@@ -7,13 +7,25 @@ const VENDOR_ROLE_LABELS = {
   individual: 'Individual / Startup',
 };
 
+/** User-facing role label in admin UI (DB role values unchanged). */
+export function getAdminRoleLabel(role) {
+  const key = (role || '').toLowerCase();
+  if (key === 'donor') return 'Supplier';
+  if (key === 'receiver') return 'Receiver';
+  if (key === 'driver') return 'Driver';
+  if (key === 'admin') return 'Admin';
+  if (key === 'customer') return 'Customer';
+  if (VENDOR_ROLE_LABELS[key]) return VENDOR_ROLE_LABELS[key];
+  return role || '—';
+}
+
 export function getAdminUserName(user) {
   if (!user) return '—';
   const role = (user.role || '').toLowerCase();
 
   if (role === 'donor') {
     if (user.donorType === 'Business' && user.businessName) return user.businessName;
-    return user.username || user.email || 'Donor';
+    return user.username || user.email || 'Supplier';
   }
   if (role === 'receiver') return user.receiverName || user.email || 'Receiver';
   if (role === 'driver') return user.driverName || user.email || 'Driver';

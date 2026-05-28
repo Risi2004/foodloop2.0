@@ -28,8 +28,8 @@ function EditSidebar({
     const displayName = user?.role === 'Receiver'
         ? (user?.receiverName || user?.email || 'Receiver')
         : user?.donorType === 'Business'
-            ? (user?.businessName || user?.email || 'Donor')
-            : (user?.username || user?.email || 'Donor');
+            ? (user?.businessName || user?.email || 'Supplier')
+            : (user?.username || user?.email || 'Supplier');
     const memberSince = formatMemberSince(user?.createdAt);
 
     const openPasswordModal = () => {

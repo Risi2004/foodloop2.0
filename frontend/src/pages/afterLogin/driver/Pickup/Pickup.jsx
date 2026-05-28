@@ -549,7 +549,7 @@ function Pickup() {
                         <Marker position={pickupLocation} icon={donorIcon}>
                             <Popup>
                                 <strong>Pickup Location</strong><br/>
-                                {donationData?.donor?.name || 'Donor'}<br/>
+                                {donationData?.donor?.name || 'Supplier'}<br/>
                                 {donationData?.donor?.address || ''}
                             </Popup>
                         </Marker>

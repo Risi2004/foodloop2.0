@@ -329,6 +329,8 @@ function DeliveryConfirmation() {
     }, [isDemoMode]);
 
     const donationStatus = donationData?.donation?.status;
+    const codAmount = Number(donationData?.donation?.codAmount || donationData?.codAmount || 0);
+    const isCodOrder = (donationData?.donation?.paymentMethod || donationData?.paymentMethod || '').toLowerCase() === 'cod';
     const canConfirmDelivery = donationStatus === 'picked_up';
 
     const handleConfirmDelivery = async () => {
@@ -527,6 +529,12 @@ function DeliveryConfirmation() {
                                         <p><strong>Address:</strong> {donationData.receiver.address}</p>
                                     </>
                                 )}
+                                {isCodOrder && (
+                                    <p>
+                                        <strong>Collect on Delivery:</strong>{' '}
+                                        LKR {codAmount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                )}
                             </>
                         )}
                     </div>
@@ -544,6 +552,11 @@ function DeliveryConfirmation() {
                                 {!canConfirmDelivery && (
                                     <p className='delivery-confirmation__warning'>
                                         Confirm pickup at the donor first, then return here to confirm delivery.
+                                    </p>
+                                )}
+                                {isCodOrder && (
+                                    <p className='delivery-confirmation__warning' style={{ color: '#1f4e36', background: '#e8f6ff' }}>
+                                        Collect LKR {codAmount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in cash before confirming delivery.
                                     </p>
                                 )}
                                 <button

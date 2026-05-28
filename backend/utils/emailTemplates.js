@@ -292,7 +292,7 @@ function newDonationAvailableEmail({ name, donation, donorName, findFoodUrl }) {
       <h2 style="color: #4CAF50;">FoodLoop</h2>
       <h3 style="color: #1F4E36; margin-bottom: 12px;">New food available near you</h3>
       <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
-      <p style="color: #444; line-height: 1.5;">A donor has posted new surplus food on FoodLoop. You can view and claim it from Find Food. Details:</p>
+      <p style="color: #444; line-height: 1.5;">A supplier has posted new surplus food on FoodLoop. You can view and claim it from Find Food. Details:</p>
       ${imageBlock}
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
         <tbody>${tableRows}</tbody>
@@ -368,7 +368,7 @@ function donationClaimedReceiverEmail({ name, donation, myClaimsUrl }) {
     d,
     [
       ['Delivery address', d.receiverAddress || '—'],
-      ['Donor', d.donorName || '—'],
+      ['Supplier', d.donorName || '—'],
     ],
     { includeTrackingId: false }
   );
@@ -581,7 +581,7 @@ function donationDriverAssignedReceiverEmail({
     [
       ['Driver', driverName || '—'],
       ['Your delivery address', d.receiverAddress || '—'],
-      ['Status', 'Driver assigned — heading to donor for pickup'],
+      ['Status', 'Driver assigned — heading to supplier for pickup'],
     ],
     { includeTrackingId: false }
   );
@@ -591,7 +591,7 @@ function donationDriverAssignedReceiverEmail({
       <h2 style="color: #4CAF50;">FoodLoop</h2>
       <h3 style="color: #1F4E36; margin-bottom: 12px;">Driver assigned to your order</h3>
       <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
-      <p style="color: #444; line-height: 1.5;">A driver has accepted the food you claimed and will pick it up from the donor soon.</p>
+      <p style="color: #444; line-height: 1.5;">A driver has accepted the food you claimed and will pick it up from the supplier soon.</p>
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
       <p style="color: #444; line-height: 1.5;">Track delivery: <a href="${trackOrderUrl}" style="color: #4CAF50;">${trackOrderUrl}</a></p>
       <p style="color: #444; line-height: 1.5;">My claims: <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a></p>
@@ -626,14 +626,14 @@ function donationDriverAssignedDriverEmail({ name, donation, donorName, receiver
       <h2 style="color: #4CAF50;">FoodLoop</h2>
       <h3 style="color: #1F4E36; margin-bottom: 12px;">Order accepted — start pickup</h3>
       <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
-      <p style="color: #444; line-height: 1.5;">You have accepted this delivery. Head to the donor for pickup, then deliver to the receiver.</p>
+      <p style="color: #444; line-height: 1.5;">You have accepted this delivery. Head to the supplier for pickup, then deliver to the receiver.</p>
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
       <p style="color: #444; line-height: 1.5;">Open pickup &amp; map: <a href="${pickupUrl}" style="color: #4CAF50;">${pickupUrl}</a></p>
     </div>`;
   const text = [
     `Hello ${name},`,
     '',
-    `You accepted "${d.itemName || 'Food'}". Pickup from ${donorName || 'donor'}, deliver to ${receiverName || 'receiver'}.`,
+    `You accepted "${d.itemName || 'Food'}". Pickup from ${donorName || 'supplier'}, deliver to ${receiverName || 'receiver'}.`,
     '',
     ...rows.map(([label, value]) => `${label}: ${value}`),
     '',
@@ -770,6 +770,62 @@ function donationDeliveredReceiverEmail({ name, donation, driverName, myClaimsUr
   return { subject: `FoodLoop — Your order was delivered${itemLabel}`, html, text };
 }
 
+function customerOrderNewPickupDriverEmail({
+  name,
+  orderId,
+  itemCount,
+  paymentMethod,
+  amount,
+  currency,
+  deliveryAddress,
+  driverPickupsUrl,
+}) {
+  const payLabel = paymentMethod === 'cod' ? 'Cash on delivery' : 'Card paid';
+  const amountLabel = `${currency || 'LKR'} ${Number(amount || 0).toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">New customer order pickup available</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A customer has placed a new order and a driver is needed.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>
+          ${donationDetailsTableHtml([
+            ['Order ID', orderId || '—'],
+            ['Items', String(itemCount || 0)],
+            ['Payment', payLabel],
+            ['Order total', amountLabel],
+            ['Delivery address', deliveryAddress || '—'],
+          ])}
+        </tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        Open driver pickups: <a href="${driverPickupsUrl}" style="color: #4CAF50;">${driverPickupsUrl}</a>
+      </p>
+    </div>
+  `;
+  const text = [
+    `Hello ${name},`,
+    '',
+    'New customer pickup available.',
+    `Order ID: ${orderId || '—'}`,
+    `Items: ${itemCount || 0}`,
+    `Payment: ${payLabel}`,
+    `Order total: ${amountLabel}`,
+    `Delivery address: ${deliveryAddress || '—'}`,
+    '',
+    `Driver pickups: ${driverPickupsUrl}`,
+  ].join('\n');
+  return {
+    subject: `FoodLoop — New customer pickup available (${orderId || 'order'})`,
+    html,
+    text,
+  };
+}
+
 function accountRejectedEmail({ name }) {
   const html = layoutHtml(
     'Registration update',
@@ -886,4 +942,5 @@ module.exports = {
   donationPickupConfirmedReceiverEmail,
   donationDeliveredDonorEmail,
   donationDeliveredReceiverEmail,
+  customerOrderNewPickupDriverEmail,
 };

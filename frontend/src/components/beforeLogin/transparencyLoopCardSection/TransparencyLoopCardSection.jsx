@@ -14,7 +14,7 @@ function TransparencyLoopCardSection() {
             icon: icon1,
             title: "Doner Add Foods",
             card: "RED Status",
-            description: "Donor lists surplus food details and location."
+            description: "Supplier lists surplus food details and location."
         },
         {
             id: 2,
@@ -42,7 +42,7 @@ function TransparencyLoopCardSection() {
             icon: icon5,
             title: "Digital Receipt",
             card: "IMPACT REPORT",
-            description: "Donor receives a transparent report of the impact."
+            description: "Supplier receives a transparent report of the impact."
         },
 
     ];
