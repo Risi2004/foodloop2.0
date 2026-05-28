@@ -3,7 +3,7 @@ import { useState } from 'react';
 import sunIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Sun.svg';
 import winterIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Winter.svg';
 import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Blur.svg';
-import { formatListingPrice } from '../../../../../utils/donationDisplay';
+import { getListingPriceDisplay } from '../../../../../utils/donationDisplay';
 
 const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
     const donation = item.donation || item;
@@ -17,7 +17,7 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
     const showAIBadge = donation.aiQualityScore !== null && 
                        donation.aiQualityScore !== undefined && 
                        donation.aiQualityScore >= 0.8;
-    const priceText = item.priceLabel || formatListingPrice(donation);
+    const priceDisplay = getListingPriceDisplay(donation);
 
     const handleCardClick = () => {
         if (onCardClick) {
@@ -60,9 +60,12 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
                     <span className="card-badge-text">AI Verified</span>
                 </div>
             )}
-            {priceText ? (
+            {priceDisplay.hasPrice ? (
                 <div className="card-badge card-badge--price">
-                    <span className="card-badge-text">{priceText}</span>
+                    {priceDisplay.hasDiscountApplied && (
+                        <span className="card-badge-text card-price-old">{priceDisplay.previous}</span>
+                    )}
+                    <span className="card-badge-text">{priceDisplay.current}</span>
                 </div>
             ) : (
                 <div className="card-badge delivery-fee">
@@ -104,8 +107,14 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
                     {item.distanceLabel && (
                         <p className="card-meta card-meta--distance">{item.distanceLabel} away</p>
                     )}
-                    {priceText && (
-                        <p className="card-meta card-meta--price">Price: {priceText}</p>
+                    {priceDisplay.hasPrice && (
+                        <p className="card-meta card-meta--price">
+                            Price:{' '}
+                            {priceDisplay.hasDiscountApplied && (
+                                <span className="card-price-old">{priceDisplay.previous} </span>
+                            )}
+                            <span>{priceDisplay.current}</span>
+                        </p>
                     )}
 
                     <div className="card-qty">

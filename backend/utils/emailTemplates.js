@@ -826,6 +826,72 @@ function customerOrderNewPickupDriverEmail({
   };
 }
 
+function aiPriceReductionAlertEmail({
+  name,
+  donation,
+  oldPrice,
+  newPrice,
+  findFoodUrl,
+}) {
+  const d = donation || {};
+  const currency = d.priceCurrency || 'LKR';
+  const oldPriceText = `${currency} ${Number(oldPrice || 0).toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+  const newPriceText = `${currency} ${Number(newPrice || 0).toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+  const freeNow = Number(newPrice || 0) === 0;
+  const title = freeNow ? 'Now available for free' : 'Price reduced with AI suggestion';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">${title}</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">A supplier applied an AI discount to a listing you may want to claim.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>
+          ${donationDetailsTableHtml([
+            ['Item', d.itemName || '—'],
+            ['Category', d.foodCategory || '—'],
+            ['Old price', oldPriceText],
+            ['New price', newPriceText],
+            ['Listing type', Number(newPrice || 0) === 0 ? 'Free listing' : 'Sell (discounted)'],
+            ['Pickup address', d.pickupAddress || '—'],
+          ])}
+        </tbody>
+      </table>
+      ${freeNow ? '<p style="display:inline-block;background:#dcfce7;color:#166534;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;">Free now</p>' : ''}
+      <p style="color: #444; line-height: 1.5; margin-top: 14px;">
+        View available listings: <a href="${findFoodUrl}" style="color: #4CAF50;">${findFoodUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'A supplier applied an AI price reduction on FoodLoop.',
+    `Item: ${d.itemName || '—'}`,
+    `Category: ${d.foodCategory || '—'}`,
+    `Old price: ${oldPriceText}`,
+    `New price: ${newPriceText}`,
+    freeNow ? 'This item is now free.' : 'This item is now available at a lower price.',
+    '',
+    `Browse listings: ${findFoodUrl}`,
+  ].join('\n');
+
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return {
+    subject: `FoodLoop — AI price reduced${itemLabel}`,
+    html,
+    text,
+  };
+}
+
 function accountRejectedEmail({ name }) {
   const html = layoutHtml(
     'Registration update',
@@ -943,4 +1009,5 @@ module.exports = {
   donationDeliveredDonorEmail,
   donationDeliveredReceiverEmail,
   customerOrderNewPickupDriverEmail,
+  aiPriceReductionAlertEmail,
 };

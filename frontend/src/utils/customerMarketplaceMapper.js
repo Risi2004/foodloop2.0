@@ -1,3 +1,5 @@
+import { getListingPriceDisplay } from './donationDisplay';
+
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80';
 
@@ -42,6 +44,7 @@ export function mapDonationToMarketplaceItem(donation = {}) {
   const quantity = Number(donation.quantity);
   const safeQuantity = Number.isNaN(quantity) || quantity < 1 ? 1 : quantity;
   const category = toTitleCase(donation.foodCategory);
+  const priceDisplay = getListingPriceDisplay(donation);
 
   return {
     id: donation.id || donation._id || `listing-${Math.random().toString(16).slice(2)}`,
@@ -63,6 +66,7 @@ export function mapDonationToMarketplaceItem(donation = {}) {
             maximumFractionDigits: 2,
           })}`
         : 'Free donation'),
+    priceDisplay,
     image: normalizeText(donation.imageUrl, FALLBACK_IMAGE),
     donorName: normalizeText(donation.donorName, 'Supplier'),
     donorType: toTitleCase(donation.donorType || 'Supplier'),
@@ -78,6 +82,7 @@ export function mapDonationToMarketplaceItem(donation = {}) {
         ? Math.round(Number(donation.aiQualityScore) * 100)
         : null,
     expiryText: donation.expiryText || formatDateText(donation.userProvidedExpiryDate),
+    discountMeta: donation.discountMeta || null,
     raw: donation,
   };
 }

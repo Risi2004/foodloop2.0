@@ -5,6 +5,7 @@ import Contact from '../../../../components/beforeLogin/Contact/Contact';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { getCustomerMarketplaceListings } from '../../../../services/donationApi';
 import { mapDonationsToMarketplaceItems } from '../../../../utils/customerMarketplaceMapper';
+import { getListingPriceDisplay } from '../../../../utils/donationDisplay';
 import './CustomerMarketplace.css';
 
 const CustomerMarketplace = () => {
@@ -18,6 +19,19 @@ const CustomerMarketplace = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [selectedListing, setSelectedListing] = useState(null);
+
+  const getMarketplacePriceNode = (listing) => {
+    const display = listing?.priceDisplay || getListingPriceDisplay(listing?.raw || listing);
+    if (!listing?.isSell || !display?.hasPrice) return <span className="current-price free">Free donation</span>;
+    return (
+      <>
+        {display.hasDiscountApplied && (
+          <span className="previous-price">{display.previous}</span>
+        )}
+        <span className="current-price">{display.current}</span>
+      </>
+    );
+  };
 
   useEffect(() => {
     if (hash === '#contact') {
@@ -192,9 +206,7 @@ const CustomerMarketplace = () => {
                         <p className="pickup-line">{product.pickupAddress}</p>
 
                         <div className="price-row">
-                          <span className={`current-price ${product.isDonation ? 'free' : ''}`}>
-                            {product.isSell ? product.priceLabel : 'Free donation'}
-                          </span>
+                          {getMarketplacePriceNode(product)}
                         </div>
 
                         <div className="social-proof-row">
@@ -260,7 +272,12 @@ const CustomerMarketplace = () => {
               <img src={selectedListing.image} alt={selectedListing.name} className="listing-modal-image" />
               <h3>{selectedListing.name}</h3>
               <p className="modal-type">
-                {selectedListing.isSell ? selectedListing.priceLabel : 'Free donation'} • {selectedListing.category}
+                {selectedListing.isSell
+                  ? (selectedListing.priceDisplay?.hasDiscountApplied
+                    ? `${selectedListing.priceDisplay.previous} -> ${selectedListing.priceDisplay.current}`
+                    : selectedListing.priceDisplay?.current || selectedListing.priceLabel)
+                  : 'Free donation'}{' '}
+                • {selectedListing.category}
               </p>
               <p>{selectedListing.description}</p>
               <div className="listing-modal-meta">

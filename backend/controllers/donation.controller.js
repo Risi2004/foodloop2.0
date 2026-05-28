@@ -10,6 +10,7 @@ const { uploadDonationImage } = require('../utils/r2Storage');
 const {
   sendDonationPostedEmail,
   sendNewDonationToAllReceivers,
+  sendAiPriceReductionToReceiversAndCustomers,
 } = require('../utils/sendNotificationEmail');
 const {
   MAX_RECEIVER_RADIUS_KM,
@@ -880,6 +881,7 @@ exports.applyDiscountSuggestion = async (req, res) => {
     if (roundedPrice > currentPrice) {
       return res.status(400).json({ success: false, message: 'Discounted price cannot exceed current price.' });
     }
+    const oldPrice = currentPrice;
 
     donation.discountMeta = {
       ...(donation.discountMeta || {}),
@@ -890,6 +892,14 @@ exports.applyDiscountSuggestion = async (req, res) => {
     };
     donation.priceAmount = roundedPrice;
     await donation.save();
+
+    if (roundedPrice < oldPrice) {
+      sendAiPriceReductionToReceiversAndCustomers({
+        donation,
+        oldPrice,
+        newPrice: roundedPrice,
+      });
+    }
 
     return res.json({
       success: true,

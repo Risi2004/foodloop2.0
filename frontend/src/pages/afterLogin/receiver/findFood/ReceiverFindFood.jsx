@@ -82,6 +82,7 @@ function transformDonationToItem(donation, receiverPosition) {
         listingType: donation.listingType,
         priceAmount: donation.priceAmount,
         priceCurrency: donation.priceCurrency,
+        discountMeta: donation.discountMeta || null,
     };
 }
 

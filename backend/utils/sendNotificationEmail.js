@@ -25,6 +25,7 @@ const {
   donationDeliveredReceiverEmail,
   paymentInvoiceEmail,
   customerOrderNewPickupDriverEmail,
+  aiPriceReductionAlertEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -505,6 +506,57 @@ async function sendCustomerOrderNewPickupToDrivers(customerOrder) {
   }
 }
 
+async function sendAiPriceReductionToReceiversAndCustomers({ donation, oldPrice, newPrice }) {
+  if (!donation) return;
+  try {
+    const recipients = await User.find({
+      role: { $in: [/^receiver$/i, /^customer$/i] },
+      isEmailVerified: true,
+      accountStatus: 'active',
+    })
+      .select('email receiverName username role')
+      .lean();
+
+    if (!recipients.length) {
+      console.log('[email] No active receiver/customer users to notify for AI discount');
+      return;
+    }
+
+    const payload = getDonationPayload(donation);
+    const findFoodUrl = getReceiverFindFoodUrl();
+    let sent = 0;
+    let failed = 0;
+
+    for (const recipient of recipients) {
+      if (!recipient.email) continue;
+      try {
+        const name = getUserDisplayName(recipient);
+        const { subject, html, text } = aiPriceReductionAlertEmail({
+          name,
+          donation: payload,
+          oldPrice,
+          newPrice,
+          findFoodUrl,
+        });
+        await sendMail({ to: recipient.email, subject, text, html });
+        sent += 1;
+      } catch (err) {
+        failed += 1;
+        console.error(
+          `[email] Failed AI discount alert to ${recipient.email}:`,
+          err.message
+        );
+      }
+    }
+
+    console.log(
+      `[email] AI discount alerts sent=${sent}, failed=${failed}, total=${recipients.length}`
+    );
+  } catch (err) {
+    console.error('[email] Failed to notify receiver/customer users about AI discount:', err.message);
+  }
+}
+
 module.exports = {
   getLoginUrl,
   getSupplierMyDonationsUrl,
@@ -534,4 +586,5 @@ module.exports = {
   sendDonationDeliveredEmails,
   sendPaymentInvoiceEmail,
   sendCustomerOrderNewPickupToDrivers,
+  sendAiPriceReductionToReceiversAndCustomers,
 };

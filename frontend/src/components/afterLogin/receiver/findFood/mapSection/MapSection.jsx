@@ -5,7 +5,7 @@ import L from 'leaflet';
 import { useEffect, useRef } from 'react';
 import MapTileLayer from '../../../../shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
-import { formatListingPrice, getDonationExpiryDisplay } from '../../../../../utils/donationDisplay';
+import { getDonationExpiryDisplay, getListingPriceDisplay } from '../../../../../utils/donationDisplay';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -139,7 +139,7 @@ const formatTime = (time) => {
 const SelectedDonationPanel = ({ selectedItem }) => {
     if (!selectedItem) return null;
     const donation = selectedItem.donation || selectedItem;
-    const priceText = selectedItem.priceLabel || formatListingPrice(donation);
+    const priceDisplay = getListingPriceDisplay(donation);
 
     return (
         <div className="selected-donation-panel">
@@ -149,9 +149,15 @@ const SelectedDonationPanel = ({ selectedItem }) => {
             {selectedItem.distanceLabel && (
                 <p className="selected-donation-panel__distance">{selectedItem.distanceLabel} away</p>
             )}
-            {priceText && (
+            {priceDisplay.hasPrice && (
                 <p className="selected-donation-panel__row selected-donation-panel__price">
-                    <strong>Price:</strong> {priceText}
+                    <strong>Price:</strong>{' '}
+                    {priceDisplay.hasDiscountApplied && (
+                        <span style={{ textDecoration: 'line-through', color: '#6b7280', marginRight: 6 }}>
+                            {priceDisplay.previous}
+                        </span>
+                    )}
+                    <span>{priceDisplay.current}</span>
                 </p>
             )}
             {donation.donorAddress && (
@@ -222,7 +228,7 @@ const MapSection = ({
 
                     const donation = item.donation || item;
                     const isSelected = item.id === selectedItemId;
-                    const priceText = item.priceLabel || formatListingPrice(donation);
+                    const priceDisplay = getListingPriceDisplay(donation);
 
                     return (
                         <Marker
@@ -248,9 +254,15 @@ const MapSection = ({
                                             <strong>Distance:</strong> {item.distanceLabel}
                                         </div>
                                     )}
-                                    {priceText && (
+                                    {priceDisplay.hasPrice && (
                                         <div style={{ marginBottom: '2px', color: '#047857', fontWeight: 600 }}>
-                                            <strong>Price:</strong> {priceText}
+                                            <strong>Price:</strong>{' '}
+                                            {priceDisplay.hasDiscountApplied && (
+                                                <span style={{ textDecoration: 'line-through', color: '#6b7280', marginRight: 6 }}>
+                                                    {priceDisplay.previous}
+                                                </span>
+                                            )}
+                                            <span>{priceDisplay.current}</span>
                                         </div>
                                     )}
                                     <div style={{ marginBottom: '2px' }}>

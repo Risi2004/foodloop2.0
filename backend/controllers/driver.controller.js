@@ -21,6 +21,7 @@ const {
   sendDonationPickupConfirmedEmails,
   sendDonationDeliveredEmails,
 } = require('../utils/sendNotificationEmail');
+const { isOrderCompatible, normalizeVehicleType } = require('../utils/driverCapacityRules');
 const {
   emitToDrivers,
   emitToDonor,
@@ -295,6 +296,7 @@ exports.getAvailablePickups = async (req, res) => {
 
     const { lat, lng } = getDriverCoords(req.user, req.query.lat, req.query.lng);
 
+    const driverVehicleType = normalizeVehicleType(req.user.vehicleType);
     if (lat == null || lng == null) {
       const customerOrdersNoLoc = await CustomerOrder.find({
         status: 'finding_driver',
@@ -302,10 +304,30 @@ exports.getAvailablePickups = async (req, res) => {
       })
         .populate('customerId', 'username email contactNo')
         .sort({ createdAt: -1 });
+      const compatibleCustomerOrders = [];
+      let filteredByCapacityCount = 0;
+      for (const order of customerOrdersNoLoc) {
+        const capacity = isOrderCompatible(driverVehicleType, 'customer_order', order);
+        if (!capacity.compatible) {
+          filteredByCapacityCount += 1;
+          continue;
+        }
+        const mapped = toDriverCustomerOrderJSON(order);
+        compatibleCustomerOrders.push({
+          ...mapped,
+          capacity: {
+            loadScore: capacity.loadScore,
+            vehicleLimit: capacity.vehicleLimit,
+            reason: capacity.reason,
+          },
+        });
+      }
       return res.json({
         success: true,
-        pickups: customerOrdersNoLoc.map((order) => toDriverCustomerOrderJSON(order)),
+        pickups: compatibleCustomerOrders,
         driverLocation: null,
+        capacityFilteredCount: filteredByCapacityCount,
+        driverVehicleType,
         message: 'Set your location to see nearby donation pickups. Customer orders are shown below.',
       });
     }
@@ -322,6 +344,7 @@ exports.getAvailablePickups = async (req, res) => {
 
     const pickups = [];
 
+    let capacityFilteredCount = 0;
     for (const donation of donations) {
       if (isDonationExpired(donation.userProvidedExpiryDate)) continue;
 
@@ -333,7 +356,20 @@ exports.getAvailablePickups = async (req, res) => {
       );
       if (donorDist == null || donorDist > MAX_DRIVER_RADIUS_KM) continue;
 
-      pickups.push(toDriverPickupJSON(donation, lat, lng));
+      const capacity = isOrderCompatible(driverVehicleType, 'donation', donation);
+      if (!capacity.compatible) {
+        capacityFilteredCount += 1;
+        continue;
+      }
+
+      pickups.push({
+        ...toDriverPickupJSON(donation, lat, lng),
+        capacity: {
+          loadScore: capacity.loadScore,
+          vehicleLimit: capacity.vehicleLimit,
+          reason: capacity.reason,
+        },
+      });
     }
 
     const customerOrders = await CustomerOrder.find({
@@ -343,11 +379,28 @@ exports.getAvailablePickups = async (req, res) => {
       .populate('customerId', 'username email contactNo')
       .sort({ createdAt: -1 });
 
-    const customerPickups = customerOrders.map((order) => toDriverCustomerOrderJSON(order));
+    const customerPickups = [];
+    for (const order of customerOrders) {
+      const capacity = isOrderCompatible(driverVehicleType, 'customer_order', order);
+      if (!capacity.compatible) {
+        capacityFilteredCount += 1;
+        continue;
+      }
+      customerPickups.push({
+        ...toDriverCustomerOrderJSON(order),
+        capacity: {
+          loadScore: capacity.loadScore,
+          vehicleLimit: capacity.vehicleLimit,
+          reason: capacity.reason,
+        },
+      });
+    }
     return res.json({
       success: true,
       pickups: [...pickups, ...customerPickups],
       driverLocation: { latitude: lat, longitude: lng },
+      capacityFilteredCount,
+      driverVehicleType,
     });
   } catch (err) {
     console.error('getAvailablePickups error:', err);
@@ -426,6 +479,7 @@ exports.acceptPickup = async (req, res) => {
       });
     }
 
+    const driverVehicleType = normalizeVehicleType(req.user.vehicleType);
     const donation = await Donation.findById(donationId);
     if (!donation) {
       const customerOrder = await CustomerOrder.findById(donationId)
@@ -438,6 +492,17 @@ exports.acceptPickup = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: 'This customer order is no longer available.',
+        });
+      }
+      const customerCapacity = isOrderCompatible(
+        driverVehicleType,
+        'customer_order',
+        customerOrder
+      );
+      if (!customerCapacity.compatible) {
+        return res.status(400).json({
+          success: false,
+          message: `This order is too large for your ${driverVehicleType.replace('_', ' ')}.`,
         });
       }
 
@@ -465,6 +530,13 @@ exports.acceptPickup = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'This donation has expired.',
+      });
+    }
+    const donationCapacity = isOrderCompatible(driverVehicleType, 'donation', donation);
+    if (!donationCapacity.compatible) {
+      return res.status(400).json({
+        success: false,
+        message: `This order is too large for your ${driverVehicleType.replace('_', ' ')}.`,
       });
     }
 

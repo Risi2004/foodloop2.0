@@ -94,6 +94,12 @@
     font-weight: 600;
 }
 
+.card-price-old {
+    text-decoration: line-through;
+    color: #6b7280;
+    margin-right: 4px;
+}
+
 .claim-btn {
     position: absolute;
     top: 12px;

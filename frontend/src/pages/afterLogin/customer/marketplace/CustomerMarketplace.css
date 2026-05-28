@@ -380,6 +380,13 @@
   font-weight: 800;
 }
 
+.previous-price {
+  font-size: 0.88rem;
+  color: #64748b;
+  text-decoration: line-through;
+  font-weight: 700;
+}
+
 .current-price.free {
   color: #2563eb;
 }

@@ -37,6 +37,8 @@ function Delivery() {
     const [showLocationModal, setShowLocationModal] = useState(false);
     const [locationSaving, setLocationSaving] = useState(false);
     const [locationSaveError, setLocationSaveError] = useState(null);
+    const [capacityFilteredCount, setCapacityFilteredCount] = useState(0);
+    const [driverVehicleType, setDriverVehicleType] = useState('');
     const driverLocationRef = useRef(driverLocation);
 
     useEffect(() => {
@@ -96,6 +98,8 @@ function Delivery() {
             }
 
             const rawPickups = pickupsResponse?.success ? pickupsResponse.pickups || [] : [];
+            setCapacityFilteredCount(Number(pickupsResponse?.capacityFilteredCount || 0));
+            setDriverVehicleType(String(pickupsResponse?.driverVehicleType || '').trim());
             let enriched = rawPickups;
             if (lat != null && lng != null) {
                 enriched = await enrichPickupsWithRoadEta(rawPickups, lat, lng);
@@ -375,8 +379,20 @@ function Delivery() {
                                     </>
                                 ) : (
                                     <>
-                                        <p>No pickups within 40 km</p>
-                                        <p className='delivery__empty-state__hint'>Check back later for new pickup requests</p>
+                                        {capacityFilteredCount > 0 ? (
+                                            <>
+                                                <p>No pickups fit your vehicle capacity</p>
+                                                <p className='delivery__empty-state__hint'>
+                                                    {capacityFilteredCount} order(s) are currently too large for your{' '}
+                                                    {driverVehicleType ? driverVehicleType.replace('_', ' ') : 'vehicle'}.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p>No pickups within 40 km</p>
+                                                <p className='delivery__empty-state__hint'>Check back later for new pickup requests</p>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>

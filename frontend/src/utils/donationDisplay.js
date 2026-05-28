@@ -63,6 +63,33 @@ export function getDiscountedPriceDetails(donation) {
   };
 }
 
+export function getListingPriceDisplay(donation) {
+  const discounted = getDiscountedPriceDetails(donation);
+  if (discounted) {
+    return {
+      hasPrice: true,
+      hasDiscountApplied: discounted.hasDiscountApplied,
+      current: discounted.currentFormatted,
+      previous: discounted.previousFormatted,
+    };
+  }
+  const regular = formatListingPrice(donation);
+  if (!regular) {
+    return {
+      hasPrice: false,
+      hasDiscountApplied: false,
+      current: null,
+      previous: null,
+    };
+  }
+  return {
+    hasPrice: true,
+    hasDiscountApplied: false,
+    current: regular,
+    previous: null,
+  };
+}
+
 export function isPaidListing(donation) {
   return (donation?.listingType || '').toLowerCase() === 'sell' && formatListingPrice(donation);
 }
