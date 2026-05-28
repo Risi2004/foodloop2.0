@@ -1,0 +1,162 @@
+.claim-payment-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001;
+  padding: 20px;
+}
+
+.claim-payment-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.claim-payment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.claim-payment-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1b4332;
+}
+
+.claim-payment-close {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+}
+
+.claim-payment-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.claim-payment-demo-badge {
+  margin: 12px 20px 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff8e1;
+  color: #6d4c00;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.claim-payment-summary {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.claim-payment-item {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.claim-payment-amount {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1b4332;
+}
+
+.claim-payment-form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.claim-payment-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.claim-payment-label input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.claim-payment-label input:focus {
+  outline: none;
+  border-color: #1b4332;
+  box-shadow: 0 0 0 2px rgba(27, 67, 50, 0.15);
+}
+
+.claim-payment-label input:disabled {
+  background: #f3f4f6;
+}
+
+.claim-payment-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.claim-payment-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.claim-payment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.claim-payment-btn {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.claim-payment-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.claim-payment-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.claim-payment-btn-primary {
+  background: #1b4332;
+  color: #fff;
+}
+
+.claim-payment-btn-primary:not(:disabled):hover {
+  background: #2d6a4f;
+}

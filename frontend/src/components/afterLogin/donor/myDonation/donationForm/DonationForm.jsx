@@ -21,9 +21,10 @@ import './DonationForm.css';
 const getTimeString = (d) =>
     `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
-function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialData }) {
+function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialData, isAnalyzing = false }) {
     const navigate = useNavigate();
     const isEditMode = !!editDonationId && !!initialData;
+    const isFormLocked = !isEditMode && (!imageUrl || isAnalyzing);
 
     // Form state (defaults; edit mode will overwrite via useEffect)
     const [foodCategory, setFoodCategory] = useState('Cooked Meals');
@@ -133,6 +134,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     const getDisabledReasons = () => {
         const reasons = [];
 
+        if (isAnalyzing) reasons.push('Wait for AI analysis to finish');
         if (!imageUrl) reasons.push('Please upload an image');
         if (!foodCategory || foodCategory.trim() === '') reasons.push('Food category is required');
         if (!itemName || itemName.trim() === '') reasons.push('Item name is required');
@@ -161,8 +163,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         return reasons;
     };
 
-    const formCanSubmit = isFormValid();
+    const formCanSubmit = !isFormLocked && isFormValid();
     const disabledReasons = getDisabledReasons();
+    const fieldReadOnly = isFormLocked || (!isEditing && isAiFilled);
+    const fieldDisabled = isFormLocked || (!isEditing && isAiFilled);
 
     // Auto-fill form when AI predictions are received
     useEffect(() => {
@@ -274,7 +278,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     };
 
     const handlePostDonation = async () => {
-        if (!isFormValid() || isSubmitting) {
+        if (isFormLocked || !isFormValid() || isSubmitting) {
             return;
         }
 
@@ -439,7 +443,14 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     };
 
     return (
-        <div className="donation-form-container">
+        <div className={`donation-form-container${isFormLocked ? ' donation-form-container--locked' : ''}`}>
+            {isFormLocked && (
+                <div className="form-lock-banner" role="status">
+                    {isAnalyzing
+                        ? 'AI is analyzing your photo. The form will unlock when analysis finishes.'
+                        : 'Upload a food photo on the left to unlock this form.'}
+                </div>
+            )}
             {/* AI Analysis Banner (hide in edit mode) */}
             {!isEditMode && aiPredictions && (
                 <div className="ai-analysis-banner">
@@ -482,6 +493,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 </div>
             )}
 
+            <fieldset disabled={isFormLocked} className="donation-form-fieldset">
             {/* Core Details Header */}
             <div className="form-section-header">
                 <div className="section-title">
@@ -489,7 +501,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                     <h2>Core Details</h2>
                     {isAiFilled && <span className="ai-filled-badge">(AI-Filled)</span>}
                 </div>
-                <button className="edit-all-btn" onClick={handleEditAll}>
+                <button type="button" className="edit-all-btn" onClick={handleEditAll} disabled={isFormLocked}>
                     {isEditing ? 'Done Editing' : 'Edit All Fields'}
                 </button>
             </div>
@@ -506,10 +518,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                                 setFoodCategory(e.target.value);
                                 setIsEditing(true);
                             }}
-                            readOnly={!isEditing && isAiFilled}
+                            readOnly={fieldReadOnly}
                             required
                         />
-                        {(!isEditing || !isAiFilled) && <img src={editIcon} alt="" className="form-icon edit-icon-img" />}
+                        {(!fieldReadOnly) && <img src={editIcon} alt="" className="form-icon edit-icon-img" />}
                     </div>
                 </div>
 
@@ -523,10 +535,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                                 setItemName(e.target.value);
                                 setIsEditing(true);
                             }}
-                            readOnly={!isEditing && isAiFilled}
+                            readOnly={fieldReadOnly}
                             required
                         />
-                        {(!isEditing || !isAiFilled) && <img src={editIcon} alt="" className="form-icon edit-icon-img" />}
+                        {(!fieldReadOnly) && <img src={editIcon} alt="" className="form-icon edit-icon-img" />}
                     </div>
                 </div>
 
@@ -534,9 +546,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                     <label>Quantity / Servings <span className="required-asterisk">*</span></label>
                     <div className="quantity-control">
                         <button 
+                            type="button"
                             className="qty-btn minus" 
                             onClick={() => handleQuantityChange(-1)}
-                            disabled={!isEditing && isAiFilled}
+                            disabled={fieldDisabled}
                         >
                             <img src={subtractIcon} alt="Decrease" className="form-icon qty-icon" />
                         </button>
@@ -544,7 +557,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                             type="text" 
                             value={isEditing ? quantity : `${quantity} Plates`}
                             className="qty-input"
-                            readOnly={!isEditing && isAiFilled}
+                            readOnly={fieldReadOnly}
                             onChange={(e) => {
                                 const text = e.target.value.replace(/\D/g, ''); // Remove non-digits
                                 const value = parseInt(text) || 1;
@@ -552,7 +565,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                                 setIsEditing(true);
                             }}
                             onFocus={(e) => {
-                                if (!isEditing && isAiFilled) {
+                                if (fieldReadOnly) {
                                     e.target.blur();
                                 } else {
                                     e.target.value = quantity.toString();
@@ -560,9 +573,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                             }}
                         />
                         <button 
+                            type="button"
                             className="qty-btn plus" 
                             onClick={() => handleQuantityChange(1)}
-                            disabled={!isEditing && isAiFilled}
+                            disabled={fieldDisabled}
                         >
                             <img src={plusMathIcon} alt="Increase" className="form-icon qty-icon" />
                         </button>
@@ -573,22 +587,28 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                     <label>Storage Instructions <span className="required-asterisk">*</span></label>
                     <div className="toggle-group">
                         <button
+                            type="button"
                             className={`toggle-btn hot ${storage === 'hot' ? 'active' : ''}`}
                             onClick={() => setStorage('hot')}
+                            disabled={isFormLocked}
                         >
                             <img src={sunIcon} alt="" className="form-icon storage-icon" />
                             Hot
                         </button>
                         <button
+                            type="button"
                             className={`toggle-btn cold ${storage === 'cold' ? 'active' : ''}`}
                             onClick={() => setStorage('cold')}
+                            disabled={isFormLocked}
                         >
                             <img src={winterIcon} alt="" className="form-icon storage-icon" />
                             Cold
                         </button>
                         <button
+                            type="button"
                             className={`toggle-btn dry ${storage === 'dry' ? 'active' : ''}`}
                             onClick={() => setStorage('dry')}
+                            disabled={isFormLocked}
                         >
                             <img src={blurIcon} alt="" className="form-icon storage-icon" />
                             Dry
@@ -835,6 +855,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                     </div>
                 )}
             </div>
+            </fieldset>
 
             {/* Location Confirmation Modal */}
             <LocationMapModal

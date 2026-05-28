@@ -7,6 +7,8 @@ import ReceiverNavbar from "../../../../components/afterLogin/dashboard/Receiver
 import ReceiverFooter from "../../../../components/afterLogin/dashboard/ReceiverSection/footer/ReceiverFooter";
 import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
 import { getAvailableDonations, claimDonation } from '../../../../services/donationApi';
+import { createClaimCheckout } from '../../../../services/paymentApi';
+import ClaimPaymentModal from '../../../../components/afterLogin/receiver/findFood/claimPayment/ClaimPaymentModal';
 import { getCurrentUser } from '../../../../services/api';
 import {
     getSocket,
@@ -102,6 +104,10 @@ const FindFood = () => {
     const [selectedItemId, setSelectedItemId] = useState(null);
     const [claimSaving, setClaimSaving] = useState(false);
     const [claimSaveError, setClaimSaveError] = useState(null);
+    const [paidOrderId, setPaidOrderId] = useState(null);
+    const [paymentNotice, setPaymentNotice] = useState(null);
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const [paymentCheckout, setPaymentCheckout] = useState(null);
 
     const fetchDonations = useCallback(async (lat, lng) => {
         try {
@@ -207,8 +213,49 @@ const FindFood = () => {
         setShowLocationModal(false);
     };
 
-    const handleClaim = (donationId) => {
+    const handlePaymentSuccess = (orderId) => {
+        const donationId = paymentCheckout?.donationId;
+        const item = items.find((i) => i.id === donationId);
+        setPaymentModalOpen(false);
+        setPaymentCheckout(null);
+        setPaidOrderId(orderId);
+        setClaimingDonationId(donationId);
+        setClaimLocationModalOpen(true);
+        const priceText = item?.priceLabel || (item?.priceAmount ? `LKR ${item.priceAmount}` : '');
+        setPaymentNotice(
+            priceText
+                ? `Payment received (${priceText}). Set your delivery location.`
+                : 'Payment received. Set your delivery location.'
+        );
+    };
+
+    const handleClaim = async (donationId) => {
         setClaimSaveError(null);
+        setPaymentNotice(null);
+
+        const item = items.find((i) => i.id === donationId);
+        const isSell =
+            item?.listingType === 'sell' &&
+            (item?.priceAmount > 0 || (item?.donation?.priceAmount > 0));
+
+        if (isSell) {
+            setPaidOrderId(null);
+            const checkout = await createClaimCheckout(donationId);
+            if (!checkout?.orderId) {
+                throw new Error('Invalid payment response from server.');
+            }
+            setPaymentCheckout({
+                orderId: checkout.orderId,
+                amount: checkout.amount,
+                currency: checkout.currency,
+                itemName: checkout.itemName,
+                donationId,
+            });
+            setPaymentModalOpen(true);
+            return;
+        }
+
+        setPaidOrderId(null);
         setClaimingDonationId(donationId);
         setClaimLocationModalOpen(true);
     };
@@ -220,11 +267,16 @@ const FindFood = () => {
         setClaimSaving(true);
         setClaimSaveError(null);
         try {
-            const response = await claimDonation(donationId, {
+            const claimPayload = {
                 receiverLatitude: lat,
                 receiverLongitude: lng,
                 receiverAddress: address || '',
-            });
+            };
+            if (paidOrderId) {
+                claimPayload.paymentOrderId = paidOrderId;
+            }
+
+            const response = await claimDonation(donationId, claimPayload);
             if (response.success) {
                 setReceiverPosition([lat, lng]);
                 setReceiverAddress(address || 'Location set');
@@ -232,6 +284,8 @@ const FindFood = () => {
                 setSelectedItemId((current) => (current === donationId ? null : current));
                 setClaimLocationModalOpen(false);
                 setClaimingDonationId(null);
+                setPaidOrderId(null);
+                setPaymentNotice(null);
                 navigate('/receiver/my-claims');
             }
         } catch (err) {
@@ -297,6 +351,21 @@ const FindFood = () => {
         <>
             <ReceiverNavbar />
             <div className="find-food-page">
+                {paymentNotice && (
+                    <div
+                        role="status"
+                        style={{
+                            margin: '12px 16px 0',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            backgroundColor: '#e8f5e9',
+                            color: '#1b4332',
+                            fontSize: '14px',
+                        }}
+                    >
+                        {paymentNotice}
+                    </div>
+                )}
                 <div className="sidebar-section">
                     <Sidebar
                         items={items}
@@ -331,6 +400,16 @@ const FindFood = () => {
                 addressPlaceholder="Enter your delivery address"
             />
 
+            <ClaimPaymentModal
+                isOpen={paymentModalOpen}
+                checkout={paymentCheckout}
+                onClose={() => {
+                    setPaymentModalOpen(false);
+                    setPaymentCheckout(null);
+                }}
+                onSuccess={handlePaymentSuccess}
+            />
+
             <LocationMapModal
                 isOpen={claimLocationModalOpen}
                 onClose={() => {
@@ -338,6 +417,7 @@ const FindFood = () => {
                     setClaimLocationModalOpen(false);
                     setClaimingDonationId(null);
                     setClaimSaveError(null);
+                    setPaidOrderId(null);
                 }}
                 onConfirm={handleClaimLocationConfirm}
                 defaultAddress={receiverAddress || profileAddress}

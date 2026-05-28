@@ -23,6 +23,7 @@ const {
   sendDonationClaimedEmails,
   sendDonationClaimCancelledEmails,
 } = require('../utils/sendNotificationEmail');
+const { verifyPaidPaymentForClaim } = require('./payment.controller');
 
 const DONOR_ROLES = [
   'donor',
@@ -355,6 +356,27 @@ exports.claimDonation = async (req, res) => {
         success: false,
         message: 'This donation has expired.',
       });
+    }
+
+    if (donation.listingType === 'sell' && donation.priceAmount > 0) {
+      const paymentOrderId = body.paymentOrderId?.trim();
+      if (!paymentOrderId) {
+        return res.status(402).json({
+          success: false,
+          message: 'Complete payment before claiming this listing.',
+        });
+      }
+      const paymentCheck = await verifyPaidPaymentForClaim({
+        paymentOrderId,
+        donationId: donation._id,
+        receiverId: req.user._id,
+      });
+      if (!paymentCheck.ok) {
+        return res.status(402).json({
+          success: false,
+          message: paymentCheck.message,
+        });
+      }
     }
 
     donation.status = 'claimed';

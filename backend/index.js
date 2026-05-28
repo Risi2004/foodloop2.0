@@ -13,6 +13,7 @@ const donationRoutes = require('./routes/donation.routes');
 const driverRoutes = require('./routes/driver.routes');
 const geocodeRoutes = require('./routes/geocode.routes');
 const routingRoutes = require('./routes/routing.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const { isR2Configured } = require('./config/r2');
 const { setIO, attachSocketAuth } = require('./socket');
 
@@ -108,6 +109,7 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/geocode', geocodeRoutes);
 app.use('/api/routing', routingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

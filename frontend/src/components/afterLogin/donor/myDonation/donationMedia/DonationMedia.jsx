@@ -6,7 +6,7 @@ import './DonationMedia.css';
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
-function DonationMedia({ onImageUploaded, onAnalysisComplete, onError }) {
+function DonationMedia({ onImageUploaded, onAnalysisComplete, onError, onAnalysisLoadingChange }) {
     const [, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -62,6 +62,10 @@ function DonationMedia({ onImageUploaded, onAnalysisComplete, onError }) {
 
     // Upload and analyze image
     const uploadAndAnalyzeImageFile = async (file) => {
+        if (onAnalysisLoadingChange) onAnalysisLoadingChange(true);
+        if (onImageUploaded) onImageUploaded(null);
+        if (onAnalysisComplete) onAnalysisComplete(null);
+
         try {
             setUploading(true);
             setAnalyzing(true);
@@ -151,6 +155,8 @@ function DonationMedia({ onImageUploaded, onAnalysisComplete, onError }) {
                 setImagePreview(null);
                 setImageUrl(null);
                 if (fileInputRef.current) fileInputRef.current.value = '';
+                if (onImageUploaded) onImageUploaded(null);
+                if (onAnalysisComplete) onAnalysisComplete(null);
             }
             
             // Check if it's a temporary AI service error (allow user to proceed)
@@ -213,6 +219,8 @@ function DonationMedia({ onImageUploaded, onAnalysisComplete, onError }) {
                     alert(`Error: ${errorMessage}. You can still fill the form manually.`);
                 }
             }
+        } finally {
+            if (onAnalysisLoadingChange) onAnalysisLoadingChange(false);
         }
     };
 
@@ -260,6 +268,7 @@ function DonationMedia({ onImageUploaded, onAnalysisComplete, onError }) {
         if (fileInputRef.current) fileInputRef.current.value = '';
         if (onImageUploaded) onImageUploaded(null);
         if (onAnalysisComplete) onAnalysisComplete(null);
+        if (onAnalysisLoadingChange) onAnalysisLoadingChange(false);
     };
 
     return (

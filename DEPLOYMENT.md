@@ -178,6 +178,17 @@ Open `http://localhost:5173`. API requests proxy to `http://localhost:5000` via 
 
 ---
 
+## Sell listing payments (mock)
+
+Receivers claiming **cash** listings (`listingType: sell`) pay through an in-app checkout modal (demo only — no real card processing). The backend exposes:
+
+- `POST /api/payments/claim/checkout` (JWT receiver) — creates a pending payment
+- `POST /api/payments/claim/confirm` (JWT receiver) — marks payment paid after UI validation
+
+No extra environment variables are required for this flow.
+
+---
+
 ## Driver routing (OSRM + traffic model)
 
 Road distances and ETAs use **OSRM** via `GET /api/routing/route` and `POST /api/routing/table` (JWT required). The public OSRM demo server has **no live traffic** and rate limits; the app applies a **Colombo time-of-day traffic heuristic** for adjusted ETAs.

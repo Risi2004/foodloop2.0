@@ -789,9 +789,81 @@ function accountRejectedEmail({ name }) {
   };
 }
 
+function formatInvoiceDate(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  return d.toLocaleString('en-LK', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Colombo',
+  });
+}
+
+function paymentInvoiceEmail({
+  name,
+  orderId,
+  paidAt,
+  itemName,
+  amount,
+  currency,
+  cardLast4,
+  myClaimsUrl,
+}) {
+  const currencyLabel = currency || 'LKR';
+  const amountFormatted = `${currencyLabel} ${Number(amount).toLocaleString('en-LK')}`;
+  const cardDisplay = cardLast4 ? `•••• •••• •••• ${cardLast4}` : 'Card on file';
+  const paidAtFormatted = formatInvoiceDate(paidAt);
+
+  const rows = [
+    ['Invoice #', orderId],
+    ['Date paid', paidAtFormatted],
+    ['Item', itemName || 'Food listing'],
+    ['Amount', amountFormatted],
+    ['Payment method', cardDisplay],
+    ['Status', 'Paid'],
+  ];
+  const tableRows = donationDetailsTableHtml(rows);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Payment receipt</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Thank you for your payment. This is your invoice for the food listing purchase (demo payment — no real charge was made).</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">
+        Complete your claim by setting your delivery location, then track your order:
+        <a href="${myClaimsUrl}" style="color: #4CAF50;">${myClaimsUrl}</a>
+      </p>
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">Keep this email for your records.</p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'Thank you for your payment. Here is your invoice (demo payment — no real charge).',
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `My claims: ${myClaimsUrl}`,
+    '',
+    'Keep this email for your records.',
+  ].join('\n');
+
+  const itemLabel = itemName ? ` — ${itemName}` : '';
+  return {
+    subject: `FoodLoop — Payment receipt${itemLabel}`,
+    html,
+    text,
+  };
+}
+
 module.exports = {
   otpEmailHtml,
   otpEmailText,
+  paymentInvoiceEmail,
   donationPostedEmail,
   newDonationAvailableEmail,
   accountCreatedEmail,

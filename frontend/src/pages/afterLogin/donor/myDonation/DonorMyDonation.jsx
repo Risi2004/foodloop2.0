@@ -9,6 +9,7 @@ function DonorMyDontaion() {
     const [aiPredictions, setAiPredictions] = useState(null);
     const [imageUrl, setImageUrl] = useState(null);
     const [error, setError] = useState(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const handleAnalysisComplete = (predictions) => {
         setAiPredictions(predictions);
@@ -16,7 +17,10 @@ function DonorMyDontaion() {
     };
 
     const handleImageUploaded = (url) => {
-        setImageUrl(url);
+        setImageUrl(url || null);
+        if (!url) {
+            setAiPredictions(null);
+        }
     };
 
     const handleError = (errorMessage) => {
@@ -31,15 +35,17 @@ function DonorMyDontaion() {
             <div className="new-donation-page">
                 <div className="donation-container">
                     <main className="donation-content">
-                        <DonationMedia 
+                        <DonationMedia
                             onImageUploaded={handleImageUploaded}
                             onAnalysisComplete={handleAnalysisComplete}
                             onError={handleError}
+                            onAnalysisLoadingChange={setIsAnalyzing}
                         />
-                        <DonationForm 
+                        <DonationForm
                             aiPredictions={aiPredictions}
                             imageUrl={imageUrl}
                             error={error}
+                            isAnalyzing={isAnalyzing}
                         />
                     </main>
                 </div>

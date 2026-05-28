@@ -78,7 +78,11 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
                     cursor: isClaiming ? 'not-allowed' : 'pointer'
                 }}
             >
-                {isClaiming ? 'Claiming...' : 'Claim now'}
+                {isClaiming
+                    ? (item.listingType === 'sell' ? 'Paying...' : 'Claiming...')
+                    : (item.listingType === 'sell' && (item.priceAmount > 0 || donation.priceAmount > 0)
+                        ? 'Pay & claim'
+                        : 'Claim now')}
             </button>
 
             <div className="card-content">

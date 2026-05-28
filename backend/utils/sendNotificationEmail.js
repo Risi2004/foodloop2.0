@@ -23,6 +23,7 @@ const {
   donationPickupConfirmedReceiverEmail,
   donationDeliveredDonorEmail,
   donationDeliveredReceiverEmail,
+  paymentInvoiceEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -438,6 +439,26 @@ async function sendDonationDeliveredEmails(donation, donorUser, receiverUser, dr
   }
 }
 
+async function sendPaymentInvoiceEmail(user, { payment, donation }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = paymentInvoiceEmail({
+      name,
+      orderId: payment.orderId,
+      paidAt: payment.updatedAt || new Date(),
+      itemName: donation?.itemName || 'Food listing',
+      amount: payment.amount,
+      currency: payment.currency || 'LKR',
+      cardLast4: payment.cardLast4,
+      myClaimsUrl: getReceiverMyClaimsUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] Payment invoice failed for ${user.email}:`, err.message);
+  }
+}
+
 module.exports = {
   getLoginUrl,
   getDonorMyDonationsUrl,
@@ -463,4 +484,5 @@ module.exports = {
   sendDonationDriverAssignedEmails,
   sendDonationPickupConfirmedEmails,
   sendDonationDeliveredEmails,
+  sendPaymentInvoiceEmail,
 };
