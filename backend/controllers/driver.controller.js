@@ -492,7 +492,7 @@ exports.acceptPickup = async (req, res) => {
       donation: payload,
     });
 
-    sendDonationDriverAssignedEmails(
+    await sendDonationDriverAssignedEmails(
       donation,
       donation.donorId,
       donation.receiverId,
@@ -646,7 +646,7 @@ exports.confirmPickup = async (req, res) => {
     emitToDonor(donorId, 'donation:picked_up', { donationId: donationIdStr, donation: tracking });
     emitToReceivers('donation:picked_up', { donationId: donationIdStr, donation: tracking });
 
-    sendDonationPickupConfirmedEmails(
+    await sendDonationPickupConfirmedEmails(
       donation,
       donation.donorId,
       donation.receiverId,
@@ -734,7 +734,7 @@ exports.confirmDelivery = async (req, res) => {
     emitToDonor(donorId, 'donation:delivered', { donationId: donationIdStr, donation: tracking });
     emitToReceivers('donation:delivered', { donationId: donationIdStr, donation: tracking });
 
-    sendDonationDeliveredEmails(
+    await sendDonationDeliveredEmails(
       donation,
       donation.donorId,
       donation.receiverId,

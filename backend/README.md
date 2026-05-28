@@ -18,6 +18,7 @@
    - Gmail SMTP: `SMTP_USER`, `SMTP_PASS` (use a [Google App Password](https://support.google.com/accounts/answer/185833), not your normal Gmail password)
    - Cloudflare R2: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_BASE_URL`
    - Google Gemini: `GEMINI_API_KEY` ([Google AI Studio](https://aistudio.google.com/apikey)), optional `GEMINI_MODEL` (default `gemini-3.5-flash`; falls back to `gemini-2.5-flash` then `gemini-1.5-flash` on quota errors)
+   - OpenWeather: `WEATHER_API_KEY` (server-side weather widget source)
 
 3. Install and run:
 
@@ -27,6 +28,15 @@
    ```
 
 API base: `http://localhost:5000`
+
+## Weather endpoints (JWT required)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/weather/current?lat=&lng=&units=metric` | Current weather at coordinates (`units`: `metric`, `imperial`, `standard`) |
+| GET | `/api/weather/forecast?lat=&lng=&units=metric` | 3-hour forecast snapshot (next 8 entries) |
+
+Weather responses are normalized by backend and cached in-memory for short durations to reduce OpenWeather request volume.
 
 ## Auth endpoints
 

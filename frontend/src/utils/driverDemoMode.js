@@ -8,6 +8,39 @@ export function isValidCoord(lat, lng) {
   return Number.isFinite(la) && Number.isFinite(ln);
 }
 
+function toCoordOrNull(lat, lng) {
+  if (!isValidCoord(lat, lng)) return null;
+  return { lat: Number(lat), lng: Number(lng) };
+}
+
+function extractDonorCoord(tracking) {
+  const donorLoc = tracking?.donor?.location;
+  if (donorLoc) {
+    const fromDonorObj = toCoordOrNull(donorLoc.latitude, donorLoc.longitude);
+    if (fromDonorObj) return fromDonorObj;
+  }
+
+  const donation = tracking?.donation;
+  const fromDonation = toCoordOrNull(donation?.donorLatitude, donation?.donorLongitude);
+  if (fromDonation) return fromDonation;
+
+  return null;
+}
+
+function extractReceiverCoord(tracking) {
+  const receiverLoc = tracking?.receiver?.location;
+  if (receiverLoc) {
+    const fromReceiverObj = toCoordOrNull(receiverLoc.latitude, receiverLoc.longitude);
+    if (fromReceiverObj) return fromReceiverObj;
+  }
+
+  const donation = tracking?.donation;
+  const fromDonation = toCoordOrNull(donation?.receiverLatitude, donation?.receiverLongitude);
+  if (fromDonation) return fromDonation;
+
+  return null;
+}
+
 /** ~1.5 km south of a point (demo start when driver GPS is unset). */
 export function offsetStartSouth(lat, lng, km = 1.5) {
   const la = Number(lat);
@@ -22,18 +55,15 @@ export function offsetStartSouth(lat, lng, km = 1.5) {
  * @param {[number, number] | null} driverLocationState [lat, lng]
  */
 export async function resolveDemoEndpoints(leg, tracking, driverLocationState) {
-  const donor = tracking?.donor?.location;
-  const receiver = tracking?.receiver?.location;
+  const donorCoord = extractDonorCoord(tracking);
+  const receiverCoord = extractReceiverCoord(tracking);
   const driver = tracking?.driver?.location;
+  const syntheticReceiver = donorCoord ? offsetStartSouth(donorCoord.lat, donorCoord.lng, 2) : null;
 
   const end =
     leg === 'pickup'
-      ? donor && isValidCoord(donor.latitude, donor.longitude)
-        ? { lat: Number(donor.latitude), lng: Number(donor.longitude) }
-        : null
-      : receiver && isValidCoord(receiver.latitude, receiver.longitude)
-        ? { lat: Number(receiver.latitude), lng: Number(receiver.longitude) }
-        : null;
+      ? donorCoord || receiverCoord
+      : receiverCoord || syntheticReceiver || donorCoord;
 
   if (!end) {
     return { start: null, end: null, error: leg === 'pickup' ? 'Donor location is missing.' : 'Receiver location is missing.' };
@@ -42,14 +72,14 @@ export async function resolveDemoEndpoints(leg, tracking, driverLocationState) {
   let start = null;
 
   // After pickup: driver is at the donor, then heads to the receiver.
-  if (leg === 'delivery' && donor && isValidCoord(donor.latitude, donor.longitude)) {
-    start = { lat: Number(donor.latitude), lng: Number(donor.longitude) };
+  if (leg === 'delivery' && donorCoord) {
+    start = donorCoord;
   } else if (driverLocationState?.length === 2 && isValidCoord(driverLocationState[0], driverLocationState[1])) {
     start = { lat: Number(driverLocationState[0]), lng: Number(driverLocationState[1]) };
   } else if (driver && isValidCoord(driver.latitude, driver.longitude)) {
     start = { lat: Number(driver.latitude), lng: Number(driver.longitude) };
-  } else if (leg === 'pickup' && donor && isValidCoord(donor.latitude, donor.longitude)) {
-    start = offsetStartSouth(donor.latitude, donor.longitude);
+  } else if (leg === 'pickup' && end) {
+    start = offsetStartSouth(end.lat, end.lng);
   }
 
   if (!start) {

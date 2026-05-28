@@ -124,6 +124,23 @@ export const deleteDonation = async (donationId) => {
   return parseResponse(response);
 };
 
+export const getDiscountSuggestion = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/discount-suggestion`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
+export const applyDiscountSuggestion = async (donationId, payload) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/apply-discount`), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(response);
+};
+
 export const getMyClaims = async () => {
   const response = await fetch(buildUrl('/api/donations/my-claims'), {
     headers: getAuthHeaders(),

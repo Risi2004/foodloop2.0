@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 const Donation = require('../models/Donation');
 const { analyzeFoodImage, FoodVisionError } = require('../services/geminiFoodVision');
+const { generateDiscountSuggestion } = require('../services/geminiDiscountEngine');
+const {
+  getCurrentWeatherByCoords,
+  getForecastWeatherByCoords,
+} = require('../services/weatherService');
 const { uploadDonationImage } = require('../utils/r2Storage');
 const {
   sendDonationPostedEmail,
@@ -36,6 +41,10 @@ const DONOR_ROLES = [
 function canCreateDonation(role) {
   const r = (role || '').toLowerCase();
   return DONOR_ROLES.includes(r);
+}
+
+function requireSupplierAccess(role) {
+  return canCreateDonation(role);
 }
 
 const EDITABLE_STATUSES = ['available', 'draft'];
@@ -750,6 +759,147 @@ exports.deleteDonation = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message || 'Failed to cancel donation',
+    });
+  }
+};
+
+exports.getDiscountSuggestion = async (req, res) => {
+  try {
+    if (!requireSupplierAccess(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only suppliers can request discount suggestions.',
+      });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid donation id.' });
+    }
+
+    const donation = await Donation.findById(id);
+    if (!donation) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+    if (!isDonorOwner(donation, req.user._id)) {
+      return res.status(403).json({ success: false, message: 'Not allowed to access this listing.' });
+    }
+
+    if (donation.listingType !== 'sell') {
+      return res.json({
+        success: true,
+        noOp: true,
+        suggestion: {
+          suggestedPrice: 0,
+          discountPercent: 0,
+          isFreeRecommendation: true,
+          reasoning: 'This listing is already in donate mode, so no discount is needed.',
+        },
+      });
+    }
+
+    const lat = Number(donation.donorLatitude);
+    const lng = Number(donation.donorLongitude);
+
+    let currentWeather = null;
+    let forecastWeather = null;
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      try {
+        currentWeather = await getCurrentWeatherByCoords(lat, lng, 'metric');
+        forecastWeather = await getForecastWeatherByCoords(lat, lng, 'metric');
+      } catch (err) {
+        console.warn('getDiscountSuggestion weather fetch fallback:', err?.message || err);
+      }
+    }
+
+    const suggestion = await generateDiscountSuggestion({
+      donation,
+      currentWeather,
+      forecastWeather,
+    });
+
+    donation.discountMeta = {
+      ...(donation.discountMeta || {}),
+      lastSuggestedPrice: suggestion.suggestedPrice,
+      lastSuggestedAt: new Date(),
+      lastDiscountPercent: suggestion.discountPercent,
+      lastSuggestionReason: suggestion.reasoning,
+      lastIsFreeRecommendation: suggestion.isFreeRecommendation,
+    };
+    await donation.save();
+
+    return res.json({
+      success: true,
+      suggestion,
+      donation: donation.toPublicJSON(),
+    });
+  } catch (err) {
+    console.error('getDiscountSuggestion error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to generate discount suggestion',
+    });
+  }
+};
+
+exports.applyDiscountSuggestion = async (req, res) => {
+  try {
+    if (!requireSupplierAccess(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only suppliers can apply discount suggestions.',
+      });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid donation id.' });
+    }
+
+    const donation = await Donation.findById(id);
+    if (!donation) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+    if (!isDonorOwner(donation, req.user._id)) {
+      return res.status(403).json({ success: false, message: 'Not allowed to update this listing.' });
+    }
+    if (donation.listingType !== 'sell') {
+      return res.status(400).json({ success: false, message: 'Discounts can only be applied to sell listings.' });
+    }
+
+    const suggestedPrice = Number(req.body?.suggestedPrice);
+    if (Number.isNaN(suggestedPrice) || suggestedPrice < 0) {
+      return res.status(400).json({ success: false, message: 'A valid suggestedPrice is required.' });
+    }
+
+    const roundedPrice = Math.round(suggestedPrice);
+    const currentPrice = Number(donation.priceAmount);
+    if (Number.isNaN(currentPrice) || currentPrice <= 0) {
+      return res.status(400).json({ success: false, message: 'Current listing price is invalid.' });
+    }
+    if (roundedPrice > currentPrice) {
+      return res.status(400).json({ success: false, message: 'Discounted price cannot exceed current price.' });
+    }
+
+    donation.discountMeta = {
+      ...(donation.discountMeta || {}),
+      lastAppliedPrice: roundedPrice,
+      lastOriginalPrice: currentPrice,
+      lastAppliedAt: new Date(),
+      lastAppliedBy: req.user._id,
+    };
+    donation.priceAmount = roundedPrice;
+    await donation.save();
+
+    return res.json({
+      success: true,
+      donation: donation.toPublicJSON(),
+    });
+  } catch (err) {
+    console.error('applyDiscountSuggestion error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to apply discount suggestion',
     });
   }
 };

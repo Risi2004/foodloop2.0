@@ -28,6 +28,8 @@ import carIcon from '../../../assets/icons/signup/car.svg';
 import truckIcon from '../../../assets/icons/signup/truck.svg';
 import defaultProfileIcon from '../../../assets/icons/afterLogin/navbar/profile.svg';
 
+const ALLOWED_ROLE_TYPES = ['receiver', 'driver', 'restaurant', 'supermarket', 'individual', 'customer'];
+
 function SignupPage() {
     const navigate = useNavigate();
     const { roleType } = useParams();
@@ -64,7 +66,7 @@ function SignupPage() {
         venueType: '',
     });
 
-    const isBusiness = ['restaurant', 'supermarket', 'business'].includes(roleType);
+    const isBusiness = ['restaurant', 'supermarket'].includes(roleType);
 
     const showNicDocumentUpload = (nic) => {
         if (isValidNicNumber(nic)) return true;
@@ -72,8 +74,14 @@ function SignupPage() {
     };
 
     const needsAdminApprovalNotice =
-        ['receiver', 'driver', 'restaurant', 'supermarket', 'business', 'individual'].includes(roleType) ||
+        ['receiver', 'driver', 'restaurant', 'supermarket', 'individual'].includes(roleType) ||
         (roleType === 'customer' && customerIncomeLevel === 'low');
+
+    useEffect(() => {
+        if (!ALLOWED_ROLE_TYPES.includes(roleType)) {
+            navigate('/signup', { replace: true });
+        }
+    }, [navigate, roleType]);
 
     const emailDebounceRef = useRef(null);
     const contactDebounceRef = useRef(null);
@@ -297,7 +305,6 @@ function SignupPage() {
             case 'driver': return 'Create Volunteer Driver Account';
             case 'restaurant': return 'Create Restaurant Account';
             case 'supermarket': return 'Create Supermarket Account';
-            case 'business': return 'Create Business Account';
             case 'individual': return 'Create Individual Account';
             case 'customer': return 'Create Customer Account';
             default: return 'Create Account';

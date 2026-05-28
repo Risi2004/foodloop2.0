@@ -158,3 +158,73 @@
     max-width: 100%;
   }
 }
+
+.ai-discount-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+}
+
+.ai-discount-modal {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.28);
+}
+
+.ai-discount-modal h3 {
+  margin: 0 0 12px;
+  color: #14532d;
+}
+
+.ai-discount-modal p {
+  margin: 8px 0;
+  color: #1f2937;
+}
+
+.ai-discount-modal__badge {
+  display: inline-block;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+}
+
+.ai-discount-modal__reason {
+  padding: 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.ai-discount-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ai-discount-modal__actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-discount-modal__actions button:first-child {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.ai-discount-modal__actions button:last-child {
+  background: #15803d;
+  color: #ffffff;
+}

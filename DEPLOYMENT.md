@@ -83,6 +83,7 @@ Default admin: `admin` / `admin123` (change after first login).
 | `GEMINI_API_KEY` | Yes | |
 | `GEMINI_MODEL` | No | e.g. `gemini-2.5-flash` |
 | `OSRM_BASE_URL` | No | Default `https://router.project-osrm.org`; set to self-hosted OSRM for production scale |
+| `WEATHER_API_KEY` | Yes | OpenWeather API key used by `/api/weather/*` backend proxy |
 
 **CORS (required):**
 

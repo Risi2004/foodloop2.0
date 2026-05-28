@@ -137,11 +137,16 @@ function Delivery() {
         init();
         getSocket();
 
+        const refreshFromServer = () => {
+            fetchData();
+        };
+
         const removePickupById = (payload) => {
             const id = payload?.donationId;
             if (!id) return;
             setPickups((prev) => prev.filter((p) => p.id !== id));
             setSelectedPickup((current) => (current?.id === id ? null : current));
+            refreshFromServer();
         };
 
         const mergeNewPickup = (payload) => {
@@ -149,8 +154,14 @@ function Delivery() {
             if (!donation) return;
 
             const loc = driverLocationRef.current;
-            if (loc?.latitude == null || loc?.longitude == null) return;
-            if (!isPickupWithinDriverRadius(donation, loc.latitude, loc.longitude)) return;
+            if (loc?.latitude == null || loc?.longitude == null) {
+                refreshFromServer();
+                return;
+            }
+            if (!isPickupWithinDriverRadius(donation, loc.latitude, loc.longitude)) {
+                refreshFromServer();
+                return;
+            }
 
             const item = computeRouteDistances(donation, loc.latitude, loc.longitude);
             const id = item.id || item._id;
@@ -159,6 +170,7 @@ function Delivery() {
                 if (prev.some((p) => p.id === id)) return prev;
                 return [item, ...prev];
             });
+            refreshFromServer();
         };
 
         const unsubNew = onDonationNewPickup(mergeNewPickup);

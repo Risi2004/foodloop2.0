@@ -8,7 +8,14 @@ import LookingForReceiverCard from "../../../../components/afterLogin/donor/myDo
 import LookingForDriverCard from "../../../../components/afterLogin/donor/myDonation/LookingForDriverCard";
 import CompletedHistoryCard from "../../../../components/afterLogin/donor/myDonation/CompletedHistoryCard";
 import { useNavigate } from 'react-router-dom';
-import { getMyDonations, deleteDonation, cancelClaim } from '../../../../services/donationApi';
+import {
+    getMyDonations,
+    deleteDonation,
+    cancelClaim,
+    getDiscountSuggestion,
+    applyDiscountSuggestion,
+} from '../../../../services/donationApi';
+import { getDiscountedPriceDetails } from '../../../../utils/donationDisplay';
 import { getUser } from '../../../../utils/auth';
 import {
     getSocket,
@@ -29,6 +36,10 @@ const DonorMyDonationDashboard = () => {
         foodSaved: 0,
         co2Offset: 0
     });
+    const [activeSuggestionDonation, setActiveSuggestionDonation] = useState(null);
+    const [suggestionData, setSuggestionData] = useState(null);
+    const [aiLoadingId, setAiLoadingId] = useState('');
+    const [applyingDiscount, setApplyingDiscount] = useState(false);
 
     const fetchDonations = async () => {
         try {
@@ -149,6 +160,44 @@ const DonorMyDonationDashboard = () => {
         }
     };
 
+    const closeSuggestionModal = () => {
+        setActiveSuggestionDonation(null);
+        setSuggestionData(null);
+        setApplyingDiscount(false);
+    };
+
+    const handleAiSuggestDiscount = async (donation) => {
+        const donationId = donation?.id || donation?._id;
+        if (!donationId) return;
+        try {
+            setAiLoadingId(donationId);
+            const response = await getDiscountSuggestion(donationId);
+            setActiveSuggestionDonation(donation);
+            setSuggestionData(response?.suggestion || null);
+        } catch (err) {
+            console.error('[DonorMyDonationDashboard] Error getting discount suggestion:', err);
+            alert(err.message || 'Failed to get AI discount suggestion');
+        } finally {
+            setAiLoadingId('');
+        }
+    };
+
+    const handleApplySuggestion = async () => {
+        const donationId = activeSuggestionDonation?.id || activeSuggestionDonation?._id;
+        const suggestedPrice = Number(suggestionData?.suggestedPrice);
+        if (!donationId || Number.isNaN(suggestedPrice)) return;
+        try {
+            setApplyingDiscount(true);
+            await applyDiscountSuggestion(donationId, { suggestedPrice });
+            await fetchDonations();
+            closeSuggestionModal();
+        } catch (err) {
+            console.error('[DonorMyDonationDashboard] Error applying discount suggestion:', err);
+            alert(err.message || 'Failed to apply AI discount');
+            setApplyingDiscount(false);
+        }
+    };
+
     if (loading) {
         return <PageLoader message="Loading your donations..." />;
     }
@@ -225,6 +274,8 @@ const DonorMyDonationDashboard = () => {
                                             key={donation.id}
                                             donation={donation}
                                             onCancelClaim={handleCancelClaim}
+                                            onAiSuggestDiscount={handleAiSuggestDiscount}
+                                            aiBusy={aiLoadingId === (donation.id || donation._id)}
                                         />
                                     ))
                                 ) : (
@@ -246,6 +297,8 @@ const DonorMyDonationDashboard = () => {
                                             donation={donation}
                                             onEdit={handleEdit}
                                             onDelete={handleDelete}
+                                            onAiSuggestDiscount={handleAiSuggestDiscount}
+                                            aiBusy={aiLoadingId === (donation.id || donation._id)}
                                         />
                                     ))
                                 ) : (
@@ -274,6 +327,33 @@ const DonorMyDonationDashboard = () => {
                     </main>
                 </div>
             </div>
+            {activeSuggestionDonation && suggestionData && (
+                <div className="ai-discount-modal__backdrop" onClick={closeSuggestionModal}>
+                    <div className="ai-discount-modal" onClick={(e) => e.stopPropagation()}>
+                        <h3>AI Discount Suggestion</h3>
+                        <p><strong>Item:</strong> {activeSuggestionDonation.itemName || 'Listing'}</p>
+                        <p>
+                            <strong>Current Price:</strong>{' '}
+                            {getDiscountedPriceDetails(activeSuggestionDonation)?.currentFormatted || 'LKR 0.00'}
+                        </p>
+                        <p>
+                            <strong>Suggested Price:</strong>{' '}
+                            LKR {Number(suggestionData.suggestedPrice || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p><strong>Discount:</strong> {Number(suggestionData.discountPercent || 0)}%</p>
+                        {suggestionData.isFreeRecommendation && (
+                            <p className="ai-discount-modal__badge">Near-expiry free recommendation</p>
+                        )}
+                        <p className="ai-discount-modal__reason">{suggestionData.reasoning || 'No reasoning available.'}</p>
+                        <div className="ai-discount-modal__actions">
+                            <button type="button" onClick={closeSuggestionModal} disabled={applyingDiscount}>Cancel</button>
+                            <button type="button" onClick={handleApplySuggestion} disabled={applyingDiscount}>
+                                {applyingDiscount ? 'Applying...' : 'Apply Discount'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <DonorFooter />
         </>
     );

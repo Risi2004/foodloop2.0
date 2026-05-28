@@ -57,9 +57,33 @@
     cursor: not-allowed;
 }
 
+.ai-discount-btn {
+    margin-top: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid #bbf7d0;
+    background: #ecfdf3;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ai-discount-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .listing-price-line {
     color: #047857;
     font-weight: 600;
+}
+
+.listing-price-line__old {
+    text-decoration: line-through;
+    color: #6b7280;
+    margin-right: 6px;
+    font-weight: 500;
 }
 
 .top {

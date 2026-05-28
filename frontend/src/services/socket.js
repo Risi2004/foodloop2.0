@@ -8,7 +8,15 @@ let socket = null;
 
 function getSocketUrl() {
   const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-  return apiBase || window.location.origin;
+  if (apiBase) return apiBase;
+
+  // In Vite dev (localhost:5173), connect directly to backend socket server
+  // to avoid noisy websocket proxy abort errors from the dev proxy.
+  if (window.location.hostname === 'localhost' && window.location.port === '5173') {
+    return 'http://localhost:5000';
+  }
+
+  return window.location.origin;
 }
 
 export function getSocket() {

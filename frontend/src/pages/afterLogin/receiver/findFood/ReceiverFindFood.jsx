@@ -145,15 +145,18 @@ const FindFood = () => {
     }, [receiverPosition, fetchDonations]);
 
     useEffect(() => {
-        if (!receiverPosition) return undefined;
-
         getSocket();
+
+        const refreshFromServer = () => {
+            if (!receiverPosition) return;
+            const [lat, lng] = receiverPosition;
+            fetchDonations(lat, lng);
+        };
 
         const mergeCreated = (payload) => {
             const donation = payload?.donation;
-            if (!donation) return;
+            if (!donation || !receiverPosition) return;
 
-            const [lat, lng] = receiverPosition;
             const item = transformDonationToItem(
                 { ...donation, donorName: payload.donorName || donation.donorName },
                 receiverPosition
@@ -164,6 +167,7 @@ const FindFood = () => {
                 if (prev.some((i) => i.id === item.id)) return prev;
                 return [item, ...prev];
             });
+            refreshFromServer();
         };
 
         const removeById = (payload) => {
@@ -171,17 +175,19 @@ const FindFood = () => {
             if (!id) return;
             setItems((prev) => prev.filter((i) => i.id !== id));
             setSelectedItemId((current) => (current === id ? null : current));
+            refreshFromServer();
         };
 
         const mergeClaimCancelled = (payload) => {
             const donation = payload?.donation;
-            if (!donation) return;
+            if (!donation || !receiverPosition) return;
             const item = transformDonationToItem(donation, receiverPosition);
             if (!isWithinRadius(item)) return;
             setItems((prev) => {
                 if (prev.some((i) => i.id === item.id)) return prev;
                 return [item, ...prev];
             });
+            refreshFromServer();
         };
 
         const unsubCreated = onDonationCreated(mergeCreated);
@@ -195,7 +201,7 @@ const FindFood = () => {
             unsubCancelled();
             unsubClaimCancelled();
         };
-    }, [receiverPosition]);
+    }, [receiverPosition, fetchDonations]);
 
     useEffect(() => {
         let cancelled = false;

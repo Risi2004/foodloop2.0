@@ -28,6 +28,8 @@ router.get('/available', verifyJwt, donationController.getAvailableDonations);
 router.get('/my-claims', verifyJwt, donationController.getMyClaims);
 router.post('/:id/claim', verifyJwt, donationController.claimDonation);
 router.post('/:id/cancel-claim', verifyJwt, donationController.cancelClaim);
+router.post('/:id/discount-suggestion', verifyJwt, donationController.getDiscountSuggestion);
+router.patch('/:id/apply-discount', verifyJwt, donationController.applyDiscountSuggestion);
 router.get('/:id', verifyJwt, donationController.getDonationById);
 router.patch('/:id', verifyJwt, donationController.updateDonation);
 router.delete('/:id', verifyJwt, donationController.deleteDonation);

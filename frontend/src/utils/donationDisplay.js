@@ -43,6 +43,26 @@ export function formatListingPrice(donation) {
   })}`;
 }
 
+export function getDiscountedPriceDetails(donation) {
+  if (!donation || (donation.listingType || '').toLowerCase() !== 'sell') return null;
+  const currentAmount = Number(donation.priceAmount);
+  if (Number.isNaN(currentAmount) || currentAmount < 0) return null;
+  const meta = donation.discountMeta || {};
+  const previousAmount = Number(meta.lastOriginalPrice);
+  const hasPrevious = !Number.isNaN(previousAmount) && previousAmount > currentAmount;
+  const currency = (donation.priceCurrency || 'LKR').trim();
+  const format = (amount) =>
+    `${currency} ${Number(amount).toLocaleString('en-LK', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  return {
+    currentFormatted: format(currentAmount),
+    previousFormatted: hasPrevious ? format(previousAmount) : null,
+    hasDiscountApplied: hasPrevious,
+  };
+}
+
 export function isPaidListing(donation) {
   return (donation?.listingType || '').toLowerCase() === 'sell' && formatListingPrice(donation);
 }

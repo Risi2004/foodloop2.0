@@ -10,7 +10,6 @@ function SignupSelection() {
         { id: 'driver', title: 'Driver', description: 'Volunteer & Paid Drivers' },
         { id: 'restaurant', title: 'Restaurant / Wedding Hall', description: 'Donate or sell food as a restaurant or wedding hall' },
         { id: 'supermarket', title: 'Supermarket / Groceries', description: 'Donate or sell groceries' },
-        { id: 'business', title: 'Other Business', description: 'Any other business entity' },
         { id: 'individual', title: 'Individual / Startup', description: 'Households or home startups' },
         { id: 'customer', title: 'Customer', description: 'Normal or low-income shoppers (GN letter for subsidized access)' },
     ];

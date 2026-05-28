@@ -4,7 +4,7 @@ import './DonationCards.css';
 import ListingPriceLine from '../../../common/ListingPriceLine/ListingPriceLine';
 import { getDonationExpiryDisplay } from '../../../../utils/donationDisplay';
 
-const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
+const LookingForReceiverCard = ({ donation, onEdit, onDelete, onAiSuggestDiscount, aiBusy }) => {
     if (!donation) {
         return null;
     }
@@ -84,6 +84,16 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete }) => {
                         <div className="listed-2-mins-ago">Listed {listedTime}</div>
                         <div className="listed-2-mins-ago">EXP: {expiryDate}</div>
                         <ListingPriceLine donation={donation} className="listed-2-mins-ago listing-price-line" />
+                        {donation.listingType === 'sell' && (
+                            <button
+                                type="button"
+                                className="ai-discount-btn"
+                                onClick={() => onAiSuggestDiscount?.(donation)}
+                                disabled={aiBusy}
+                            >
+                                {aiBusy ? 'Getting AI discount...' : 'AI suggesting this much discount'}
+                            </button>
+                        )}
                     </div>
                     <div className="wight">
                         <div className="wight2">
