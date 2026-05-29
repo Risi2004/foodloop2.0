@@ -982,6 +982,116 @@ function paymentInvoiceEmail({
   };
 }
 
+function supplierAiSubscriptionPaymentEmail({
+  name,
+  orderId,
+  paidAt,
+  amount,
+  currency,
+  cardLast4,
+  expiresAt,
+  autoRenew,
+  isRenewal,
+  myDonationsUrl,
+}) {
+  const currencyLabel = currency || 'LKR';
+  const amountFormatted = `${currencyLabel} ${Number(amount).toLocaleString('en-LK')}`;
+  const cardDisplay = cardLast4 ? `•••• •••• •••• ${cardLast4}` : 'Card on file';
+  const paidAtFormatted = formatInvoiceDate(paidAt);
+  const validUntilFormatted = formatInvoiceDate(expiresAt);
+  const productLabel = 'Supplier Tomorrow AI — unlimited forecasts';
+  const renewLine = autoRenew
+    ? 'Your subscription will renew automatically each month using this card until you cancel.'
+    : 'Automatic monthly renewal is off. Subscribe again before your period ends to keep unlimited access.';
+
+  const rows = [
+    ['Invoice #', orderId],
+    ['Date paid', paidAtFormatted],
+    ['Service', productLabel],
+    ['Amount', amountFormatted],
+    ['Valid until', validUntilFormatted],
+    ['Payment method', cardDisplay],
+    ['Auto-renew', autoRenew ? 'On' : 'Off'],
+    ['Status', 'Paid'],
+  ];
+  const tableRows = donationDetailsTableHtml(rows);
+  const title = isRenewal ? 'Subscription renewed' : 'Subscription payment received';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">${title}</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Thank you for your payment. Your Supplier Tomorrow AI subscription is active for one month from today. Payments are non-refundable for the current billing period.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">${renewLine}</p>
+      <p style="color: #444; line-height: 1.5;">Manage your subscription from
+        <a href="${myDonationsUrl}" style="color: #4CAF50;">My donations</a>.
+      </p>
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">Keep this email for your records.</p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `${title}. Your subscription is active until ${validUntilFormatted}. Payments are non-refundable for the current period.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    renewLine,
+    '',
+    `My donations: ${myDonationsUrl}`,
+  ].join('\n');
+
+  return {
+    subject: `FoodLoop — ${isRenewal ? 'AI subscription renewed' : 'AI subscription payment receipt'}`,
+    html,
+    text,
+  };
+}
+
+function supplierAiAutoRenewCancelledEmail({
+  name,
+  expiresAt,
+  amount,
+  currency,
+  myDonationsUrl,
+}) {
+  const validUntilFormatted = formatInvoiceDate(expiresAt);
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36;">Automatic renewal cancelled</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">You cancelled automatic monthly renewal for Supplier Tomorrow AI. You will not be charged again.</p>
+      <p style="color: #444; line-height: 1.5;">Your unlimited access remains active until <strong>${validUntilFormatted}</strong>. No refund is issued for the current ${amt} billing period.</p>
+      <p style="color: #444; line-height: 1.5;">You can subscribe again anytime from
+        <a href="${myDonationsUrl}" style="color: #4CAF50;">My donations</a>.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'Automatic renewal cancelled. No further charges will be made.',
+    `Unlimited access continues until ${validUntilFormatted}. No refund for the current billing period.`,
+    '',
+    `My donations: ${myDonationsUrl}`,
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — AI subscription auto-renew cancelled',
+    html,
+    text,
+  };
+}
+
 function payoutSubmittedEmail({ name, amount, currency, earningsUrl }) {
   const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
   const html = `
@@ -1392,4 +1502,6 @@ module.exports = {
   scheduledMaintenanceUpdatedEmail,
   suddenMaintenanceAnnouncementEmail,
   maintenanceCancelledEmail,
+  supplierAiSubscriptionPaymentEmail,
+  supplierAiAutoRenewCancelledEmail,
 };

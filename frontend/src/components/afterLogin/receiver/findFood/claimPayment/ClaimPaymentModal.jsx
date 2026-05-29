@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { confirmClaimPayment } from '../../../../../services/paymentApi';
 import './ClaimPaymentModal.css';
 
@@ -13,22 +14,56 @@ const formatExpiry = (value) => {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 };
 
+/**
+ * FoodLoop card payment gateway (receivers, suppliers, etc.).
+ * Pass `confirmPayment` to override the default claim confirm API.
+ */
 const ClaimPaymentModal = ({
   isOpen,
   onClose,
   checkout,
   onSuccess,
+  title = 'Pay for listing',
+  submitLabel = 'Pay & continue',
+  confirmPayment,
+  footerNote,
+  showAutoRenewOption = false,
+  subscriptionTerms,
 }) => {
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
+  const [autoRenew, setAutoRenew] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setCardNumber('');
+    setExpiry('');
+    setCvv('');
+    setAutoRenew(false);
+    setError(null);
+  }, [isOpen, checkout?.orderId]);
+
   if (!isOpen || !checkout) return null;
 
-  const { orderId, amount, currency, itemName, breakdown, discountStatus } = checkout;
+  const {
+    orderId,
+    amount,
+    currency,
+    itemName,
+    breakdown,
+    discountStatus,
+    summaryLines,
+  } = checkout;
   const currencyLabel = currency || 'LKR';
+  const note = footerNote ?? checkout.footerNote;
+  const terms =
+    subscriptionTerms ??
+    (showAutoRenewOption
+      ? 'One month of access per payment. No refunds for the current billing period. Cancel auto-renew anytime; access continues until the period ends.'
+      : null);
 
   const formatMoney = (value) =>
     `${currencyLabel} ${Number(value || 0).toLocaleString('en-LK', {
@@ -48,15 +83,22 @@ const ClaimPaymentModal = ({
     setIsProcessing(true);
     setError(null);
 
+    const cardPayload = {
+      orderId,
+      cardNumber: cardNumber.replace(/\D/g, ''),
+      expiry,
+      cvv,
+      cardLast4: cardNumber.replace(/\D/g, '').slice(-4),
+      autoRenew: showAutoRenewOption ? autoRenew : undefined,
+    };
+
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
-      await confirmClaimPayment({
-        orderId,
-        cardNumber: cardNumber.replace(/\D/g, ''),
-        expiry,
-        cvv,
-        cardLast4: cardNumber.replace(/\D/g, '').slice(-4),
-      });
+      if (confirmPayment) {
+        await confirmPayment(cardPayload);
+      } else {
+        await confirmClaimPayment(cardPayload);
+      }
       onSuccess(orderId);
     } catch (err) {
       setError(err.message || 'Payment failed. Please try again.');
@@ -69,7 +111,7 @@ const ClaimPaymentModal = ({
     if (e.target === e.currentTarget && !isProcessing) onClose();
   };
 
-  return (
+  const modalContent = (
     <div
       className="claim-payment-overlay"
       role="dialog"
@@ -80,7 +122,7 @@ const ClaimPaymentModal = ({
     >
       <div className="claim-payment-modal">
         <header className="claim-payment-header">
-          <h2 id="claim-payment-title">Pay for listing</h2>
+          <h2 id="claim-payment-title">{title}</h2>
           <button
             type="button"
             className="claim-payment-close"
@@ -92,11 +134,22 @@ const ClaimPaymentModal = ({
           </button>
         </header>
 
-        <div className="claim-payment-demo-badge">Demo payment — no real charge</div>
-
         <div className="claim-payment-summary">
           <p className="claim-payment-item">{itemName}</p>
-          {breakdown ? (
+          {Array.isArray(summaryLines) && summaryLines.length > 0 ? (
+            <div className="claim-payment-breakdown">
+              {summaryLines.map((line) => (
+                <div className="claim-payment-line" key={line.label}>
+                  <span>{line.label}</span>
+                  <span>{formatMoney(line.amount)}</span>
+                </div>
+              ))}
+              <div className="claim-payment-line claim-payment-line--total">
+                <span>Total</span>
+                <span>{formatMoney(amount)}</span>
+              </div>
+            </div>
+          ) : breakdown ? (
             <div className="claim-payment-breakdown">
               {breakdown.claimQuantity > 1 && breakdown.unitPriceAmount != null && (
                 <div className="claim-payment-line">
@@ -134,9 +187,11 @@ const ClaimPaymentModal = ({
           )}
           {discountStatus?.eligible && (
             <p className="claim-payment-discount-note">
-              {discountStatus.remaining} of {discountStatus.monthlyLimit} discounted deliveries left this month
+              {discountStatus.remaining} of {discountStatus.monthlyLimit} discounted deliveries left
+              this month
             </p>
           )}
+          {note && <p className="claim-payment-discount-note">{note}</p>}
         </div>
 
         <form className="claim-payment-form" onSubmit={handleSubmit}>
@@ -181,6 +236,20 @@ const ClaimPaymentModal = ({
             </label>
           </div>
 
+          {showAutoRenewOption && (
+            <label className="claim-payment-auto-renew">
+              <input
+                type="checkbox"
+                checked={autoRenew}
+                onChange={(e) => setAutoRenew(e.target.checked)}
+                disabled={isProcessing}
+              />
+              <span>Renew automatically every month</span>
+            </label>
+          )}
+
+          {terms && <p className="claim-payment-terms">{terms}</p>}
+
           {error && (
             <p className="claim-payment-error" role="alert">
               {error}
@@ -201,13 +270,16 @@ const ClaimPaymentModal = ({
               className="claim-payment-btn claim-payment-btn-primary"
               disabled={!isFormValid() || isProcessing}
             >
-              {isProcessing ? 'Processing…' : 'Pay & continue'}
+              {isProcessing ? 'Processing…' : submitLabel}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return modalContent;
+  return createPortal(modalContent, document.body);
 };
 
 export default ClaimPaymentModal;

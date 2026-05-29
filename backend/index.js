@@ -19,9 +19,11 @@ const weatherRoutes = require('./routes/weather.routes');
 const earningsRoutes = require('./routes/earnings.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
 const chatRoutes = require('./routes/chat.routes');
+const supplierAiRoutes = require('./routes/supplierAi.routes');
 const { isIndexAvailable } = require('./services/chatKnowledgeIndex');
 const { isR2Configured } = require('./config/r2');
 const { setIO, attachSocketAuth } = require('./socket');
+const { startRenewalScheduler } = require('./services/supplierAiSubscriptionService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -121,6 +123,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/earnings', earningsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/supplier/ai-insights', supplierAiRoutes);
 
 if (!isIndexAvailable()) {
   console.warn(
@@ -152,6 +155,7 @@ mongoose
     console.log('MongoDB connected successfully');
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      startRenewalScheduler();
       console.log('Socket.IO enabled');
       console.log('CORS allowlist:', allowedOrigins.join(', '));
       console.log(

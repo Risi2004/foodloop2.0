@@ -25,6 +25,7 @@ import {
     onDonationClaimCancelledForDonor,
 } from '../../../../services/socket';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
+import SupplierAiInsightsPanel from '../../../../components/afterLogin/donor/myDonation/supplierAiInsights/SupplierAiInsightsPanel';
 
 const DonorMyDonationDashboard = () => {
     const navigate = useNavigate();
@@ -248,6 +249,7 @@ const DonorMyDonationDashboard = () => {
                     <DonationSidebar impactStats={impactStats} />
                     
                     <main className="donor-my-donation-content">
+                        <SupplierAiInsightsPanel />
                         {/* 1. In Transit */}
                         <div className="intransit">
                             <h2 className="active-donations">In Transit Donations</h2>

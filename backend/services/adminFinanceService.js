@@ -256,7 +256,12 @@ async function fetchCardLedgerRows(range) {
     direction: 'in',
     amount: roundCurrency(p.amount),
     referenceLabel: p.orderId || 'Card payment',
-    context: p.paymentContext === 'customer_checkout' ? 'customer_checkout' : 'claim',
+    context:
+      p.paymentContext === 'customer_checkout'
+        ? 'customer_checkout'
+        : p.paymentContext === 'supplier_ai_subscription'
+          ? 'supplier_ai_subscription'
+          : 'claim',
     status: p.status,
     meta: {
       paymentMethod: p.orderSummary?.paymentMethod || 'card',

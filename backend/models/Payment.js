@@ -5,8 +5,14 @@ const paymentSchema = new mongoose.Schema(
     orderId: { type: String, required: true, unique: true, trim: true, index: true },
     paymentContext: {
       type: String,
-      enum: ['claim', 'customer_checkout'],
+      enum: ['claim', 'customer_checkout', 'supplier_ai_subscription'],
       default: 'claim',
+      index: true,
+    },
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
       index: true,
     },
     donationId: {
@@ -62,5 +68,6 @@ const paymentSchema = new mongoose.Schema(
 
 paymentSchema.index({ donationId: 1, status: 1 });
 paymentSchema.index({ customerId: 1, status: 1 });
+paymentSchema.index({ supplierId: 1, status: 1 });
 
 module.exports = mongoose.model('Payment', paymentSchema);

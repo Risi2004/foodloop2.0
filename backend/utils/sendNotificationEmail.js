@@ -36,6 +36,8 @@ const {
   scheduledMaintenanceUpdatedEmail,
   suddenMaintenanceAnnouncementEmail,
   maintenanceCancelledEmail,
+  supplierAiSubscriptionPaymentEmail,
+  supplierAiAutoRenewCancelledEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -458,6 +460,45 @@ async function sendDonationDeliveredEmails(donation, donorUser, receiverUser, dr
   }
 }
 
+async function sendSupplierAiSubscriptionPaymentEmail(user, { payment, subscription, isRenewal }) {
+  if (!user?.email || !payment) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = supplierAiSubscriptionPaymentEmail({
+      name,
+      orderId: payment.orderId,
+      paidAt: payment.updatedAt || new Date(),
+      amount: payment.amount,
+      currency: payment.currency || 'LKR',
+      cardLast4: payment.cardLast4,
+      expiresAt: subscription?.expiresAt,
+      autoRenew: !!(subscription?.autoRenew && !subscription?.autoRenewCancelledAt),
+      isRenewal: !!isRenewal,
+      myDonationsUrl: getSupplierMyDonationsUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] Supplier AI subscription payment failed for ${user.email}:`, err.message);
+  }
+}
+
+async function sendSupplierAiAutoRenewCancelledEmail(user, { expiresAt, amount, currency }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = supplierAiAutoRenewCancelledEmail({
+      name,
+      expiresAt,
+      amount,
+      currency,
+      myDonationsUrl: getSupplierMyDonationsUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] Supplier AI cancel renew failed for ${user.email}:`, err.message);
+  }
+}
+
 async function sendPaymentInvoiceEmail(user, { payment, donation }) {
   if (!user?.email) return;
   try {
@@ -845,6 +886,8 @@ module.exports = {
   sendDonationPickupConfirmedEmails,
   sendDonationDeliveredEmails,
   sendPaymentInvoiceEmail,
+  sendSupplierAiSubscriptionPaymentEmail,
+  sendSupplierAiAutoRenewCancelledEmail,
   sendCustomerOrderNewPickupToDrivers,
   sendAiPriceReductionToReceiversAndCustomers,
   sendPayoutSubmittedEmail,

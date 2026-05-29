@@ -70,6 +70,29 @@ Weather responses are normalized by backend and cached in-memory for short durat
 
 Requires `GEMINI_API_KEY` and a built index (`npm run chat:ingest`). Rate limited per IP (~20 requests / 15 minutes).
 
+## Supplier Tomorrow AI (JWT + supplier roles)
+
+On `/supplier/my-donation`, suppliers can run weather-aware “tomorrow” product suggestions (OpenWeather + Gemini).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/supplier/ai-insights/status` | Free quota / unlimited subscription state (Asia/Colombo day) |
+| POST | `/api/supplier/ai-insights/tomorrow` | `{ lat?, lng?, foodCategory?, itemName? }` — generate insights |
+| POST | `/api/supplier/ai-insights/subscription/checkout` | Start LKR 5,000 mock card checkout (30 min TTL) |
+| POST | `/api/supplier/ai-insights/subscription/confirm` | `{ orderId, cardNumber, expiry, cvv }` — activate unlimited until month end |
+
+**Env (optional):** `SUPPLIER_AI_FREE_DAILY_LIMIT` (default `2`), `SUPPLIER_AI_SUBSCRIPTION_LKR` (default `5000`). Uses `GEMINI_API_KEY` and `WEATHER_API_KEY` like other AI/weather features.
+
+**Business rules:** 2 free forecasts per supplier per calendar day (Colombo); paid tier unlocks unlimited runs until the last day of the current calendar month. Subscription payments use the same in-app mock card flow as claims and appear in admin **Card inflows** with context `supplier_ai_subscription`.
+
+**Manual test:**
+
+1. Log in as a supplier (Donor / Restaurant / etc.) and open **My donations** (`/supplier/my-donation`).
+2. Call **Get tomorrow’s AI forecast** twice — status should show `0/2` then insights.
+3. Third run returns `AI_QUOTA_EXCEEDED` and the paywall CTA.
+4. Complete mock checkout (16-digit card, MM/YY expiry, 3-digit CVV) — status shows unlimited until month end; further runs do not consume the daily counter.
+5. As Admin → **Platform Finance** → Card inflows: ledger row for LKR 5,000 with context **Supplier AI subscription**.
+
 ## Signup file storage (Cloudflare R2)
 
 All new signup uploads (PDFs and profile images) are stored in **Cloudflare R2**, not on the server disk. MongoDB stores the public URL (e.g. `https://pub-xxxx.r2.dev/users/{userId}/...`).

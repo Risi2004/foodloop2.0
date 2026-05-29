@@ -26,6 +26,12 @@
   overflow-x: hidden;
 }
 
+.donor-my-donation-content .supplier-ai-panel {
+  max-width: none;
+  margin: 0;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+}
+
 .intransit,
 .lookingForReceiver,
 .looking,

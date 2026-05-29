@@ -43,6 +43,7 @@ export function contextLabel(context) {
   const labels = {
     customer_checkout: 'Customer checkout',
     claim: 'Receiver claim',
+    supplier_ai_subscription: 'Supplier AI subscription',
     donation_delivery: 'Donation delivery',
     payout: 'Payout',
   };
