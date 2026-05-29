@@ -132,7 +132,7 @@ function Chatbot() {
         <div className="chatbot__popout">
           <header className="chatbot__header">
             <img src={chatbotIcon2} alt="Chatbot-Icon" className="chatbot__header__icon" />
-            <span className="chatbot__header__title">FoodLoop AI Chat Bot</span>
+            <span className="chatbot__header__title">{getChatbotText(language, 'headerTitle')}</span>
             <div className="chatbot__lang">
               {SUPPORTED_LANGS.map((lang) => (
                 <button

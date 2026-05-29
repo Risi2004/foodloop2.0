@@ -6,7 +6,6 @@ import Feedback from "../../../../components/afterLogin/dashboard/common/feedbac
 import Contact from "../../../../components/beforeLogin/Contact/Contact";
 import ReceiverFooter from "../../../../components/afterLogin/dashboard/ReceiverSection/footer/ReceiverFooter";
 import Map from "../../../../components/afterLogin/dashboard/ReceiverSection/map/ReceiverMap";
-import Chatbot from "../../../../components/chatbot/Chatbot";
 import './ReceiverDashboard.css';
 import FunctionsSection from "../../../../components/afterLogin/dashboard/ReceiverSection/functionsSection/FunctionsSection";
 
@@ -22,7 +21,6 @@ function ReceiverDashboard() {
     return (
         <div className="receiver__dashboard">
             <ReceiverNavbar />
-            <Chatbot />
             <Header />
             <FunctionsSection />
             <Feedback />

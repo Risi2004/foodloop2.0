@@ -8,7 +8,6 @@ import TransparencyLoopCardSection from "../../../components/beforeLogin/transpa
 import Map from "../../../components/beforeLogin/map/Map"
 import ReviewSection from "../../../components/beforeLogin/review/ReviewSection"
 import Contact from "../../../components/beforeLogin/Contact/Contact"
-import Chatbot from "../../../components/chatbot/Chatbot"
 import Footer from "../../../components/beforeLogin/footer/Footer"
 import PageLoader from "../../../components/common/PageLoader/PageLoader"
 import { preloadSignupLoginImages } from "../../../utils/preloadSignupLoginImages"
@@ -121,7 +120,6 @@ function LandingPage() {
                 />
             )}
             <Navbar />
-            <Chatbot />
             <HeaderImage />
             <StatsCardPage />
             <About />

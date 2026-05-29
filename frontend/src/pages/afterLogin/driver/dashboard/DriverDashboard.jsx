@@ -6,7 +6,6 @@ import DriverNavbar from '../../../../components/afterLogin/dashboard/driverSect
 import Feedback from "../../../../components/afterLogin/dashboard/common/feedback/Feedback";
 import Map from "../../../../components/afterLogin/dashboard/driverSection/map/DriverMap";
 import Contact from "../../../../components/beforeLogin/Contact/Contact";
-import Chatbot from '../../../../components/chatbot/Chatbot';
 import StatusBatch from "../../../../components/afterLogin/dashboard/driverSection/driverStatusBatch/DriverStatusBatch";
 import DriverFooter from "../../../../components/afterLogin/dashboard/driverSection/footer/DriverFooter";
 import './DriverDashboard.css';
@@ -23,7 +22,6 @@ function DriverDashboard(){
     return (
         <div className='driver__dashboard'>
             <DriverNavbar />
-            <Chatbot />
             <Header />
             <FunctionsSection />
             <Feedback />

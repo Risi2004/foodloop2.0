@@ -20,7 +20,15 @@
    - Google Gemini: `GEMINI_API_KEY` ([Google AI Studio](https://aistudio.google.com/apikey)), optional `GEMINI_MODEL` (default `gemini-3.5-flash`; falls back to `gemini-2.5-flash` then `gemini-1.5-flash` on quota errors)
    - OpenWeather: `WEATHER_API_KEY` (server-side weather widget source)
 
-3. Install and run:
+3. **FoodLoop AI chatbot (optional but recommended):** add curated markdown under `knowledge/website/`, place PDF help files in `knowledge/sources/`, then build the search index:
+
+   ```bash
+   npm run chat:ingest
+   ```
+
+   Re-run after changing PDFs or website knowledge files. See `knowledge/sources/README.md`.
+
+4. Install and run:
 
    ```bash
    npm install
@@ -53,6 +61,14 @@ Weather responses are normalized by backend and cached in-memory for short durat
 | POST | `/api/auth/resend-reset-otp` | `{ email }` — resend reset OTP |
 | POST | `/api/auth/reset-password` | `{ email, password, retypePassword }` — after OTP verified (15 min window) |
 | GET | `/api/auth/me` | Bearer token required |
+
+## Chatbot endpoints (public)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/chat/message` | `{ message, history?, language? }` — RAG answers about FoodLoop only (en/ta/si) |
+
+Requires `GEMINI_API_KEY` and a built index (`npm run chat:ingest`). Rate limited per IP (~20 requests / 15 minutes).
 
 ## Signup file storage (Cloudflare R2)
 

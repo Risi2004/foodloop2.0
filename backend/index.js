@@ -18,6 +18,8 @@ const customerOrderRoutes = require('./routes/customerOrder.routes');
 const weatherRoutes = require('./routes/weather.routes');
 const earningsRoutes = require('./routes/earnings.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
+const chatRoutes = require('./routes/chat.routes');
+const { isIndexAvailable } = require('./services/chatKnowledgeIndex');
 const { isR2Configured } = require('./config/r2');
 const { setIO, attachSocketAuth } = require('./socket');
 
@@ -118,6 +120,13 @@ app.use('/api/customer-orders', customerOrderRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/earnings', earningsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/chat', chatRoutes);
+
+if (!isIndexAvailable()) {
+  console.warn(
+    'Warning: Chat knowledge index missing. Run "npm run chat:ingest" in backend/ after adding knowledge files.'
+  );
+}
 
 app.use((err, req, res, next) => {
   console.error(err);

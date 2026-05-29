@@ -80,8 +80,11 @@ Default admin: `admin` / `admin123` (change after first login).
 | `R2_SECRET_ACCESS_KEY` | Yes | |
 | `R2_BUCKET_NAME` | Yes | |
 | `R2_PUBLIC_BASE_URL` | Yes | Public R2 URL, no trailing slash |
-| `GEMINI_API_KEY` | Yes | |
+| `GEMINI_API_KEY` | Yes | Also used for FoodLoop AI chatbot |
 | `GEMINI_MODEL` | No | e.g. `gemini-3.5-flash` |
+| `CHAT_EMBEDDING_MODEL` | No | Default `text-embedding-004` |
+| `CHAT_TOP_K` | No | RAG chunks retrieved (default `5`) |
+| `CHAT_MIN_SCORE` | No | Similarity threshold (default `0.35`) |
 | `OSRM_BASE_URL` | No | Default `https://router.project-osrm.org`; set to self-hosted OSRM for production scale |
 | `WEATHER_API_KEY` | Yes | OpenWeather API key used by `/api/weather/*` backend proxy |
 
@@ -100,6 +103,15 @@ After the frontend is live, set `FRONTEND_URL` to your **production** Vercel URL
 **Free tier:** the service sleeps after inactivity; the first request may take 30–60 seconds.
 
 **WebSockets:** Socket.IO works on Render Web Services with no extra config.
+
+**FoodLoop AI chatbot:** After deploy, run the ingest script once (locally or in a one-off shell with repo + env):
+
+```bash
+cd backend
+npm run chat:ingest
+```
+
+Commit PDFs in `backend/knowledge/sources/` and markdown in `backend/knowledge/website/` before ingest. The generated `knowledge/built/index.json` must exist on the server — either run ingest on the host after deploy or commit the built index if your policy allows (default: gitignored; run ingest on Render shell or CI).
 
 ---
 

@@ -11,6 +11,8 @@ const translations = {
     headerTitle: 'FoodLoop AI Chat Bot',
     inputPlaceholder: 'Type here',
     errorGeneric: "Sorry, I couldn't get a response. Please try again.",
+    offTopic:
+      'I can only help with questions about FoodLoop — our website, features, roles, signup, and how to use the platform.',
     ariaOpen: 'Open chatbot',
     ariaClose: 'Close chatbot',
     ariaSend: 'Send message',
@@ -25,6 +27,8 @@ const translations = {
     headerTitle: 'FoodLoop AI அரட்டை துணை',
     inputPlaceholder: 'இங்கே தட்டச்சு செய்யுங்கள்',
     errorGeneric: 'மன்னிக்கவும், பதிலைப் பெற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.',
+    offTopic:
+      'நான் FoodLoop தொடர்பான கேள்விகளுக்கு மட்டுமே உதவ முடியும் — வலைத்தளம், அம்சங்கள், பதிவு மற்றும் தளத்தைப் பயன்படுத்துவது.',
     ariaOpen: 'அரட்டையைத் திற',
     ariaClose: 'அரட்டையை மூடு',
     ariaSend: 'அனுப்பு',
@@ -39,6 +43,8 @@ const translations = {
     headerTitle: 'FoodLoop AI සංවාද බොට්',
     inputPlaceholder: 'මෙහි ටයිප් කරන්න',
     errorGeneric: 'සමාවන්න, පිළිතුර ලබා ගැනීමට නොහැකි විය. නැවත උත්සාහ කරන්න.',
+    offTopic:
+      'මට උදව් කළ හැක්කේ FoodLoop සම්බන්ධ ප්‍රශ්න සඳහා පමණි — වෙබ් අඩවිය, විශේෂාංග, ලියාපදිංචිය සහ වේදිකාව භාවිතා කිරීම.',
     ariaOpen: 'සංවාද බොට් අරින්න',
     ariaClose: 'සංවාද බොට් වසන්න',
     ariaSend: 'යවන්න',

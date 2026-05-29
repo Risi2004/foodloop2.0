@@ -75,6 +75,7 @@ import RoleLayout from "./components/afterLogin/RoleLayout/RoleLayout";
 import { MarketplaceProvider } from "./contexts/MarketplaceContext";
 import { DONOR_DASHBOARD_ROLES } from "./utils/auth";
 import { legacyDonorToSupplier } from "./constants/supplierRoutes";
+import Chatbot from "./components/chatbot/Chatbot";
 
 function LegacyDonorRedirect() {
   const { pathname, search, hash } = useLocation();
@@ -98,6 +99,7 @@ function App() {
     <MarketplaceProvider>
     <Router>
       <ScrollToTop />
+      <Chatbot />
       <Routes>
         {/* Before Signin */}
 
