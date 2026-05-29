@@ -135,14 +135,16 @@ const LocationMapModal = ({
         [applyCoords]
     );
 
-    const fetchCurrentLocation = useCallback(async () => {
+    const fetchCurrentLocation = useCallback(async (manageLoading = true) => {
         if (!navigator.geolocation) {
             setError('Geolocation is not supported by your browser.');
             return false;
         }
 
-        setActionLoading(true);
-        setLoadingMessage('Fetching your location…');
+        if (manageLoading) {
+            setActionLoading(true);
+            setLoadingMessage('Fetching your location…');
+        }
         setError(null);
 
         return new Promise((resolve) => {
@@ -152,7 +154,7 @@ const LocationMapModal = ({
                         err?.message ||
                             'Failed to get your current location. Allow location access or enter an address and tap Find on map.'
                     );
-                    setActionLoading(false);
+                    if (manageLoading) setActionLoading(false);
                     resolve(false);
                     return;
                 }
@@ -164,7 +166,7 @@ const LocationMapModal = ({
                     setError(e.message || 'Failed to resolve address for your location.');
                     resolve(false);
                 } finally {
-                    setActionLoading(false);
+                    if (manageLoading) setActionLoading(false);
                 }
             });
         });
@@ -194,31 +196,53 @@ const LocationMapModal = ({
         if (!isOpen) return;
 
         const savedAddress = (initialPickupAddress || '').trim();
-        setAddressText(savedAddress);
         setError(null);
         setInfo(null);
         setMapReady(true);
         setCoordinates(DEFAULT_CENTER);
         setMarkerPosition(DEFAULT_CENTER);
 
+        const loadSavedCoords = async () => {
+            if (
+                defaultLat == null ||
+                defaultLng == null ||
+                Number.isNaN(Number(defaultLat)) ||
+                Number.isNaN(Number(defaultLng))
+            ) {
+                return false;
+            }
+            setLoadingMessage('Loading map…');
+            const hasSavedAddress = !!savedAddress;
+            await loadFromCoords(Number(defaultLat), Number(defaultLng), !hasSavedAddress);
+            if (hasSavedAddress) setAddressText(savedAddress);
+            setInfo('Location loaded. Adjust on the map if needed.');
+            return true;
+        };
+
         const init = async () => {
             setActionLoading(true);
             try {
-                if (
-                    defaultLat != null &&
-                    defaultLng != null &&
-                    !Number.isNaN(Number(defaultLat)) &&
-                    !Number.isNaN(Number(defaultLng))
-                ) {
-                    setLoadingMessage('Loading map…');
-                    const hasSavedAddress = !!savedAddress;
-                    await loadFromCoords(
-                        Number(defaultLat),
-                        Number(defaultLng),
-                        !hasSavedAddress
-                    );
-                    if (hasSavedAddress) setAddressText(savedAddress);
-                    setInfo('Pickup location loaded. Adjust on the map if needed.');
+                if (autoFetchOnOpen) {
+                    setAddressText('');
+                    setLoadingMessage('Fetching your location…');
+                    const located = await fetchCurrentLocation(false);
+                    if (located) return;
+
+                    const restored = await loadSavedCoords();
+                    if (restored) {
+                        setInfo('Could not get live location. Using your last map pin — adjust or tap Use current location.');
+                        return;
+                    }
+
+                    setCoordinates(DEFAULT_CENTER);
+                    setMarkerPosition(DEFAULT_CENTER);
+                    setInfo('Allow location access, drag the marker, or enter an address and tap Find on map.');
+                    return;
+                }
+
+                setAddressText(savedAddress);
+
+                if (await loadSavedCoords()) {
                     return;
                 }
 
@@ -233,11 +257,7 @@ const LocationMapModal = ({
                     return;
                 }
 
-                if (autoFetchOnOpen) {
-                    await fetchCurrentLocation();
-                } else {
-                    setInfo('Use current location or type an address and tap Find on map.');
-                }
+                setInfo('Use current location or type an address and tap Find on map.');
             } finally {
                 setActionLoading(false);
             }

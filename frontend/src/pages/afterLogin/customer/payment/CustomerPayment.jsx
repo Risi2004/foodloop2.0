@@ -353,10 +353,9 @@ const CustomerPayment = () => {
           setLocationModalOpen(false);
         }}
         onConfirm={handleLocationConfirm}
-        defaultAddress={address || user?.address || ''}
         defaultLat={deliveryLat ?? undefined}
         defaultLng={deliveryLng ?? undefined}
-        autoFetchOnOpen={locationModalPurpose === 'payment' || !locationConfirmed}
+        autoFetchOnOpen
         saving={isProcessing}
         saveError={pageError}
         title="Confirm delivery location"

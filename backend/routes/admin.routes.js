@@ -1,6 +1,7 @@
 const express = require('express');
 const adminController = require('../controllers/admin.controller');
 const earningsController = require('../controllers/earnings.controller');
+const adminFinanceController = require('../controllers/adminFinance.controller');
 const { requireAdmin } = require('../middleware/adminAuth');
 
 const router = express.Router();
@@ -22,5 +23,8 @@ router.get('/payout-requests/:id', earningsController.getAdminPayoutRequestDetai
 router.patch('/payout-requests/:id/approve', earningsController.approvePayoutRequest);
 router.patch('/payout-requests/:id/reject', earningsController.rejectPayoutRequest);
 router.patch('/payout-requests/:id/mark-paid', earningsController.markPayoutPaid);
+
+router.get('/finance/summary', adminFinanceController.getFinanceSummary);
+router.get('/finance/ledger', adminFinanceController.getFinanceLedger);
 
 module.exports = router;

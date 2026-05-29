@@ -886,6 +886,11 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 }
                 defaultLat={selectedLatitude ?? (isEditMode ? initialData?.donorLatitude : undefined)}
                 defaultLng={selectedLongitude ?? (isEditMode ? initialData?.donorLongitude : undefined)}
+                autoFetchOnOpen={
+                    !isEditMode &&
+                    selectedLatitude == null &&
+                    selectedLongitude == null
+                }
             />
         </div>
     );

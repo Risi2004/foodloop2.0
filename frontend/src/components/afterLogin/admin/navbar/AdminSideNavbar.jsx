@@ -43,6 +43,10 @@ function AdminSideNavbar() {
                     </div>
                     <div className='sidebar__links'>
                         <img src={payoutIcon} alt="" />
+                        <Link to="/admin/finance">Platform Finance</Link>
+                    </div>
+                    <div className='sidebar__links'>
+                        <img src={payoutIcon} alt="" />
                         <Link to="/admin/payout-requests">Payout Requests</Link>
                     </div>
                     <div className='sidebar__links'>
@@ -85,6 +89,7 @@ function AdminSideNavbar() {
                     <Link to="/admin/dashboard" onClick={toggleMenu}>Dashboard Overview</Link>
                     <Link to="/admin/user-management" onClick={toggleMenu}>User Management</Link>
                     <Link to="/admin/payout-requests" onClick={toggleMenu}>Payout Requests</Link>
+                    <Link to="/admin/finance" onClick={toggleMenu}>Platform Finance</Link>
                     <Link to="/admin/orders" onClick={toggleMenu}>All Orders</Link>
                     <Link to="/admin/user-monitoring" onClick={toggleMenu}>User Monitoring</Link>
                     <Link to="/admin/notification" onClick={toggleMenu}>Notification</Link>
