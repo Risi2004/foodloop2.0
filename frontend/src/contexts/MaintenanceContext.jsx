@@ -13,9 +13,15 @@ import {
 
 const MaintenanceContext = createContext(null);
 
+function getInitialLoading() {
+  const cached = getInitialMaintenanceStatus();
+  if (!cached) return true;
+  return Boolean(cached.showMaintenanceUI);
+}
+
 export function MaintenanceProvider({ children }) {
   const [status, setStatus] = useState(() => getInitialMaintenanceStatus());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(getInitialLoading);
   const refreshInFlightRef = useRef(false);
   const user = getUser();
   const isAdmin = String(user?.role || '').toLowerCase() === 'admin';

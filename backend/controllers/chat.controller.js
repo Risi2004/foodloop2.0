@@ -35,6 +35,7 @@ exports.postMessage = async (req, res) => {
     }
 
     if (err instanceof ChatError || err instanceof EmbeddingError) {
+      console.error('[chat] Gemini error:', err.code, err.message);
       return res.status(err.statusCode || 503).json({
         success: false,
         code: err.code,
@@ -42,7 +43,7 @@ exports.postMessage = async (req, res) => {
       });
     }
 
-    console.error('chat.controller postMessage:', err);
+    console.error('chat.controller postMessage:', err?.code || err?.message || err);
     return res.status(500).json({
       success: false,
       code: 'CHAT_ERROR',

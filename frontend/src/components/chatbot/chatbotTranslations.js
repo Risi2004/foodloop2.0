@@ -69,8 +69,9 @@ export function getChatbotText(lang, key, params = {}) {
   const normalized = SUPPORTED_LANGS.includes(lang) ? lang : DEFAULT_LANG;
   const map = translations[normalized] || translations[DEFAULT_LANG];
   let str = map[key] != null ? map[key] : (translations[DEFAULT_LANG][key] ?? key);
-  Object.keys(params).forEach((k) => {
-    str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
+  Object.entries(params).forEach(([paramKey, value]) => {
+    const token = `{${paramKey}}`;
+    str = str.split(token).join(value == null ? '' : String(value));
   });
   return str;
 }

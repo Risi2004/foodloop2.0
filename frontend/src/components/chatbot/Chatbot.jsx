@@ -4,7 +4,7 @@ import chatbotIcon from '../../assets/chatbot/chatbot.svg';
 import chatbotIcon2 from '../../assets/chatbot/chatbot2.svg';
 import sendIcon from "../../assets/chatbot/send.svg";
 import { sendMessage } from '../../services/chatApi';
-import { getUser, isAuthenticated } from '../../utils/auth';
+import { getUser, isAuthenticated, getChatbotDisplayName } from '../../utils/auth';
 import { getChatbotText, SUPPORTED_LANGS, DEFAULT_LANG } from './chatbotTranslations';
 
 const CHAT_LANG_KEY = 'foodloop_chat_lang';
@@ -16,23 +16,13 @@ function getStoredLang() {
   return SUPPORTED_LANGS.includes(stored) ? stored : DEFAULT_LANG;
 }
 
-function getDisplayName(user) {
-  if (!user) return '';
-  if (user.role === 'Donor') {
-    return user.donorType === 'Business' ? (user.businessName || user.email || '') : (user.username || user.email || '');
-  }
-  if (user.role === 'Receiver') return user.receiverName || user.email || '';
-  if (user.role === 'Driver') return user.driverName || user.email || '';
-  return user.email || '';
-}
-
 function getWelcomeMessage(lang) {
   const l = SUPPORTED_LANGS.includes(lang) ? lang : DEFAULT_LANG;
   if (!isAuthenticated()) return getChatbotText(l, 'welcomeGuest');
   const user = getUser();
-  const name = getDisplayName(user);
-  if (!name || !name.trim()) return getChatbotText(l, 'welcomeGuest');
-  return getChatbotText(l, 'welcomeAuthenticated', { name: name.trim() });
+  const name = getChatbotDisplayName(user);
+  if (!name) return getChatbotText(l, 'welcomeGuest');
+  return getChatbotText(l, 'welcomeAuthenticated', { name });
 }
 
 /** Remove markdown asterisks so **bold** and *italic* show as plain text */

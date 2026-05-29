@@ -1,9 +1,26 @@
 import { buildUrl, parseResponse } from './api';
 import { getAuthHeaders } from '../utils/auth';
 
+const MAINTENANCE_FETCH_MS = 8000;
+
 export async function getMaintenanceStatus() {
-  const response = await fetch(buildUrl('/api/maintenance/status'));
-  return parseResponse(response);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MAINTENANCE_FETCH_MS);
+  try {
+    const response = await fetch(buildUrl('/api/maintenance/status'), {
+      signal: controller.signal,
+    });
+    return parseResponse(response);
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      const error = new Error('Maintenance status request timed out.');
+      error.code = 'MAINTENANCE_TIMEOUT';
+      throw error;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function getAdminMaintenance() {

@@ -35,6 +35,16 @@ function RoleLayoutContent() {
   } = useMaintenance();
 
   const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [maintenanceGateTimedOut, setMaintenanceGateTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!maintenanceLoading) {
+      setMaintenanceGateTimedOut(false);
+      return undefined;
+    }
+    const id = setTimeout(() => setMaintenanceGateTimedOut(true), 8000);
+    return () => clearTimeout(id);
+  }, [maintenanceLoading]);
 
   const handleDismissNotice = useCallback(() => {
     if (banner) dismissMaintenanceNotice(banner);
@@ -68,7 +78,7 @@ function RoleLayoutContent() {
     if (showMaintenanceUI) {
       return <MaintenanceScreen />;
     }
-    if (maintenanceLoading) {
+    if (maintenanceLoading && !maintenanceGateTimedOut) {
       return <div className="role-layout__maintenance-gate" role="status" aria-label="Loading" />;
     }
   }

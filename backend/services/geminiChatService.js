@@ -1,7 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
-const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+const CHAT_DEFAULT_MODEL = 'gemini-2.5-flash';
+/** Models that exist on the current Gemini API (1.5-flash often 404). */
+const CHAT_FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+
+const RETRY_DELAY_MS = 1500;
+const MAX_ATTEMPTS_PER_MODEL = 2;
 
 class ChatError extends Error {
   constructor(code, message, statusCode = 503) {
@@ -12,11 +16,15 @@ class ChatError extends Error {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getModelCandidates() {
-  const preferred = (process.env.GEMINI_MODEL || DEFAULT_MODEL).trim();
+  const preferred = (process.env.CHAT_GEMINI_MODEL || CHAT_DEFAULT_MODEL).trim();
   const seen = new Set();
   const candidates = [];
-  for (const name of [preferred, ...FALLBACK_MODELS, DEFAULT_MODEL]) {
+  for (const name of [preferred, ...CHAT_FALLBACK_MODELS, CHAT_DEFAULT_MODEL]) {
     if (name && !seen.has(name)) {
       seen.add(name);
       candidates.push(name);
@@ -42,9 +50,25 @@ function isQuotaExhaustedError(err) {
   );
 }
 
+function isRetryableError(err) {
+  const msg = String(err?.message || '');
+  const status = err?.status || err?.statusCode;
+  return (
+    status === 429 ||
+    status === 503 ||
+    msg.includes('high demand') ||
+    msg.includes('Unavailable') ||
+    msg.includes('ECONNRESET') ||
+    msg.includes('fetch failed')
+  );
+}
+
 function mapGeminiError(err, modelTried) {
   const status = err?.status || err?.statusCode;
-  if (status === 429) {
+  const detail = String(err?.message || '').slice(0, 200);
+  console.error(`[geminiChat] Failed (${modelTried}):`, detail);
+
+  if (status === 429 || isQuotaExhaustedError(err)) {
     return new ChatError(
       'GEMINI_RATE_LIMIT',
       'Too many chat requests. Please wait a moment and try again.'
@@ -67,6 +91,62 @@ function toGeminiHistory(history) {
     }));
 }
 
+async function sendViaStartChat(model, systemInstruction, message, geminiHistory) {
+  const chat = model.startChat({ history: geminiHistory });
+  const result = await chat.sendMessage(String(message).trim());
+  const text = result?.response?.text?.();
+  if (!text?.trim()) {
+    throw new ChatError('GEMINI_EMPTY', 'Chat returned no response.');
+  }
+  return text.trim();
+}
+
+async function sendViaGenerateContent(model, systemInstruction, message, geminiHistory) {
+  const contents = [
+    ...geminiHistory,
+    { role: 'user', parts: [{ text: String(message).trim() }] },
+  ];
+  const result = await model.generateContent({ contents });
+  const text = result?.response?.text?.();
+  if (!text?.trim()) {
+    throw new ChatError('GEMINI_EMPTY', 'Chat returned no response.');
+  }
+  return text.trim();
+}
+
+async function tryModel(genAI, modelName, systemInstruction, message, geminiHistory) {
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction,
+  });
+
+  let lastErr;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_MODEL; attempt += 1) {
+    try {
+      try {
+        return await sendViaStartChat(model, systemInstruction, message, geminiHistory);
+      } catch (startErr) {
+        if (startErr instanceof ChatError) throw startErr;
+        console.warn(`[geminiChat] startChat failed (${modelName}), trying generateContent`);
+        return await sendViaGenerateContent(model, systemInstruction, message, geminiHistory);
+      }
+    } catch (err) {
+      lastErr = err;
+      if (err instanceof ChatError && err.code !== 'GEMINI_EMPTY') throw err;
+      const retryable = isRetryableError(err);
+      if (retryable && attempt < MAX_ATTEMPTS_PER_MODEL - 1) {
+        console.warn(
+          `[geminiChat] ${modelName} attempt ${attempt + 1} failed, retrying in ${RETRY_DELAY_MS}ms`
+        );
+        await sleep(RETRY_DELAY_MS);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
 async function generateChatReply({ systemInstruction, message, history = [] }) {
   assertGeminiConfigured();
 
@@ -78,27 +158,22 @@ async function generateChatReply({ systemInstruction, message, history = [] }) {
   for (let i = 0; i < candidates.length; i += 1) {
     const modelName = candidates[i];
     try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction,
-      });
-
-      const chat = model.startChat({ history: geminiHistory });
-      const result = await chat.sendMessage(String(message).trim());
-      const text = result?.response?.text?.();
-      if (!text?.trim()) {
-        throw new ChatError('GEMINI_EMPTY', 'Chat returned no response.');
-      }
-      return text.trim();
+      return await tryModel(genAI, modelName, systemInstruction, message, geminiHistory);
     } catch (err) {
       lastErr = err;
-      if (err instanceof ChatError) throw err;
+      if (err instanceof ChatError && err.code !== 'GEMINI_EMPTY') {
+        const canTryNext = i < candidates.length - 1;
+        if (canTryNext) {
+          console.warn(`[geminiChat] Model ${modelName} failed, trying next.`);
+          continue;
+        }
+        throw err;
+      }
       const msg = String(err?.message || '');
       const status = err?.status || err?.statusCode;
       const is404 = status === 404 || msg.includes('not found');
-      const is503 = status === 503 || msg.includes('high demand') || msg.includes('Unavailable');
       const canTryNext =
-        i < candidates.length - 1 && (isQuotaExhaustedError(err) || is404 || is503);
+        i < candidates.length - 1 && (isRetryableError(err) || is404);
       if (canTryNext) {
         console.warn(`[geminiChat] Model ${modelName} unavailable, trying next.`);
         continue;

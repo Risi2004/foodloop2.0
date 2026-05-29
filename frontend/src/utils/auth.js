@@ -39,6 +39,40 @@ export function getSupplierDisplayName(user) {
 /** @deprecated Use getSupplierDisplayName */
 export const getDonorDisplayName = getSupplierDisplayName;
 
+/** Friendly name for chatbot greetings — never falls back to email. */
+export function getChatbotDisplayName(user) {
+  if (!user) return '';
+
+  const role = (user.role || '').toLowerCase();
+
+  if (role === 'receiver') {
+    return user.receiverName?.trim() || '';
+  }
+  if (role === 'driver') {
+    return user.driverName?.trim() || '';
+  }
+  if (role === 'admin') {
+    return user.username?.trim() || user.businessName?.trim() || '';
+  }
+  if (role === 'customer') {
+    return user.username?.trim() || '';
+  }
+  if (isDonorDashboardRole(user.role)) {
+    const label = getSupplierDisplayName(user);
+    const generic = new Set(['User', 'Business', 'Supplier', 'Individual']);
+    if (!generic.has(label)) return label;
+    return user.businessName?.trim() || user.username?.trim() || '';
+  }
+
+  return (
+    user.businessName?.trim() ||
+    user.username?.trim() ||
+    user.receiverName?.trim() ||
+    user.driverName?.trim() ||
+    ''
+  );
+}
+
 /** Resolved profile photo URL from login/signup user object (R2, /uploads, or blob preview) */
 export function getUserProfileImageUrl(user) {
   if (!user) return null;

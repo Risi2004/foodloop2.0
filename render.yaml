@@ -9,7 +9,7 @@ services:
     name: foodloop-api
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install && npm run chat:ingest
     startCommand: npm start
     healthCheckPath: /
     plan: free
