@@ -38,6 +38,10 @@ const {
   maintenanceCancelledEmail,
   supplierAiSubscriptionPaymentEmail,
   supplierAiAutoRenewCancelledEmail,
+  supplierEsgSubscriptionPaymentEmail,
+  supplierEsgAutoRenewCancelledEmail,
+  supplierBundleSubscriptionPaymentEmail,
+  supplierBundleAutoRenewCancelledEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -56,6 +60,10 @@ function getLoginUrl() {
 
 function getSupplierMyDonationsUrl() {
   return `${getFrontendBase()}/supplier/my-donation`;
+}
+
+function getSupplierEsgCsrUrl() {
+  return `${getFrontendBase()}/supplier/esg-csr`;
 }
 
 /** @deprecated Use getSupplierMyDonationsUrl */
@@ -482,6 +490,45 @@ async function sendSupplierAiSubscriptionPaymentEmail(user, { payment, subscript
   }
 }
 
+async function sendSupplierEsgSubscriptionPaymentEmail(user, { payment, subscription, isRenewal }) {
+  if (!user?.email || !payment) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = supplierEsgSubscriptionPaymentEmail({
+      name,
+      orderId: payment.orderId,
+      paidAt: payment.updatedAt || new Date(),
+      amount: payment.amount,
+      currency: payment.currency || 'LKR',
+      cardLast4: payment.cardLast4,
+      expiresAt: subscription?.expiresAt,
+      autoRenew: !!(subscription?.autoRenew && !subscription?.autoRenewCancelledAt),
+      isRenewal: !!isRenewal,
+      esgDashboardUrl: getSupplierEsgCsrUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] ESG subscription payment failed for ${user.email}:`, err.message);
+  }
+}
+
+async function sendSupplierEsgAutoRenewCancelledEmail(user, { expiresAt, amount, currency }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = supplierEsgAutoRenewCancelledEmail({
+      name,
+      expiresAt,
+      amount,
+      currency,
+      esgDashboardUrl: getSupplierEsgCsrUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] ESG cancel renew failed for ${user.email}:`, err.message);
+  }
+}
+
 async function sendSupplierAiAutoRenewCancelledEmail(user, { expiresAt, amount, currency }) {
   if (!user?.email) return;
   try {
@@ -496,6 +543,47 @@ async function sendSupplierAiAutoRenewCancelledEmail(user, { expiresAt, amount, 
     await sendMail({ to: user.email, subject, text, html });
   } catch (err) {
     console.error(`[email] Supplier AI cancel renew failed for ${user.email}:`, err.message);
+  }
+}
+
+async function sendSupplierBundleSubscriptionPaymentEmail(user, { payment, subscription, isRenewal }) {
+  if (!user?.email || !payment) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = supplierBundleSubscriptionPaymentEmail({
+      name,
+      orderId: payment.orderId,
+      paidAt: payment.updatedAt || new Date(),
+      amount: payment.amount,
+      currency: payment.currency || 'LKR',
+      cardLast4: payment.cardLast4,
+      expiresAt: subscription?.expiresAt,
+      autoRenew: !!(subscription?.autoRenew && !subscription?.autoRenewCancelledAt),
+      isRenewal: !!isRenewal,
+      myDonationsUrl: getSupplierMyDonationsUrl(),
+      esgDashboardUrl: getSupplierEsgCsrUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] Bundle subscription payment failed for ${user.email}:`, err.message);
+  }
+}
+
+async function sendSupplierBundleAutoRenewCancelledEmail(user, { expiresAt, amount, currency }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = supplierBundleAutoRenewCancelledEmail({
+      name,
+      expiresAt,
+      amount,
+      currency,
+      myDonationsUrl: getSupplierMyDonationsUrl(),
+      esgDashboardUrl: getSupplierEsgCsrUrl(),
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] Bundle cancel renew failed for ${user.email}:`, err.message);
   }
 }
 
@@ -888,6 +976,10 @@ module.exports = {
   sendPaymentInvoiceEmail,
   sendSupplierAiSubscriptionPaymentEmail,
   sendSupplierAiAutoRenewCancelledEmail,
+  sendSupplierEsgSubscriptionPaymentEmail,
+  sendSupplierEsgAutoRenewCancelledEmail,
+  sendSupplierBundleSubscriptionPaymentEmail,
+  sendSupplierBundleAutoRenewCancelledEmail,
   sendCustomerOrderNewPickupToDrivers,
   sendAiPriceReductionToReceiversAndCustomers,
   sendPayoutSubmittedEmail,

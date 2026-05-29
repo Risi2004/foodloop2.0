@@ -1092,6 +1092,228 @@ function supplierAiAutoRenewCancelledEmail({
   };
 }
 
+function supplierEsgSubscriptionPaymentEmail({
+  name,
+  orderId,
+  paidAt,
+  amount,
+  currency,
+  cardLast4,
+  expiresAt,
+  autoRenew,
+  isRenewal,
+  esgDashboardUrl,
+}) {
+  const currencyLabel = currency || 'LKR';
+  const amountFormatted = `${currencyLabel} ${Number(amount).toLocaleString('en-LK')}`;
+  const cardDisplay = cardLast4 ? `•••• •••• •••• ${cardLast4}` : 'Card on file';
+  const paidAtFormatted = formatInvoiceDate(paidAt);
+  const validUntilFormatted = formatInvoiceDate(expiresAt);
+  const productLabel = 'ESG & CSR Impact Dashboard';
+  const renewLine = autoRenew
+    ? 'Your subscription will renew automatically each month until you cancel.'
+    : 'Automatic monthly renewal is off. Resubscribe before your period ends to keep access.';
+
+  const rows = [
+    ['Invoice #', orderId],
+    ['Date paid', paidAtFormatted],
+    ['Service', productLabel],
+    ['Amount', amountFormatted],
+    ['Valid until', validUntilFormatted],
+    ['Payment method', cardDisplay],
+    ['Auto-renew', autoRenew ? 'On' : 'Off'],
+    ['Status', 'Paid'],
+  ];
+  const tableRows = donationDetailsTableHtml(rows);
+  const title = isRenewal ? 'ESG subscription renewed' : 'ESG subscription payment received';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">${title}</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Thank you for your payment. Your ESG & CSR dashboard is active for one month. Payments are non-refundable for the current billing period.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">${renewLine}</p>
+      <p style="color: #444; line-height: 1.5;">Open your dashboard:
+        <a href="${esgDashboardUrl}" style="color: #4CAF50;">${esgDashboardUrl}</a>
+      </p>
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">Keep this email for your records.</p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `${title}. Active until ${validUntilFormatted}. Non-refundable for the current period.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    renewLine,
+    '',
+    `Dashboard: ${esgDashboardUrl}`,
+  ].join('\n');
+
+  return {
+    subject: `FoodLoop — ${isRenewal ? 'ESG subscription renewed' : 'ESG subscription receipt'}`,
+    html,
+    text,
+  };
+}
+
+function supplierEsgAutoRenewCancelledEmail({
+  name,
+  expiresAt,
+  amount,
+  currency,
+  esgDashboardUrl,
+}) {
+  const validUntilFormatted = formatInvoiceDate(expiresAt);
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36;">ESG auto-renew cancelled</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Automatic monthly renewal for your ESG & CSR dashboard has been cancelled.</p>
+      <p style="color: #444; line-height: 1.5;">Access remains until <strong>${validUntilFormatted}</strong>. No refund for the current ${amt} period.</p>
+      <p style="color: #444; line-height: 1.5;">
+        <a href="${esgDashboardUrl}" style="color: #4CAF50;">${esgDashboardUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'ESG auto-renew cancelled. No further charges.',
+    `Access until ${validUntilFormatted}.`,
+    '',
+    esgDashboardUrl,
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — ESG subscription auto-renew cancelled',
+    html,
+    text,
+  };
+}
+
+function supplierBundleSubscriptionPaymentEmail({
+  name,
+  orderId,
+  paidAt,
+  amount,
+  currency,
+  cardLast4,
+  expiresAt,
+  autoRenew,
+  isRenewal,
+  myDonationsUrl,
+  esgDashboardUrl,
+}) {
+  const currencyLabel = currency || 'LKR';
+  const amountFormatted = `${currencyLabel} ${Number(amount).toLocaleString('en-LK')}`;
+  const cardDisplay = cardLast4 ? `•••• •••• •••• ${cardLast4}` : 'Card on file';
+  const paidAtFormatted = formatInvoiceDate(paidAt);
+  const validUntilFormatted = formatInvoiceDate(expiresAt);
+  const productLabel = 'Supplier Premium bundle (AI + ESG)';
+  const renewLine = autoRenew
+    ? 'Your subscription will renew automatically each month until you cancel.'
+    : 'Automatic monthly renewal is off. Resubscribe before your period ends to keep access.';
+
+  const rows = [
+    ['Invoice #', orderId],
+    ['Date paid', paidAtFormatted],
+    ['Service', productLabel],
+    ['Amount', amountFormatted],
+    ['Valid until', validUntilFormatted],
+    ['Payment method', cardDisplay],
+    ['Auto-renew', autoRenew ? 'On' : 'Off'],
+    ['Status', 'Paid'],
+  ];
+  const tableRows = donationDetailsTableHtml(rows);
+  const title = isRenewal ? 'Premium bundle renewed' : 'Premium bundle payment received';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">${title}</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Thank you for your payment. Your Premium bundle is active for one month and includes unlimited AI insights on listings and full ESG & CSR reporting. Payments are non-refundable for the current billing period.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tbody>${tableRows}</tbody>
+      </table>
+      <p style="color: #444; line-height: 1.5;">${renewLine}</p>
+      <p style="color: #444; line-height: 1.5;">AI insights: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a></p>
+      <p style="color: #444; line-height: 1.5;">ESG dashboard: <a href="${esgDashboardUrl}" style="color: #4CAF50;">${esgDashboardUrl}</a></p>
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">Keep this email for your records.</p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `${title}. Active until ${validUntilFormatted}. Includes unlimited AI + ESG dashboard.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    renewLine,
+    '',
+    `AI: ${myDonationsUrl}`,
+    `ESG: ${esgDashboardUrl}`,
+  ].join('\n');
+
+  return {
+    subject: `FoodLoop — ${isRenewal ? 'Premium bundle renewed' : 'Premium bundle receipt'}`,
+    html,
+    text,
+  };
+}
+
+function supplierBundleAutoRenewCancelledEmail({
+  name,
+  expiresAt,
+  amount,
+  currency,
+  myDonationsUrl,
+  esgDashboardUrl,
+}) {
+  const validUntilFormatted = formatInvoiceDate(expiresAt);
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36;">Premium bundle auto-renew cancelled</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Automatic monthly renewal for your Premium bundle has been cancelled.</p>
+      <p style="color: #444; line-height: 1.5;">AI insights and ESG dashboard access remain until <strong>${validUntilFormatted}</strong>. No refund for the current ${amt} period.</p>
+      <p style="color: #444; line-height: 1.5;">AI: <a href="${myDonationsUrl}" style="color: #4CAF50;">${myDonationsUrl}</a></p>
+      <p style="color: #444; line-height: 1.5;">ESG: <a href="${esgDashboardUrl}" style="color: #4CAF50;">${esgDashboardUrl}</a></p>
+    </div>
+  `;
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'Premium bundle auto-renew cancelled. No further charges.',
+    `Access until ${validUntilFormatted}.`,
+    '',
+    myDonationsUrl,
+    esgDashboardUrl,
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — Premium bundle auto-renew cancelled',
+    html,
+    text,
+  };
+}
+
 function payoutSubmittedEmail({ name, amount, currency, earningsUrl }) {
   const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
   const html = `
@@ -1504,4 +1726,8 @@ module.exports = {
   maintenanceCancelledEmail,
   supplierAiSubscriptionPaymentEmail,
   supplierAiAutoRenewCancelledEmail,
+  supplierEsgSubscriptionPaymentEmail,
+  supplierEsgAutoRenewCancelledEmail,
+  supplierBundleSubscriptionPaymentEmail,
+  supplierBundleAutoRenewCancelledEmail,
 };

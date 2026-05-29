@@ -93,6 +93,48 @@ On `/supplier/my-donation`, suppliers can run weather-aware “tomorrow” produ
 4. Complete mock checkout (16-digit card, MM/YY expiry, 3-digit CVV) — status shows unlimited until month end; further runs do not consume the daily counter.
 5. As Admin → **Platform Finance** → Card inflows: ledger row for LKR 5,000 with context **Supplier AI subscription**.
 
+## Supplier ESG & CSR dashboard (JWT + supplier roles)
+
+Premium impact reporting at `/supplier/esg-csr` — environmental, social, and governance metrics from donation history, optional Gemini executive summary, and **Print / Save PDF** (browser print).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/supplier/esg/status` | Subscription state (`unlocked`, `expiresAt`, auto-renew) |
+| GET | `/api/supplier/esg/report?period=` | Full report (`this_month`, `last_30`, `this_quarter`, `all_time`) — requires active subscription |
+| POST | `/api/supplier/esg/subscription/checkout` | Start LKR 5,000 mock checkout |
+| POST | `/api/supplier/esg/subscription/confirm` | Confirm card + activate 1-month access |
+| POST | `/api/supplier/esg/subscription/cancel-auto-renew` | Stop future monthly charges |
+
+**Env (optional):** `SUPPLIER_ESG_SUBSCRIPTION_LKR` (default `5000`). Separate from Tomorrow AI subscription. Payments appear in admin **Card inflows** as `supplier_esg_subscription`.
+
+**Manual test:**
+
+1. Supplier opens **ESG & CSR** in the navbar (`/supplier/esg-csr`) — paywall if not subscribed.
+2. Subscribe with mock card — dashboard loads with KPIs and pillar tabs.
+3. Change period filter — metrics update from delivered listings.
+4. Click **Download report** for a PDF file, or **Print** to use the browser print dialog.
+5. Admin finance shows LKR 5,000 **Supplier ESG subscription**.
+
+## Supplier Premium bundle (JWT + supplier roles)
+
+On the supplier home page (`/supplier/dashboard`), after **Earn Your Status**, suppliers can choose **Free** (LKR 0) or **Premium bundle** (LKR 8,000/month). The bundle unlocks unlimited Tomorrow AI insights and the full ESG & CSR dashboard without separate LKR 5,000 products. Individual AI-only and ESG-only subscriptions remain available on their feature pages.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/supplier/bundle/status` | Bundle active, `expiresAt`, auto-renew |
+| POST | `/api/supplier/bundle/subscription/checkout` | Start LKR 8,000 mock checkout |
+| POST | `/api/supplier/bundle/subscription/confirm` | Confirm card + activate 1 month |
+| POST | `/api/supplier/bundle/subscription/cancel-auto-renew` | Stop future monthly charges |
+
+**Env (optional):** `SUPPLIER_BUNDLE_SUBSCRIPTION_LKR` (default `8000`). Card inflows context: `supplier_bundle_subscription` (**Supplier Premium bundle**).
+
+**Manual test:**
+
+1. Supplier home → **Grow with FoodLoop** — Free and Premium cards visible.
+2. Subscribe to Premium (mock card) — status shows active until period end.
+3. **My Listings** — unlimited AI forecasts; **ESG & CSR** — full dashboard without separate paywall.
+4. Admin finance — LKR 8,000 **Supplier Premium bundle**.
+
 ## Signup file storage (Cloudflare R2)
 
 All new signup uploads (PDFs and profile images) are stored in **Cloudflare R2**, not on the server disk. MongoDB stores the public URL (e.g. `https://pub-xxxx.r2.dev/users/{userId}/...`).

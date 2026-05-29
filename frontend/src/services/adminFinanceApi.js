@@ -44,6 +44,8 @@ export function contextLabel(context) {
     customer_checkout: 'Customer checkout',
     claim: 'Receiver claim',
     supplier_ai_subscription: 'Supplier AI subscription',
+    supplier_esg_subscription: 'Supplier ESG subscription',
+    supplier_bundle_subscription: 'Supplier Premium bundle',
     donation_delivery: 'Donation delivery',
     payout: 'Payout',
   };

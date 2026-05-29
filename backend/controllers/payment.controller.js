@@ -16,6 +16,7 @@ const {
   sendPaymentInvoiceEmail,
   sendCustomerOrderNewPickupToDrivers,
 } = require('../utils/sendNotificationEmail');
+const { validateMockCard } = require('../utils/mockCardValidation');
 
 const CHECKOUT_TTL_MS = 30 * 60 * 1000;
 const LOW_INCOME_MONTHLY_DISCOUNT_LIMIT = 20;
@@ -42,26 +43,6 @@ function generateOrderId(seedValue = Date.now().toString()) {
   const suffix = Date.now().toString(36).toUpperCase();
   const idPart = String(seedValue).slice(-8).toUpperCase().replace(/\W/g, '');
   return `FL${idPart}${suffix}`.slice(0, 32);
-}
-
-function digitsOnly(value) {
-  return String(value || '').replace(/\D/g, '');
-}
-
-function validateMockCard({ cardNumber, expiry, cvv }) {
-  const num = digitsOnly(cardNumber);
-  if (num.length < 16) {
-    return { ok: false, message: 'Card number must be at least 16 digits.' };
-  }
-  const expiryTrimmed = String(expiry || '').trim();
-  if (!/^\d{2}\/\d{2}$/.test(expiryTrimmed)) {
-    return { ok: false, message: 'Expiry must be MM/YY.' };
-  }
-  const cvvDigits = digitsOnly(cvv);
-  if (cvvDigits.length !== 3) {
-    return { ok: false, message: 'CVV must be 3 digits.' };
-  }
-  return { ok: true, cardLast4: num.slice(-4) };
 }
 
 function validateCustomerCheckoutPayload(body = {}) {

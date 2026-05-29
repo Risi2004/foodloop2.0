@@ -7,12 +7,14 @@ import DonorNavbar from "../../../../components/afterLogin/dashboard/donorSectio
 import DonorFooter from "../../../../components/afterLogin/dashboard/donorSection/footer/DonorFooter";
 import { getCurrentUser } from '../../../../services/api';
 import { getMyDonations, getDonorStatistics } from '../../../../services/donationApi';
+import { getBundleStatus } from '../../../../services/supplierBundleApi';
 import './DonorProfile.css';
 
 function DonorProfile() {
     const [user, setUser] = useState(null);
     const [donations, setDonations] = useState([]);
     const [badgeProgress, setBadgeProgress] = useState(null);
+    const [bundleStatus, setBundleStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -22,10 +24,11 @@ function DonorProfile() {
             try {
                 setLoading(true);
                 setError(null);
-                const [userRes, donationsRes, statsRes] = await Promise.all([
+                const [userRes, donationsRes, statsRes, bundleRes] = await Promise.all([
                     getCurrentUser(),
                     getMyDonations(),
                     getDonorStatistics().catch(() => ({ success: false })),
+                    getBundleStatus().catch(() => null),
                 ]);
                 if (cancelled) return;
                 if (userRes?.user) setUser(userRes.user);
@@ -33,6 +36,7 @@ function DonorProfile() {
                 if (statsRes?.success && statsRes?.statistics?.badgeProgress) {
                     setBadgeProgress(statsRes.statistics.badgeProgress);
                 }
+                if (bundleRes) setBundleStatus(bundleRes);
             } catch (err) {
                 if (!cancelled) setError(err.message || 'Failed to load profile');
             } finally {
@@ -76,7 +80,11 @@ function DonorProfile() {
             <DonorNavbar />
             <div className="profile-page">
                 <div className="profile-container">
-                    <ProfileHeader user={user} />
+                    <ProfileHeader
+                        user={user}
+                        isPremium={!!bundleStatus?.active}
+                        premiumExpiresAt={bundleStatus?.expiresAt}
+                    />
                     <div className="profile-content">
                         <aside className="profile-sidebar-column">
                             <ProfileSidebar user={user} badgeProgress={badgeProgress} />

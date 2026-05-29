@@ -1,23 +1,24 @@
 const Payment = require('../models/Payment');
-const SupplierAiSubscription = require('../models/SupplierAiSubscription');
+const SupplierBundleSubscription = require('../models/SupplierBundleSubscription');
 const User = require('../models/User');
 const { addOneCalendarMonth, getColomboYearMonth } = require('../utils/colomboTime');
 const {
-  sendSupplierAiSubscriptionPaymentEmail,
-  sendSupplierAiAutoRenewCancelledEmail,
+  sendSupplierBundleSubscriptionPaymentEmail,
+  sendSupplierBundleAutoRenewCancelledEmail,
 } = require('../utils/sendNotificationEmail');
+
 function getSubscriptionAmount() {
-  return Number(process.env.SUPPLIER_AI_SUBSCRIPTION_LKR) || 5000;
+  return Number(process.env.SUPPLIER_BUNDLE_SUBSCRIPTION_LKR) || 8000;
 }
 
 function generateRenewalOrderId(supplierId) {
   const suffix = Date.now().toString(36).toUpperCase();
   const idPart = String(supplierId).slice(-8).toUpperCase().replace(/\W/g, '');
-  return `FLAIR${idPart}${suffix}`.slice(0, 32);
+  return `FLBND${idPart}${suffix}`.slice(0, 32);
 }
 
 async function findActiveSubscription(supplierId) {
-  const sub = await SupplierAiSubscription.findOne({
+  const sub = await SupplierBundleSubscription.findOne({
     supplierId,
     status: 'active',
   });
@@ -36,9 +37,31 @@ function isAutoRenewEnabled(sub) {
   return !!(sub?.autoRenew && !sub.autoRenewCancelledAt);
 }
 
-/**
- * Activate or extend subscription after a successful payment.
- */
+async function getAccessStatus(supplierId) {
+  const sub = await findActiveSubscription(supplierId);
+  const amount = getSubscriptionAmount();
+
+  if (sub) {
+    return {
+      tier: 'premium',
+      active: true,
+      expiresAt: sub.expiresAt,
+      autoRenew: isAutoRenewEnabled(sub),
+      autoRenewCancelledAt: sub.autoRenewCancelledAt || null,
+      subscriptionAmountLkr: amount,
+    };
+  }
+
+  return {
+    tier: 'free',
+    active: false,
+    expiresAt: null,
+    autoRenew: false,
+    autoRenewCancelledAt: null,
+    subscriptionAmountLkr: amount,
+  };
+}
+
 async function activateSubscriptionFromPayment({
   supplierId,
   payment,
@@ -46,7 +69,7 @@ async function activateSubscriptionFromPayment({
   autoRenew,
 }) {
   const now = new Date();
-  const existing = await SupplierAiSubscription.findOne({ supplierId });
+  const existing = await SupplierBundleSubscription.findOne({ supplierId });
   const amount = payment.amount;
   const currency = payment.currency || 'LKR';
 
@@ -60,7 +83,7 @@ async function activateSubscriptionFromPayment({
 
   const renewalEnabled = !!autoRenew;
 
-  const sub = await SupplierAiSubscription.findOneAndUpdate(
+  const sub = await SupplierBundleSubscription.findOneAndUpdate(
     { supplierId },
     {
       supplierId,
@@ -85,7 +108,7 @@ async function activateSubscriptionFromPayment({
 async function cancelAutoRenew(supplierId) {
   const sub = await findActiveSubscription(supplierId);
   if (!sub) {
-    return { ok: false, message: 'No active subscription found.' };
+    return { ok: false, message: 'No active Premium bundle subscription found.' };
   }
 
   const wasRenewing = isAutoRenewEnabled(sub);
@@ -97,7 +120,7 @@ async function cancelAutoRenew(supplierId) {
 
     const user = await User.findById(supplierId).lean();
     if (user) {
-      sendSupplierAiAutoRenewCancelledEmail(user, {
+      sendSupplierBundleAutoRenewCancelledEmail(user, {
         expiresAt: sub.expiresAt,
         amount: sub.amount,
         currency: sub.currency,
@@ -114,15 +137,15 @@ async function cancelAutoRenew(supplierId) {
     : 'the end of your billing period';
 
   const message = wasRenewing
-    ? `Subscription cancelled. No refund for the current month. AI access continues until ${until}. You will not be charged again.`
-    : `No further charges are scheduled. AI access continues until ${until}. Payments are non-refundable for the current month.`;
+    ? `Subscription cancelled. No refund for the current month. Premium access continues until ${until}. You will not be charged again.`
+    : `No further charges are scheduled. Premium access continues until ${until}. Payments are non-refundable for the current month.`;
 
   return { ok: true, subscription: sub, wasRenewing, message };
 }
 
 async function processDueRenewals() {
   const now = new Date();
-  const due = await SupplierAiSubscription.find({
+  const due = await SupplierBundleSubscription.find({
     status: 'active',
     autoRenew: true,
     autoRenewCancelledAt: null,
@@ -134,7 +157,7 @@ async function processDueRenewals() {
     try {
       await renewSubscription(sub);
     } catch (err) {
-      console.error('[supplierAiRenewal] failed for', sub.supplierId, err.message);
+      console.error('[supplierBundleRenewal] failed for', sub.supplierId, err.message);
       sub.autoRenew = false;
       sub.nextRenewalAt = null;
       await sub.save();
@@ -149,7 +172,7 @@ async function renewSubscription(sub) {
 
   const payment = await Payment.create({
     orderId,
-    paymentContext: 'supplier_ai_subscription',
+    paymentContext: 'supplier_bundle_subscription',
     supplierId,
     amount,
     currency: sub.currency || 'LKR',
@@ -159,8 +182,8 @@ async function renewSubscription(sub) {
     orderSummary: {
       items: [
         {
-          id: 'supplier-ai-sub-renewal',
-          name: 'Supplier Tomorrow AI — monthly renewal',
+          id: 'supplier-bundle-sub-renewal',
+          name: 'Supplier Premium bundle — monthly renewal',
           quantity: 1,
           unitPrice: amount,
           lineTotal: amount,
@@ -188,7 +211,7 @@ async function renewSubscription(sub) {
 
   const user = await User.findById(supplierId).lean();
   if (user) {
-    await sendSupplierAiSubscriptionPaymentEmail(user, {
+    await sendSupplierBundleSubscriptionPaymentEmail(user, {
       payment,
       subscription: sub,
       isRenewal: true,
@@ -196,23 +219,12 @@ async function renewSubscription(sub) {
   }
 }
 
-function startRenewalScheduler() {
-  const intervalMs = Number(process.env.SUPPLIER_AI_RENEWAL_INTERVAL_MS) || 6 * 60 * 60 * 1000;
-  const run = () => {
-    processDueRenewals().catch((err) => {
-      console.error('[supplierAiRenewal] scheduler error:', err.message);
-    });
-  };
-  run();
-  setInterval(run, intervalMs);
-  console.log(`Supplier AI auto-renewal scheduler every ${intervalMs / 1000}s`);
-}
-
 module.exports = {
+  getSubscriptionAmount,
   findActiveSubscription,
   isAutoRenewEnabled,
+  getAccessStatus,
   activateSubscriptionFromPayment,
   cancelAutoRenew,
   processDueRenewals,
-  startRenewalScheduler,
 };

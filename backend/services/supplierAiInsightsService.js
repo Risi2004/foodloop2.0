@@ -3,6 +3,7 @@ const {
   findActiveSubscription,
   isAutoRenewEnabled,
 } = require('./supplierAiSubscriptionService');
+const { findActiveBundleSubscription } = require('./supplierPremiumAccess');
 const SupplierAiUsage = require('../models/SupplierAiUsage');
 const {
   getCurrentWeatherByCoords,
@@ -43,15 +44,35 @@ async function getTodayUsageCount(supplierId) {
 }
 
 async function getAccessStatus(supplierId) {
-  const dateKey = getColomboDateKey();
-  const yearMonth = getColomboYearMonth();
-  const sub = await getActiveSubscription(supplierId);
   const usedToday = await getTodayUsageCount(supplierId);
+  const bundle = await findActiveBundleSubscription(supplierId);
+  const sub = await getActiveSubscription(supplierId);
+
+  if (bundle) {
+    return {
+      tier: 'unlimited',
+      unlimited: true,
+      source: 'bundle',
+      bundleActive: true,
+      bundleExpiresAt: bundle.expiresAt,
+      remainingToday: null,
+      freeDailyLimit: FREE_DAILY_LIMIT,
+      usedToday,
+      paidThroughMonth: bundle.paidThroughMonth,
+      expiresAt: bundle.expiresAt,
+      subscriptionAmountLkr: getSubscriptionAmount(),
+      autoRenew: false,
+      autoRenewCancelledAt: null,
+    };
+  }
 
   if (sub) {
     return {
       tier: 'unlimited',
       unlimited: true,
+      source: 'ai',
+      bundleActive: false,
+      bundleExpiresAt: null,
       remainingToday: null,
       freeDailyLimit: FREE_DAILY_LIMIT,
       usedToday,
@@ -67,6 +88,9 @@ async function getAccessStatus(supplierId) {
   return {
     tier: 'free',
     unlimited: false,
+    source: 'free',
+    bundleActive: false,
+    bundleExpiresAt: null,
     remainingToday,
     freeDailyLimit: FREE_DAILY_LIMIT,
     usedToday,

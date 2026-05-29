@@ -8,6 +8,9 @@ import { clearAuth, getUser, setUser, getSupplierDisplayName, getUserProfileImag
 import { getUnreadCount, NOTIFICATIONS_READ_EVENT } from "../../../../../services/notificationApi";
 import { getSocket, onNewNotification } from "../../../../../services/socket";
 import { deleteAccount, getCurrentUser } from "../../../../../services/api";
+import { getBundleStatus } from "../../../../../services/supplierBundleApi";
+import { SUPPLIER_BUNDLE_UPDATED } from "../../../../../utils/supplierPremiumEvents";
+import goldBadge from "../../../../../assets/icons/afterLogin/status-batch/gold.svg";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -15,6 +18,7 @@ function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [avatarError, setAvatarError] = useState(false);
+    const [isPremium, setIsPremium] = useState(false);
 
     const profileImageUrl = getUserProfileImageUrl(user);
     const showProfilePhoto = Boolean(profileImageUrl) && !avatarError;
@@ -38,6 +42,25 @@ function Navbar() {
         })();
         return () => {
             cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadPremium = async () => {
+            try {
+                const status = await getBundleStatus();
+                if (!cancelled) setIsPremium(!!status?.active);
+            } catch {
+                if (!cancelled) setIsPremium(false);
+            }
+        };
+        loadPremium();
+        const onBundleUpdated = () => loadPremium();
+        window.addEventListener(SUPPLIER_BUNDLE_UPDATED, onBundleUpdated);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(SUPPLIER_BUNDLE_UPDATED, onBundleUpdated);
         };
     }, []);
 
@@ -133,6 +156,7 @@ function Navbar() {
                     <Link to="/supplier/about">About Us</Link>
                     <Link to="/supplier/dashboard#contact">Contact Us</Link>
                     <Link to="/supplier/my-donation">My Listings</Link>
+                    <Link to="/supplier/esg-csr">ESG &amp; CSR</Link>
                     <Link to="/supplier/earnings">Earnings</Link>
                 </div>
 
@@ -143,9 +167,19 @@ function Navbar() {
                             <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
                         )}
                     </Link>
+                    {isPremium && (
+                        <Link
+                            to="/supplier/dashboard#supplier-plans"
+                            className="navbar__premium-reward"
+                            title="Premium member — AI + ESG bundle active"
+                        >
+                            <img src={goldBadge} alt="" className="navbar__premium-reward__icon" aria-hidden="true" />
+                            <span>Premium</span>
+                        </Link>
+                    )}
                     <div className="navbar__s3__sub" onClick={toggleProfile}>
                         <h3>{displayName}</h3>
-                        <div className="navbar__profile-wrap">
+                        <div className={`navbar__profile-wrap${isPremium ? ' navbar__profile-wrap--premium' : ''}`}>
                             {showProfilePhoto ? (
                                 <img
                                     className="navbar__s3__img2 navbar__s3__img2--photo"
@@ -194,6 +228,15 @@ function Navbar() {
                             <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
                         )}
                     </Link>
+                    {isPremium && (
+                        <Link
+                            to="/supplier/dashboard#supplier-plans"
+                            className="navbar__premium-reward navbar__premium-reward--compact"
+                            title="Premium member"
+                        >
+                            <img src={goldBadge} alt="" className="navbar__premium-reward__icon" aria-hidden="true" />
+                        </Link>
+                    )}
                     <img src={menu} alt="menu-bar" onClick={toggleMenu} />
                 </div>
             </div>
@@ -208,6 +251,7 @@ function Navbar() {
                         <Link to="/supplier/about" onClick={toggleMenu}>About Us</Link>
                         <Link to="/supplier/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
                         <Link to="/supplier/my-donation" onClick={toggleMenu}>My Listings</Link>
+                        <Link to="/supplier/esg-csr" onClick={toggleMenu}>ESG &amp; CSR</Link>
                         <Link to="/supplier/earnings" onClick={toggleMenu}>Earnings</Link>
                         <Link to="/supplier/profile" onClick={toggleMenu}>View Profile</Link>
                         <div className="navbar__popup__action">

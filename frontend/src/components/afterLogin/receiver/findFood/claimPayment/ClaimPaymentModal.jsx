@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { confirmClaimPayment } from '../../../../../services/paymentApi';
+import { getCardExpiryError, isCardExpiryValid } from '../../../../../utils/cardExpiry';
 import './ClaimPaymentModal.css';
 
 const formatCardNumber = (value) => {
@@ -36,6 +37,7 @@ const ClaimPaymentModal = ({
   const [autoRenew, setAutoRenew] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [expiryError, setExpiryError] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,7 +46,17 @@ const ClaimPaymentModal = ({
     setCvv('');
     setAutoRenew(false);
     setError(null);
+    setExpiryError(null);
   }, [isOpen, checkout?.orderId]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
 
   if (!isOpen || !checkout) return null;
 
@@ -62,7 +74,7 @@ const ClaimPaymentModal = ({
   const terms =
     subscriptionTerms ??
     (showAutoRenewOption
-      ? 'One month of access per payment. No refunds for the current billing period. Cancel auto-renew anytime; access continues until the period ends.'
+      ? 'One month of access per payment. Non-refundable. Cancel anytime — access continues until the paid month ends; no refund.'
       : null);
 
   const formatMoney = (value) =>
@@ -73,11 +85,30 @@ const ClaimPaymentModal = ({
 
   const isFormValid = () => {
     const digits = cardNumber.replace(/\D/g, '');
-    return digits.length >= 16 && expiry.length >= 5 && cvv.replace(/\D/g, '').length === 3;
+    return (
+      digits.length >= 16 &&
+      isCardExpiryValid(expiry) &&
+      cvv.replace(/\D/g, '').length === 3
+    );
+  };
+
+  const handleExpiryChange = (rawValue) => {
+    const formatted = formatExpiry(rawValue);
+    setExpiry(formatted);
+    setExpiryError(getCardExpiryError(formatted));
+  };
+
+  const handleExpiryBlur = () => {
+    setExpiryError(getCardExpiryError(expiry));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const expiryValidation = getCardExpiryError(expiry);
+    if (expiryValidation) {
+      setExpiryError(expiryValidation);
+      return;
+    }
     if (!isFormValid() || isProcessing) return;
 
     setIsProcessing(true);
@@ -135,7 +166,9 @@ const ClaimPaymentModal = ({
         </header>
 
         <div className="claim-payment-summary">
-          <p className="claim-payment-item">{itemName}</p>
+          {!(Array.isArray(summaryLines) && summaryLines.length > 0) && (
+            <p className="claim-payment-item">{itemName}</p>
+          )}
           {Array.isArray(summaryLines) && summaryLines.length > 0 ? (
             <div className="claim-payment-breakdown">
               {summaryLines.map((line) => (
@@ -209,7 +242,7 @@ const ClaimPaymentModal = ({
           </label>
 
           <div className="claim-payment-row">
-            <label className="claim-payment-label">
+            <label className="claim-payment-label claim-payment-label--expiry">
               Expiry
               <input
                 type="text"
@@ -217,9 +250,17 @@ const ClaimPaymentModal = ({
                 autoComplete="cc-exp"
                 placeholder="MM/YY"
                 value={expiry}
-                onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                onChange={(e) => handleExpiryChange(e.target.value)}
+                onBlur={handleExpiryBlur}
                 disabled={isProcessing}
+                aria-invalid={expiryError ? 'true' : undefined}
+                aria-describedby={expiryError ? 'claim-payment-expiry-error' : undefined}
               />
+              {expiryError && (
+                <span id="claim-payment-expiry-error" className="claim-payment-field-error" role="alert">
+                  {expiryError}
+                </span>
+              )}
             </label>
             <label className="claim-payment-label">
               CVV

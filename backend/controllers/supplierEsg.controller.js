@@ -1,30 +1,25 @@
 const Payment = require('../models/Payment');
 const {
-  SupplierAiError,
   getAccessStatus,
-  assertCanRun,
-  recordRun,
-  buildTomorrowInsights,
   getSubscriptionAmount,
-} = require('../services/supplierAiInsightsService');
-const {
   findActiveSubscription,
   activateSubscriptionFromPayment,
   cancelAutoRenew,
-} = require('../services/supplierAiSubscriptionService');
-const { sendSupplierAiSubscriptionPaymentEmail } = require('../utils/sendNotificationEmail');
+} = require('../services/supplierEsgSubscriptionService');
+const { buildEsgReport, SupplierEsgError } = require('../services/supplierEsgReportService');
+const { sendSupplierEsgSubscriptionPaymentEmail } = require('../utils/sendNotificationEmail');
 const { validateMockCard } = require('../utils/mockCardValidation');
 
 const CHECKOUT_TTL_MS = 30 * 60 * 1000;
-
 const DONOR_ROLES = ['donor', 'restaurant', 'supermarket', 'business', 'individual'];
+const VALID_PERIODS = new Set(['this_month', 'last_30', 'this_quarter', 'all_time']);
 
 function requireSupplier(req, res) {
   const role = (req.user?.role || '').toLowerCase();
   if (!DONOR_ROLES.includes(role)) {
     res.status(403).json({
       success: false,
-      message: 'Only food suppliers can use AI insights.',
+      message: 'Only food suppliers can access ESG & CSR reports.',
       code: 'FORBIDDEN',
     });
     return false;
@@ -35,21 +30,21 @@ function requireSupplier(req, res) {
 function generateOrderId(seedValue = Date.now().toString()) {
   const suffix = Date.now().toString(36).toUpperCase();
   const idPart = String(seedValue).slice(-8).toUpperCase().replace(/\W/g, '');
-  return `FLAI${idPart}${suffix}`.slice(0, 32);
+  return `FLESG${idPart}${suffix}`.slice(0, 32);
 }
 
 function handleError(res, err) {
-  if (err instanceof SupplierAiError) {
+  if (err instanceof SupplierEsgError) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
       code: err.code,
     });
   }
-  console.error('[supplierAi]', err);
+  console.error('[supplierEsg]', err);
   return res.status(500).json({
     success: false,
-    message: err.message || 'Supplier AI request failed.',
+    message: err.message || 'ESG request failed.',
   });
 }
 
@@ -63,29 +58,25 @@ exports.getStatus = async (req, res) => {
   }
 };
 
-exports.getTomorrowInsights = async (req, res) => {
+exports.getReport = async (req, res) => {
   try {
     if (!requireSupplier(req, res)) return;
 
-    await assertCanRun(req.user._id);
-
-    const { lat, lng, foodCategory, itemName } = req.body || {};
-    const result = await buildTomorrowInsights(req.user, {
-      lat,
-      lng,
-      foodCategory,
-      itemName,
-    });
-
-    await recordRun(req.user._id);
     const status = await getAccessStatus(req.user._id);
+    if (!status.unlocked) {
+      throw new SupplierEsgError(
+        'ESG_SUBSCRIPTION_REQUIRED',
+        'Subscribe to unlock the ESG & CSR dashboard and PDF reports.',
+        402
+      );
+    }
 
-    return res.json({
-      success: true,
-      insights: result.insights,
-      weather: result.weather,
-      status,
-    });
+    const period = VALID_PERIODS.has(req.query.period)
+      ? req.query.period
+      : 'this_month';
+
+    const report = await buildEsgReport(req.user._id, req.user, { period });
+    return res.json({ success: true, report, status });
   } catch (err) {
     return handleError(res, err);
   }
@@ -103,7 +94,7 @@ exports.subscriptionCheckout = async (req, res) => {
       return res.json({
         success: true,
         alreadySubscribed: true,
-        message: 'You already have an active AI subscription.',
+        message: 'You already have an active ESG & CSR subscription.',
         status: await getAccessStatus(supplierId),
       });
     }
@@ -111,7 +102,7 @@ exports.subscriptionCheckout = async (req, res) => {
     await Payment.updateMany(
       {
         supplierId,
-        paymentContext: 'supplier_ai_subscription',
+        paymentContext: 'supplier_esg_subscription',
         status: 'pending',
         expiresAt: { $lt: new Date() },
       },
@@ -119,21 +110,19 @@ exports.subscriptionCheckout = async (req, res) => {
     );
 
     const orderId = generateOrderId(supplierId.toString());
-    const expiresAt = new Date(Date.now() + CHECKOUT_TTL_MS);
-
     const payment = await Payment.create({
       orderId,
-      paymentContext: 'supplier_ai_subscription',
+      paymentContext: 'supplier_esg_subscription',
       supplierId,
       amount,
       currency: 'LKR',
       status: 'pending',
-      expiresAt,
+      expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
       orderSummary: {
         items: [
           {
-            id: 'supplier-ai-sub',
-            name: 'Supplier Tomorrow AI — 1 month unlimited',
+            id: 'supplier-esg-sub',
+            name: 'ESG & CSR Impact Dashboard — 1 month',
             quantity: 1,
             unitPrice: amount,
             lineTotal: amount,
@@ -142,7 +131,6 @@ exports.subscriptionCheckout = async (req, res) => {
         subtotal: amount,
         deliveryFee: 0,
         total: amount,
-        address: '',
         paymentMethod: 'card',
       },
     });
@@ -153,8 +141,7 @@ exports.subscriptionCheckout = async (req, res) => {
         orderId: payment.orderId,
         amount: payment.amount,
         currency: payment.currency,
-        itemName: 'Supplier Tomorrow AI subscription',
-        expiresAtCheckout: payment.expiresAt,
+        itemName: 'ESG & CSR Impact Dashboard',
       },
     });
   } catch (err) {
@@ -174,6 +161,7 @@ exports.subscriptionConfirm = async (req, res) => {
       cardLast4: bodyLast4,
       autoRenew,
     } = req.body || {};
+
     if (!orderId) {
       return res.status(400).json({ success: false, message: 'Order id required.' });
     }
@@ -187,7 +175,7 @@ exports.subscriptionConfirm = async (req, res) => {
     if (!payment) {
       return res.status(404).json({ success: false, message: 'Payment not found.' });
     }
-    if (payment.paymentContext !== 'supplier_ai_subscription') {
+    if (payment.paymentContext !== 'supplier_esg_subscription') {
       return res.status(400).json({ success: false, message: 'Invalid payment type.' });
     }
     if (!payment.supplierId || payment.supplierId.toString() !== req.user._id.toString()) {
@@ -234,18 +222,14 @@ exports.subscriptionConfirm = async (req, res) => {
       autoRenew: wantAutoRenew,
     });
 
-    sendSupplierAiSubscriptionPaymentEmail(req.user, {
+    sendSupplierEsgSubscriptionPaymentEmail(req.user, {
       payment,
       subscription,
       isRenewal: false,
     }).catch(() => {});
 
     const status = await getAccessStatus(req.user._id);
-    return res.json({
-      success: true,
-      status,
-      orderId: payment.orderId,
-    });
+    return res.json({ success: true, status, orderId: payment.orderId });
   } catch (err) {
     return handleError(res, err);
   }

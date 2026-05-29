@@ -72,10 +72,13 @@ function SupplierAiInsightsPanel({ draftCoords, foodCategory, itemName }) {
   const statusMeta = useMemo(() => {
     if (!status) return null;
     if (status.unlimited) {
+      const isBundle = status.source === 'bundle' || status.bundleActive;
       return {
         variant: 'pro',
-        label: 'Unlimited',
-        detail: `Active until ${formatPeriodEnd(status.expiresAt)}`,
+        label: isBundle ? 'Premium bundle' : 'Unlimited',
+        detail: isBundle
+          ? `Included until ${formatPeriodEnd(status.expiresAt)}`
+          : `Active until ${formatPeriodEnd(status.expiresAt)}`,
       };
     }
     const remaining = status.remainingToday ?? 0;
@@ -136,14 +139,25 @@ function SupplierAiInsightsPanel({ draftCoords, foodCategory, itemName }) {
   };
 
   const handleCancelAutoRenew = async () => {
+    const until = formatPeriodEnd(status?.expiresAt);
+    const confirmed = window.confirm(
+      `Cancel AI subscription renewal?\n\n` +
+        `• No refund for this month\n` +
+        `• Unlimited AI access continues until ${until}\n` +
+        `• You will not be charged again after this period`
+    );
+    if (!confirmed) return;
+
     setCancellingRenew(true);
     setError(null);
     try {
       const res = await cancelSubscriptionAutoRenew();
       if (res.status) setStatus(res.status);
       else await loadStatus();
+      if (res.message) setError(null);
+      alert(res.message || `Cancelled. Access continues until ${until}. No refund.`);
     } catch (err) {
-      setError(err.message || 'Could not cancel automatic renewal.');
+      setError(err.message || 'Could not cancel subscription.');
     } finally {
       setCancellingRenew(false);
     }
@@ -220,7 +234,7 @@ function SupplierAiInsightsPanel({ draftCoords, foodCategory, itemName }) {
           >
             {loadingInsights ? 'Generating…' : "Get tomorrow's forecast"}
           </button>
-          {showPaywall && (
+          {showPaywall && !status?.bundleActive && (
             <button
               type="button"
               className="supplier-ai-panel__btn supplier-ai-panel__btn--outline"
@@ -232,12 +246,22 @@ function SupplierAiInsightsPanel({ draftCoords, foodCategory, itemName }) {
           )}
         </div>
 
-        {status?.unlimited && status?.autoRenew && (
+        {status?.unlimited && status?.source === 'bundle' && (
+          <p className="supplier-ai-panel__bundle-note">
+            Included in your Premium bundle. Manage renewal on your{' '}
+            <a href="/supplier/dashboard">supplier home</a>.
+          </p>
+        )}
+
+        {status?.unlimited && status?.source === 'ai' && (
           <div className="supplier-ai-panel__subscription">
             <p className="supplier-ai-panel__subscription-text">
-              <strong>Auto-renew enabled</strong>
+              <strong>
+                {status.autoRenew ? 'Renews monthly' : 'Active until period end'}
+              </strong>
               <span>
-                LKR {subscriptionLkr} / month · cancel anytime (no refund for current month)
+                LKR {subscriptionLkr} / month · cancel anytime — no refund; access stays until{' '}
+                {formatPeriodEnd(status.expiresAt)}
               </span>
             </p>
             <button
@@ -246,7 +270,7 @@ function SupplierAiInsightsPanel({ draftCoords, foodCategory, itemName }) {
               onClick={handleCancelAutoRenew}
               disabled={cancellingRenew}
             >
-              {cancellingRenew ? 'Cancelling…' : 'Turn off auto-renew'}
+              {cancellingRenew ? 'Cancelling…' : 'Cancel subscription'}
             </button>
           </div>
         )}
@@ -254,7 +278,7 @@ function SupplierAiInsightsPanel({ draftCoords, foodCategory, itemName }) {
         {error && (
           <div className="supplier-ai-panel__error" role="alert">
             <p>{error}</p>
-            {showPaywall && !loadingCheckout && (
+            {showPaywall && !status?.bundleActive && !loadingCheckout && (
               <button
                 type="button"
                 className="supplier-ai-panel__btn supplier-ai-panel__btn--outline"

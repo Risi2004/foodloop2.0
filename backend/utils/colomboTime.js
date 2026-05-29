@@ -54,6 +54,7 @@ function addOneCalendarMonth(date = new Date()) {
 
 module.exports = {
   COLOMBO_TZ,
+  formatColomboParts,
   getColomboDateKey,
   getColomboYearMonth,
   getMonthEndDate,

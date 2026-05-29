@@ -51,6 +51,7 @@ import ReceiptForm from "./pages/afterLogin/receiver/receiptForm/ReceiptForm";
 import Myclaims from "./pages/afterLogin/receiver/myClaims/MyClaims";
 import ReceiverTrackingPage from "./pages/afterLogin/receiver/trackingPage/ReceiverTrackingPage";
 import SupplierEarnings from "./pages/afterLogin/donor/earnings/SupplierEarnings";
+import SupplierEsgCsrPage from "./pages/afterLogin/donor/esgCsr/SupplierEsgCsrPage";
 import DriverEarnings from "./pages/afterLogin/driver/earnings/DriverEarnings";
 import AdminPayoutRequestsPage from "./pages/afterLogin/admin/payoutRequests/AdminPayoutRequestsPage";
 import AdminOrdersPage from "./pages/afterLogin/admin/orders/AdminOrdersPage";
@@ -132,6 +133,7 @@ function App() {
           <Route path="digital-receipt" element={<DigitalReceipt />} />
           <Route path="individual-edit-profile" element={<IndividualEditProfile />} />
           <Route path="earnings" element={<SupplierEarnings />} />
+          <Route path="esg-csr" element={<SupplierEsgCsrPage />} />
         </Route>
 
         <Route path="/donor/*" element={<LegacyDonorRedirect />} />

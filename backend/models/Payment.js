@@ -5,7 +5,13 @@ const paymentSchema = new mongoose.Schema(
     orderId: { type: String, required: true, unique: true, trim: true, index: true },
     paymentContext: {
       type: String,
-      enum: ['claim', 'customer_checkout', 'supplier_ai_subscription'],
+      enum: [
+        'claim',
+        'customer_checkout',
+        'supplier_ai_subscription',
+        'supplier_esg_subscription',
+        'supplier_bundle_subscription',
+      ],
       default: 'claim',
       index: true,
     },

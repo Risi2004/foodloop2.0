@@ -1,22 +1,15 @@
 const Payment = require('../models/Payment');
 const {
-  SupplierAiError,
   getAccessStatus,
-  assertCanRun,
-  recordRun,
-  buildTomorrowInsights,
   getSubscriptionAmount,
-} = require('../services/supplierAiInsightsService');
-const {
   findActiveSubscription,
   activateSubscriptionFromPayment,
   cancelAutoRenew,
-} = require('../services/supplierAiSubscriptionService');
-const { sendSupplierAiSubscriptionPaymentEmail } = require('../utils/sendNotificationEmail');
+} = require('../services/supplierBundleSubscriptionService');
+const { sendSupplierBundleSubscriptionPaymentEmail } = require('../utils/sendNotificationEmail');
 const { validateMockCard } = require('../utils/mockCardValidation');
 
 const CHECKOUT_TTL_MS = 30 * 60 * 1000;
-
 const DONOR_ROLES = ['donor', 'restaurant', 'supermarket', 'business', 'individual'];
 
 function requireSupplier(req, res) {
@@ -24,7 +17,7 @@ function requireSupplier(req, res) {
   if (!DONOR_ROLES.includes(role)) {
     res.status(403).json({
       success: false,
-      message: 'Only food suppliers can use AI insights.',
+      message: 'Only food suppliers can manage subscriptions.',
       code: 'FORBIDDEN',
     });
     return false;
@@ -35,22 +28,7 @@ function requireSupplier(req, res) {
 function generateOrderId(seedValue = Date.now().toString()) {
   const suffix = Date.now().toString(36).toUpperCase();
   const idPart = String(seedValue).slice(-8).toUpperCase().replace(/\W/g, '');
-  return `FLAI${idPart}${suffix}`.slice(0, 32);
-}
-
-function handleError(res, err) {
-  if (err instanceof SupplierAiError) {
-    return res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-      code: err.code,
-    });
-  }
-  console.error('[supplierAi]', err);
-  return res.status(500).json({
-    success: false,
-    message: err.message || 'Supplier AI request failed.',
-  });
+  return `FLBND${idPart}${suffix}`.slice(0, 32);
 }
 
 exports.getStatus = async (req, res) => {
@@ -59,35 +37,11 @@ exports.getStatus = async (req, res) => {
     const status = await getAccessStatus(req.user._id);
     return res.json({ success: true, status });
   } catch (err) {
-    return handleError(res, err);
-  }
-};
-
-exports.getTomorrowInsights = async (req, res) => {
-  try {
-    if (!requireSupplier(req, res)) return;
-
-    await assertCanRun(req.user._id);
-
-    const { lat, lng, foodCategory, itemName } = req.body || {};
-    const result = await buildTomorrowInsights(req.user, {
-      lat,
-      lng,
-      foodCategory,
-      itemName,
+    console.error('[supplierBundle]', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Could not load subscription status.',
     });
-
-    await recordRun(req.user._id);
-    const status = await getAccessStatus(req.user._id);
-
-    return res.json({
-      success: true,
-      insights: result.insights,
-      weather: result.weather,
-      status,
-    });
-  } catch (err) {
-    return handleError(res, err);
   }
 };
 
@@ -103,7 +57,7 @@ exports.subscriptionCheckout = async (req, res) => {
       return res.json({
         success: true,
         alreadySubscribed: true,
-        message: 'You already have an active AI subscription.',
+        message: 'You already have an active Premium bundle.',
         status: await getAccessStatus(supplierId),
       });
     }
@@ -111,7 +65,7 @@ exports.subscriptionCheckout = async (req, res) => {
     await Payment.updateMany(
       {
         supplierId,
-        paymentContext: 'supplier_ai_subscription',
+        paymentContext: 'supplier_bundle_subscription',
         status: 'pending',
         expiresAt: { $lt: new Date() },
       },
@@ -119,21 +73,19 @@ exports.subscriptionCheckout = async (req, res) => {
     );
 
     const orderId = generateOrderId(supplierId.toString());
-    const expiresAt = new Date(Date.now() + CHECKOUT_TTL_MS);
-
     const payment = await Payment.create({
       orderId,
-      paymentContext: 'supplier_ai_subscription',
+      paymentContext: 'supplier_bundle_subscription',
       supplierId,
       amount,
       currency: 'LKR',
       status: 'pending',
-      expiresAt,
+      expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
       orderSummary: {
         items: [
           {
-            id: 'supplier-ai-sub',
-            name: 'Supplier Tomorrow AI — 1 month unlimited',
+            id: 'supplier-bundle-sub',
+            name: 'Supplier Premium bundle — 1 month',
             quantity: 1,
             unitPrice: amount,
             lineTotal: amount,
@@ -142,7 +94,6 @@ exports.subscriptionCheckout = async (req, res) => {
         subtotal: amount,
         deliveryFee: 0,
         total: amount,
-        address: '',
         paymentMethod: 'card',
       },
     });
@@ -153,12 +104,15 @@ exports.subscriptionCheckout = async (req, res) => {
         orderId: payment.orderId,
         amount: payment.amount,
         currency: payment.currency,
-        itemName: 'Supplier Tomorrow AI subscription',
-        expiresAtCheckout: payment.expiresAt,
+        itemName: 'Supplier Premium bundle',
       },
     });
   } catch (err) {
-    return handleError(res, err);
+    console.error('[supplierBundle]', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Checkout failed.',
+    });
   }
 };
 
@@ -174,6 +128,7 @@ exports.subscriptionConfirm = async (req, res) => {
       cardLast4: bodyLast4,
       autoRenew,
     } = req.body || {};
+
     if (!orderId) {
       return res.status(400).json({ success: false, message: 'Order id required.' });
     }
@@ -187,7 +142,7 @@ exports.subscriptionConfirm = async (req, res) => {
     if (!payment) {
       return res.status(404).json({ success: false, message: 'Payment not found.' });
     }
-    if (payment.paymentContext !== 'supplier_ai_subscription') {
+    if (payment.paymentContext !== 'supplier_bundle_subscription') {
       return res.status(400).json({ success: false, message: 'Invalid payment type.' });
     }
     if (!payment.supplierId || payment.supplierId.toString() !== req.user._id.toString()) {
@@ -234,20 +189,20 @@ exports.subscriptionConfirm = async (req, res) => {
       autoRenew: wantAutoRenew,
     });
 
-    sendSupplierAiSubscriptionPaymentEmail(req.user, {
+    sendSupplierBundleSubscriptionPaymentEmail(req.user, {
       payment,
       subscription,
       isRenewal: false,
     }).catch(() => {});
 
     const status = await getAccessStatus(req.user._id);
-    return res.json({
-      success: true,
-      status,
-      orderId: payment.orderId,
-    });
+    return res.json({ success: true, status, orderId: payment.orderId });
   } catch (err) {
-    return handleError(res, err);
+    console.error('[supplierBundle]', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Payment confirmation failed.',
+    });
   }
 };
 
@@ -267,6 +222,10 @@ exports.cancelSubscriptionAutoRenew = async (req, res) => {
         'Subscription cancelled. No refund for the current month; access continues until your period ends.',
     });
   } catch (err) {
-    return handleError(res, err);
+    console.error('[supplierBundle]', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Could not cancel auto-renew.',
+    });
   }
 };

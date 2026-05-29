@@ -9,6 +9,7 @@ import Contact from "../../../../components/beforeLogin/Contact/Contact";
 import DonorFooter from "../../../../components/afterLogin/dashboard/donorSection/footer/DonorFooter";
 import "./DonorDashboard.css";
 import StatusBatchCard from "../../../../components/afterLogin/dashboard/common/statusBatchCard/StatusBatchCard";
+import SupplierSubscriptionPlans from "../../../../components/afterLogin/dashboard/donorSection/subscriptionPlans/SupplierSubscriptionPlans";
 
 function DonorDashboard() {
     const { hash } = useLocation();
@@ -27,6 +28,7 @@ function DonorDashboard() {
             <Feedback />
             <Map />
             <StatusBatchCard />
+            <SupplierSubscriptionPlans />
             <Contact />
             <DonorFooter />
         </div>

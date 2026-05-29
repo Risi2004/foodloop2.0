@@ -261,7 +261,11 @@ async function fetchCardLedgerRows(range) {
         ? 'customer_checkout'
         : p.paymentContext === 'supplier_ai_subscription'
           ? 'supplier_ai_subscription'
-          : 'claim',
+          : p.paymentContext === 'supplier_esg_subscription'
+            ? 'supplier_esg_subscription'
+            : p.paymentContext === 'supplier_bundle_subscription'
+              ? 'supplier_bundle_subscription'
+              : 'claim',
     status: p.status,
     meta: {
       paymentMethod: p.orderSummary?.paymentMethod || 'card',

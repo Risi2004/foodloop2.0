@@ -26,6 +26,7 @@ export const supplierRoutes = {
       ? `${supplierPath('digital-receipt')}?donationId=${encodeURIComponent(donationId)}`
       : supplierPath('digital-receipt'),
   earnings: () => supplierPath('earnings'),
+  esgCsr: () => supplierPath('esg-csr'),
 };
 
 /** Map legacy /donor/* paths to /supplier/* (same sub-path). */
