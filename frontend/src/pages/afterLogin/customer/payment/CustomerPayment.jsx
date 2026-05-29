@@ -7,6 +7,8 @@ import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { getUser } from '../../../../utils/auth';
 import { customerRoutes } from '../../../../constants/customerRoutes';
 import CustomerPaymentModal from '../../../../components/afterLogin/customer/payment/CustomerPaymentModal';
+import { useMaintenance } from '../../../../contexts/MaintenanceContext';
+import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
 import {
   createCustomerCheckout,
   placeCustomerCodOrder,
@@ -26,6 +28,7 @@ const CustomerPayment = () => {
   } = useMarketplace();
   const navigate = useNavigate();
   const user = getUser();
+  const { blockNewOrders } = useMaintenance();
 
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [address, setAddress] = useState(user?.address || '');
@@ -129,6 +132,10 @@ const CustomerPayment = () => {
 
   const handleConfirmPayment = () => {
     if (isProcessing) return;
+    if (blockNewOrders) {
+      setPageError(MAINTENANCE_BLOCK_MESSAGE);
+      return;
+    }
     setPageError('');
     setPendingPaymentMethod(paymentMethod);
     setLocationModalPurpose('payment');

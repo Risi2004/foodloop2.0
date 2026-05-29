@@ -1,0 +1,126 @@
+.admin-maintenance-success {
+  color: #a5d6a7;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.admin-maintenance-status {
+  margin-bottom: 24px;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-maintenance-status h2 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.admin-maintenance-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-maintenance-chip {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(115, 161, 63, 0.25);
+  border: 1px solid rgba(165, 214, 167, 0.35);
+  color: #c8e6c9;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.admin-maintenance-breakdown,
+.admin-maintenance-schedule-preview {
+  margin: 0 0 12px;
+  color: #a5d6a7;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.admin-maintenance-panel .admin-maintenance-hint {
+  margin: 0 0 16px;
+  color: #486858;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.admin-maintenance-drain-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  color: #bf360c;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.admin-maintenance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.admin-maintenance-panel {
+  background: #f6f8f7;
+  border: 1px solid #dbe6e0;
+  border-radius: 20px;
+  padding: 22px;
+  color: #2e4e3f;
+}
+
+.admin-maintenance-panel h2 {
+  margin: 0 0 8px;
+  color: #1f4e36;
+  font-size: 1.15rem;
+}
+
+.admin-maintenance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-maintenance-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1f4e36;
+}
+
+.admin-maintenance-form input,
+.admin-maintenance-form textarea {
+  border: 1px solid #cfdad4;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.admin-maintenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.admin-btn--danger {
+  background: #c62828 !important;
+}
+
+@media (max-width: 900px) {
+  .admin-maintenance-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -5,11 +5,14 @@ import notificationIcon from "../../../../assets/icons/afterLogin/admin/notifica
 import reviewIcon from "../../../../assets/icons/afterLogin/admin/review.svg";
 import messageIcon from "../../../../assets/icons/afterLogin/admin/messages.svg"
 import payoutIcon from "../../../../assets/icons/afterLogin/admin/payout.svg";
+import maintenanceIcon from "../../../../assets/icons/afterLogin/admin/maintenance.svg";
+import financeIcon from "../../../../assets/icons/afterLogin/admin/finance.svg";
 import ordersIcon from "../../../../assets/icons/afterLogin/admin/orders.svg";
 import monitoringIcon from "../../../../assets/icons/afterLogin/admin/monitoring.svg";
 import menuIcon from "../../../../assets/icons/navbar/menu-bar.svg";
 import { useState } from 'react';
-import './AdminSideNavbar.css'
+import './AdminSideNavbar.css';
+import '../../../../pages/afterLogin/admin/shared/AdminPageTheme.css';
 import { clearAuth } from "../../../../utils/auth";
 
 function AdminSideNavbar() {
@@ -42,7 +45,11 @@ function AdminSideNavbar() {
                         <Link to="/admin/user-management">User Management</Link>
                     </div>
                     <div className='sidebar__links'>
-                        <img src={payoutIcon} alt="" />
+                        <img src={maintenanceIcon} alt="" />
+                        <Link to="/admin/maintenance">Maintenance</Link>
+                    </div>
+                    <div className='sidebar__links'>
+                        <img src={financeIcon} alt="" />
                         <Link to="/admin/finance">Platform Finance</Link>
                     </div>
                     <div className='sidebar__links'>
@@ -90,6 +97,7 @@ function AdminSideNavbar() {
                     <Link to="/admin/user-management" onClick={toggleMenu}>User Management</Link>
                     <Link to="/admin/payout-requests" onClick={toggleMenu}>Payout Requests</Link>
                     <Link to="/admin/finance" onClick={toggleMenu}>Platform Finance</Link>
+                    <Link to="/admin/maintenance" onClick={toggleMenu}>Maintenance</Link>
                     <Link to="/admin/orders" onClick={toggleMenu}>All Orders</Link>
                     <Link to="/admin/user-monitoring" onClick={toggleMenu}>User Monitoring</Link>
                     <Link to="/admin/notification" onClick={toggleMenu}>Notification</Link>

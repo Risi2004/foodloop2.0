@@ -4,6 +4,8 @@ import { submitDonation, updateDonation, getDonorStatistics } from '../../../../
 import { clearAuth } from '../../../../../utils/auth';
 import { getBadgeIconSrc, BADGE_KEYS_ORDER } from '../../../../../utils/badgeIcons';
 import LocationMapModal from '../locationMapModal/LocationMapModal';
+import { useMaintenance } from '../../../../../contexts/MaintenanceContext';
+import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../../services/maintenanceApi';
 import autoFixHighIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/auto_fix_high.svg';
 import editIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Edit.svg';
 import lightningBoltIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Lightning Bolt.svg';
@@ -23,6 +25,7 @@ const getTimeString = (d) =>
 
 function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialData, isAnalyzing = false, manualEntryMode = false }) {
     const navigate = useNavigate();
+    const { blockNewOrders } = useMaintenance();
     const isEditMode = !!editDonationId && !!initialData;
     const isFormLocked = !isEditMode && (!imageUrl || isAnalyzing);
 
@@ -286,6 +289,11 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
 
     const handlePostDonation = async () => {
         if (isFormLocked || !isFormValid() || isSubmitting) {
+            return;
+        }
+
+        if (!isEditMode && blockNewOrders) {
+            setSubmitError(MAINTENANCE_BLOCK_MESSAGE);
             return;
         }
 

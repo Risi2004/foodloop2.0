@@ -4,23 +4,12 @@ body.admin-mode {
 
 .dashboard {
     display: flex;
-    height: 100vh;
-    overflow: hidden;
-    background: #10221C;
-}
-
-.admin-dashboard {
-    box-sizing: border-box;
-    width: 80%;
-    background-color: #162F26; /* Deep matching nature green canvas for dark accent paneling */
-    color: #ffffff;
+    flex: 1 1 auto;
+    min-width: 0;
     min-height: calc(100vh - 60px);
-    padding: 48px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    margin: 30px;
-    border-radius: 32px;
+    overflow-x: hidden;
     overflow-y: auto;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    background: transparent;
 }
 
 .dashboard-header-row {
@@ -109,9 +98,8 @@ body.admin-mode {
 
 @media screen and (max-width: 1300px) {
     .admin-dashboard {
-        width: 100%;
-        margin: 20px;
-        padding: 30px;
+        margin: 16px;
+        padding: 24px;
     }
 }
 

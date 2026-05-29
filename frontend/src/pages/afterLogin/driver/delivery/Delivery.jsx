@@ -22,10 +22,13 @@ import {
     isPickupWithinDriverRadius,
 } from '../../../../utils/driverRoute';
 import { useNavigate } from 'react-router-dom';
+import { useMaintenance } from '../../../../contexts/MaintenanceContext';
+import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
 import './Delivery.css';
 
 function Delivery() {
     const navigate = useNavigate();
+    const { blockNewOrders } = useMaintenance();
     const [pickups, setPickups] = useState([]);
     const [activeDeliveries, setActiveDeliveries] = useState([]);
     const [selectedPickup, setSelectedPickup] = useState(null);
@@ -199,6 +202,10 @@ function Delivery() {
 
     const handleAcceptOrder = async (pickup) => {
         if (!pickup?.id) return;
+        if (blockNewOrders) {
+            alert(MAINTENANCE_BLOCK_MESSAGE);
+            return;
+        }
         const isCustomerOrder = pickup?.sourceType === 'customer_order';
         if (activeDeliveries.length > 0) {
             alert('You can only have 1 order at a time. Complete your current delivery first.');
@@ -276,6 +283,7 @@ function Delivery() {
 
     const canAcceptSelected =
         !!driverLocation &&
+        !blockNewOrders &&
         (!!(selectedPickup?.totalRouteDistanceFormatted || selectedPickup?.totalEtaFormatted) ||
             selectedPickup?.sourceType === 'customer_order') &&
         activeDeliveries.length === 0;

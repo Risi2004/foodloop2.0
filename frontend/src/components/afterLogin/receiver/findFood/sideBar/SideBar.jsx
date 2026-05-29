@@ -14,6 +14,7 @@ const Sidebar = ({
     claimQuantities = {},
     onClaimQuantityChange,
     getClaimQuantityFor,
+    ordersBlocked = false,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -363,6 +364,7 @@ const Sidebar = ({
                                     : (claimQuantities[item.id] ?? 1)
                             }
                             onClaimQuantityChange={onClaimQuantityChange}
+                            ordersBlocked={ordersBlocked}
                         />
                     ))
                 )}

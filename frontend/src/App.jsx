@@ -56,6 +56,7 @@ import AdminPayoutRequestsPage from "./pages/afterLogin/admin/payoutRequests/Adm
 import AdminOrdersPage from "./pages/afterLogin/admin/orders/AdminOrdersPage";
 import AdminUserMonitoringPage from "./pages/afterLogin/admin/userMonitoring/AdminUserMonitoringPage";
 import AdminFinancePage from "./pages/afterLogin/admin/finance/AdminFinancePage";
+import AdminMaintenancePage from "./pages/afterLogin/admin/maintenance/AdminMaintenancePage";
 
 import CustomerMarketplace from "./pages/afterLogin/customer/marketplace/CustomerMarketplace";
 import CustomerCart from "./pages/afterLogin/customer/cart/CustomerCart";
@@ -175,6 +176,7 @@ function App() {
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="user-monitoring" element={<AdminUserMonitoringPage />} />
           <Route path="finance" element={<AdminFinancePage />} />
+          <Route path="maintenance" element={<AdminMaintenancePage />} />
         </Route>
 
         {/* Customer Routes - Accessible by Customer role */}

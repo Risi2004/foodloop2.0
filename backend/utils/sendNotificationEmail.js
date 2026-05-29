@@ -31,6 +31,9 @@ const {
   payoutRejectedEmail,
   payoutPaidEmail,
   payoutAdminAlertEmail,
+  scheduledMaintenanceAnnouncementEmail,
+  suddenMaintenanceAnnouncementEmail,
+  maintenanceCancelledEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -642,6 +645,145 @@ async function sendPayoutAdminAlertEmail(user, payout) {
   await sendMail({ to, ...tpl });
 }
 
+async function sendMaintenanceAnnouncementEmails({ type, state }) {
+  if (!state || !type) return;
+
+  try {
+    const users = await User.find({
+      isEmailVerified: true,
+      accountStatus: 'active',
+      email: { $exists: true, $ne: '' },
+    })
+      .select('email username receiverName driverName businessName role')
+      .lean();
+
+    if (!users.length) {
+      console.log('[email] No active users to notify about maintenance');
+      return;
+    }
+
+    const loginUrl = getLoginUrl();
+    const isDraining = state.phase === 'sudden_drain';
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      if (!user.email) continue;
+      try {
+        const name = getUserDisplayName(user);
+        let tpl;
+        if (type === 'scheduled') {
+          tpl = scheduledMaintenanceAnnouncementEmail({
+            name,
+            loginUrl,
+            scheduledMessage: state.scheduledMessage,
+            scheduledStart: state.scheduledStart,
+            scheduledEnd: state.scheduledEnd,
+          });
+        } else if (type === 'sudden') {
+          tpl = suddenMaintenanceAnnouncementEmail({
+            name,
+            loginUrl,
+            suddenStartedAt: state.suddenStartedAt,
+            isDraining,
+            deliveriesInProgress: state.ongoingCount ?? 0,
+          });
+        } else {
+          continue;
+        }
+        await sendMail({ to: user.email, ...tpl });
+        sent += 1;
+      } catch (err) {
+        failed += 1;
+        console.error(
+          `[email] Failed maintenance announcement to ${user.email}:`,
+          err.message
+        );
+      }
+    }
+
+    console.log(
+      `[email] Maintenance (${type}) announcements sent=${sent}, failed=${failed}, total=${users.length}`
+    );
+  } catch (err) {
+    console.error('[email] Failed maintenance announcement broadcast:', err.message);
+  }
+}
+
+function sendScheduledMaintenanceAnnouncementEmails(state) {
+  return sendMaintenanceAnnouncementEmails({ type: 'scheduled', state });
+}
+
+function sendSuddenMaintenanceAnnouncementEmails(state) {
+  return sendMaintenanceAnnouncementEmails({ type: 'sudden', state });
+}
+
+function resolveMaintenanceType(payload) {
+  if (payload?.maintenanceType) return payload.maintenanceType;
+  const phase = payload?.phase || '';
+  const mode = payload?.mode || '';
+  if (mode === 'scheduled' || phase.startsWith('scheduled_')) return 'scheduled';
+  if (mode === 'sudden_drain' || mode === 'sudden_active' || phase.startsWith('sudden_')) {
+    return 'sudden';
+  }
+  return 'scheduled';
+}
+
+async function sendMaintenanceCancelledAnnouncementEmails(payload) {
+  if (!payload || payload.reason == null) return;
+
+  try {
+    const users = await User.find({
+      isEmailVerified: true,
+      accountStatus: 'active',
+      email: { $exists: true, $ne: '' },
+    })
+      .select('email username receiverName driverName businessName role')
+      .lean();
+
+    if (!users.length) {
+      console.log('[email] No active users to notify about maintenance cancellation');
+      return;
+    }
+
+    const loginUrl = getLoginUrl();
+    const maintenanceType = resolveMaintenanceType(payload);
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      if (!user.email) continue;
+      try {
+        const name = getUserDisplayName(user);
+        const tpl = maintenanceCancelledEmail({
+          name,
+          loginUrl,
+          maintenanceType,
+          reason: payload.reason,
+          scheduledStart: payload.scheduledStart,
+          scheduledEnd: payload.scheduledEnd,
+          scheduledMessage: payload.scheduledMessage,
+          suddenStartedAt: payload.suddenStartedAt,
+        });
+        await sendMail({ to: user.email, ...tpl });
+        sent += 1;
+      } catch (err) {
+        failed += 1;
+        console.error(
+          `[email] Failed maintenance cancellation email to ${user.email}:`,
+          err.message
+        );
+      }
+    }
+
+    console.log(
+      `[email] Maintenance cancelled (${payload.reason}) emails sent=${sent}, failed=${failed}, total=${users.length}`
+    );
+  } catch (err) {
+    console.error('[email] Failed maintenance cancellation broadcast:', err.message);
+  }
+}
+
 module.exports = {
   getLoginUrl,
   getSupplierMyDonationsUrl,
@@ -677,4 +819,7 @@ module.exports = {
   sendPayoutRejectedEmail,
   sendPayoutPaidEmail,
   sendPayoutAdminAlertEmail,
+  sendScheduledMaintenanceAnnouncementEmails,
+  sendSuddenMaintenanceAnnouncementEmails,
+  sendMaintenanceCancelledAnnouncementEmails,
 };

@@ -1,15 +1,5 @@
 .review-manage-page {
-    box-sizing: border-box;
-    width: 80%;
-    background-color: #162F26; /* Deep nature green canvas */
-    color: #ffffff;
     min-height: calc(100vh - 60px);
-    padding: 48px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    margin: 30px;
-    border-radius: 32px;
-    overflow-y: auto;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
 /* Card Container for Recent Requests */

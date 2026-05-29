@@ -2,6 +2,7 @@ const express = require('express');
 const adminController = require('../controllers/admin.controller');
 const earningsController = require('../controllers/earnings.controller');
 const adminFinanceController = require('../controllers/adminFinance.controller');
+const maintenanceController = require('../controllers/maintenance.controller');
 const { requireAdmin } = require('../middleware/adminAuth');
 
 const router = express.Router();
@@ -26,5 +27,12 @@ router.patch('/payout-requests/:id/mark-paid', earningsController.markPayoutPaid
 
 router.get('/finance/summary', adminFinanceController.getFinanceSummary);
 router.get('/finance/ledger', adminFinanceController.getFinanceLedger);
+
+router.get('/maintenance', maintenanceController.getAdminMaintenance);
+router.put('/maintenance/scheduled', maintenanceController.setScheduled);
+router.post('/maintenance/sudden/start', maintenanceController.startSudden);
+router.post('/maintenance/sudden/activate', maintenanceController.forceSuddenActive);
+router.post('/maintenance/end', maintenanceController.endMaintenance);
+router.post('/maintenance/cancel', maintenanceController.cancelMaintenance);
 
 module.exports = router;

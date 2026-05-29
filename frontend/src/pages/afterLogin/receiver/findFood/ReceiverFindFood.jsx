@@ -21,6 +21,8 @@ import {
 } from '../../../../services/socket';
 import { calculateDistance, formatDistance } from '../../../../utils/distance';
 import { formatExpiryDate } from '../../../../utils/donationDisplay';
+import { useMaintenance } from '../../../../contexts/MaintenanceContext';
+import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
 
 const getTimeAgo = (date) => {
@@ -98,6 +100,7 @@ function isWithinRadius(item) {
 
 const FindFood = () => {
     const navigate = useNavigate();
+    const { blockNewOrders } = useMaintenance();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -316,6 +319,10 @@ const FindFood = () => {
     };
 
     const handleClaim = async (donationId, claimQuantity = 1) => {
+        if (blockNewOrders) {
+            setPaymentNotice(MAINTENANCE_BLOCK_MESSAGE);
+            return;
+        }
         setClaimSaveError(null);
         setPaymentNotice(null);
         setPaidOrderId(null);
@@ -487,6 +494,7 @@ const FindFood = () => {
                         claimQuantities={claimQuantities}
                         onClaimQuantityChange={handleClaimQuantityChange}
                         getClaimQuantityFor={getClaimQuantityFor}
+                        ordersBlocked={blockNewOrders}
                     />
                 </div>
                 <div className="map-section">

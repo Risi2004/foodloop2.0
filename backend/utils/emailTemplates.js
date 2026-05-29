@@ -1054,6 +1054,189 @@ function payoutAdminAlertEmail({ userName, userEmail, role, amount, currency }) 
   return { subject: 'FoodLoop — New payout request', html, text };
 }
 
+function formatMaintenanceDateTime(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-LK', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function scheduledMaintenanceAnnouncementEmail({
+  name,
+  loginUrl,
+  scheduledMessage,
+  scheduledStart,
+  scheduledEnd,
+}) {
+  const message =
+    scheduledMessage?.trim() ||
+    'FoodLoop will be undergoing scheduled maintenance.';
+  const start = formatMaintenanceDateTime(scheduledStart);
+  const end = formatMaintenanceDateTime(scheduledEnd);
+
+  const html = layoutHtml(
+    'Scheduled maintenance notice',
+    [
+      `Hello ${name},`,
+      'FoodLoop has scheduled a maintenance window. Please save your work and plan accordingly.',
+      `<strong>Message:</strong> ${message}`,
+      `<strong>Starts:</strong> ${start}<br/><strong>Ends:</strong> ${end}`,
+      'Before the window, you may see a reminder on your home dashboard. During maintenance, new orders will be paused and the app will show a maintenance screen until the window ends.',
+      `Sign in anytime: <a href="${loginUrl}" style="color: #4CAF50;">${loginUrl}</a>`,
+    ],
+    'Thank you for your patience — FoodLoop'
+  );
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'FoodLoop has scheduled a maintenance window.',
+    '',
+    `Message: ${message}`,
+    `Starts: ${start}`,
+    `Ends: ${end}`,
+    '',
+    'During maintenance, new orders will be paused and the app will show a maintenance screen until the window ends.',
+    '',
+    `Sign in: ${loginUrl}`,
+    '',
+    'Thank you for your patience — FoodLoop',
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — Scheduled maintenance notice',
+    html,
+    text,
+  };
+}
+
+function suddenMaintenanceAnnouncementEmail({
+  name,
+  loginUrl,
+  suddenStartedAt,
+  isDraining,
+  deliveriesInProgress,
+}) {
+  const started = formatMaintenanceDateTime(suddenStartedAt);
+  const drainNote = isDraining
+    ? `New orders are already paused. We are waiting for ${deliveriesInProgress} delivery(ies) still on the road to finish; the full maintenance experience will follow shortly.`
+    : 'New orders are paused and the maintenance experience is active now.';
+
+  const html = layoutHtml(
+    'Urgent maintenance notice',
+    [
+      `Hello ${name},`,
+      'FoodLoop has entered sudden maintenance mode to improve the platform.',
+      `<strong>Started:</strong> ${started}`,
+      drainNote,
+      'Thank you for your patience while we complete this work.',
+      `Sign in: <a href="${loginUrl}" style="color: #4CAF50;">${loginUrl}</a>`,
+    ],
+    'We will be back as soon as possible — FoodLoop'
+  );
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'FoodLoop has entered sudden maintenance mode.',
+    '',
+    `Started: ${started}`,
+    drainNote,
+    '',
+    `Sign in: ${loginUrl}`,
+    '',
+    'We will be back as soon as possible — FoodLoop',
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — Urgent maintenance notice',
+    html,
+    text,
+  };
+}
+
+function maintenanceCancelledEmail({
+  name,
+  loginUrl,
+  maintenanceType,
+  reason,
+  scheduledStart,
+  scheduledEnd,
+  scheduledMessage,
+  suddenStartedAt,
+}) {
+  const isScheduled = maintenanceType === 'scheduled';
+  let title = 'Maintenance update';
+  let headline = 'Maintenance has been cancelled.';
+  let detail =
+    'FoodLoop is available again. You can sign in and use the platform as usual.';
+
+  if (reason === 'auto_completed') {
+    title = 'Scheduled maintenance ended';
+    headline = 'Scheduled maintenance has ended.';
+    detail =
+      'The planned maintenance window is complete. FoodLoop is available again for orders and normal use.';
+  } else if (reason === 'admin_cancel') {
+    title = isScheduled ? 'Scheduled maintenance cancelled' : 'Maintenance cancelled';
+    headline = isScheduled
+      ? 'Scheduled maintenance has been cancelled.'
+      : 'Maintenance has been cancelled.';
+    detail =
+      'An administrator cancelled maintenance. FoodLoop is available again — you can sign in and continue as usual.';
+  } else if (reason === 'admin_end') {
+    title = isScheduled ? 'Maintenance ended' : 'Sudden maintenance ended';
+    headline = isScheduled
+      ? 'Scheduled maintenance has ended early.'
+      : 'Sudden maintenance has ended.';
+    detail =
+      'Maintenance was ended by an administrator. FoodLoop is back to normal operation.';
+  }
+
+  const extra = [];
+  if (isScheduled && (scheduledStart || scheduledEnd)) {
+    const start = formatMaintenanceDateTime(scheduledStart);
+    const end = formatMaintenanceDateTime(scheduledEnd);
+    extra.push(`<strong>Planned window:</strong> ${start} — ${end}`);
+    if (scheduledMessage?.trim()) {
+      extra.push(`<strong>Notice:</strong> ${scheduledMessage.trim()}`);
+    }
+  } else if (!isScheduled && suddenStartedAt) {
+    extra.push(`<strong>Had started:</strong> ${formatMaintenanceDateTime(suddenStartedAt)}`);
+  }
+
+  const html = layoutHtml(
+    title,
+    [`Hello ${name},`, headline, detail, ...extra, `Sign in: <a href="${loginUrl}" style="color: #4CAF50;">${loginUrl}</a>`],
+    'Thank you — FoodLoop'
+  );
+
+  const textLines = [
+    `Hello ${name},`,
+    '',
+    headline,
+    detail,
+    '',
+  ];
+  if (isScheduled && scheduledStart) {
+    textLines.push(
+      `Planned window: ${formatMaintenanceDateTime(scheduledStart)} — ${formatMaintenanceDateTime(scheduledEnd)}`
+    );
+    if (scheduledMessage?.trim()) textLines.push(`Notice: ${scheduledMessage.trim()}`);
+    textLines.push('');
+  } else if (!isScheduled && suddenStartedAt) {
+    textLines.push(`Had started: ${formatMaintenanceDateTime(suddenStartedAt)}`, '');
+  }
+  textLines.push(`Sign in: ${loginUrl}`, '', 'Thank you — FoodLoop');
+
+  const subject = isScheduled
+    ? reason === 'auto_completed'
+      ? 'FoodLoop — Scheduled maintenance ended'
+      : 'FoodLoop — Scheduled maintenance cancelled'
+    : 'FoodLoop — Maintenance ended';
+
+  return { subject, html, text: textLines.join('\n') };
+}
+
 module.exports = {
   otpEmailHtml,
   otpEmailText,
@@ -1087,4 +1270,7 @@ module.exports = {
   payoutRejectedEmail,
   payoutPaidEmail,
   payoutAdminAlertEmail,
+  scheduledMaintenanceAnnouncementEmail,
+  suddenMaintenanceAnnouncementEmail,
+  maintenanceCancelledEmail,
 };

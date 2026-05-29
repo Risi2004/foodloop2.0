@@ -7,12 +7,15 @@ import { getCustomerMarketplaceListings } from '../../../../services/donationApi
 import { mapDonationsToMarketplaceItems } from '../../../../utils/customerMarketplaceMapper';
 import { getListingPriceDisplay } from '../../../../utils/donationDisplay';
 import { customerRoutes } from '../../../../constants/customerRoutes';
+import { useMaintenance } from '../../../../contexts/MaintenanceContext';
+import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
 import './CustomerMarketplace.css';
 
 const CustomerMarketplace = () => {
   const { hash } = useLocation();
   const navigate = useNavigate();
   const { addToCart } = useMarketplace();
+  const { blockNewOrders } = useMaintenance();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -41,12 +44,20 @@ const CustomerMarketplace = () => {
 
   const handleAddToCart = (product) => {
     if (!product.isSell) return;
+    if (blockNewOrders) {
+      window.alert(MAINTENANCE_BLOCK_MESSAGE);
+      return;
+    }
     addToCart(buildCartItem(product));
     showAddedToCartToast(product);
   };
 
   const handleBuyNow = (product) => {
     if (!product.isSell) return;
+    if (blockNewOrders) {
+      window.alert(MAINTENANCE_BLOCK_MESSAGE);
+      return;
+    }
     addToCart(buildCartItem(product));
     navigate(customerRoutes.cart());
   };
@@ -269,6 +280,7 @@ const CustomerMarketplace = () => {
                                 type="button"
                                 className="floating-cart-btn inline-cart-btn"
                                 onClick={() => handleAddToCart(product)}
+                                disabled={blockNewOrders}
                               >
                                 Add to Cart
                               </button>
@@ -276,6 +288,7 @@ const CustomerMarketplace = () => {
                                 type="button"
                                 className="buy-now-btn"
                                 onClick={() => handleBuyNow(product)}
+                                disabled={blockNewOrders}
                               >
                                 Buy Now
                               </button>
@@ -342,6 +355,7 @@ const CustomerMarketplace = () => {
                       handleAddToCart(selectedListing);
                       setSelectedListing(null);
                     }}
+                    disabled={blockNewOrders}
                   >
                     Add to Cart
                   </button>
@@ -352,6 +366,7 @@ const CustomerMarketplace = () => {
                       handleBuyNow(selectedListing);
                       setSelectedListing(null);
                     }}
+                    disabled={blockNewOrders}
                   >
                     Buy Now
                   </button>

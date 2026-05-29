@@ -5,7 +5,7 @@ import winterIcon from '../../../../../assets/icons/afterLogin/donor/new-donatio
 import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Blur.svg';
 import { getListingPriceDisplay } from '../../../../../utils/donationDisplay';
 
-const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity, onClaimQuantityChange }) => {
+const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity, onClaimQuantityChange, ordersBlocked = false }) => {
     const donation = item.donation || item;
     const [isClaiming, setIsClaiming] = useState(false);
     const maxQty = item.impactPeople ?? donation.quantity ?? 1;
@@ -30,7 +30,7 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
     const handleClaimClick = async (e) => {
         e.stopPropagation(); // Prevent card click event
         
-        if (!onClaim || isClaiming) {
+        if (ordersBlocked || !onClaim || isClaiming) {
             return;
         }
 
@@ -78,10 +78,10 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
             <button 
                 className="claim-btn" 
                 onClick={handleClaimClick}
-                disabled={isClaiming || !onClaim}
+                disabled={isClaiming || !onClaim || ordersBlocked}
                 style={{ 
-                    opacity: isClaiming ? 0.6 : 1,
-                    cursor: isClaiming ? 'not-allowed' : 'pointer'
+                    opacity: isClaiming || ordersBlocked ? 0.6 : 1,
+                    cursor: isClaiming || ordersBlocked ? 'not-allowed' : 'pointer'
                 }}
             >
                 {isClaiming
