@@ -27,8 +27,14 @@ const ClaimPaymentModal = ({
 
   if (!isOpen || !checkout) return null;
 
-  const { orderId, amount, currency, itemName } = checkout;
+  const { orderId, amount, currency, itemName, breakdown, discountStatus } = checkout;
   const currencyLabel = currency || 'LKR';
+
+  const formatMoney = (value) =>
+    `${currencyLabel} ${Number(value || 0).toLocaleString('en-LK', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
   const isFormValid = () => {
     const digits = cardNumber.replace(/\D/g, '');
@@ -90,9 +96,47 @@ const ClaimPaymentModal = ({
 
         <div className="claim-payment-summary">
           <p className="claim-payment-item">{itemName}</p>
-          <p className="claim-payment-amount">
-            {currencyLabel} {Number(amount).toLocaleString()}
-          </p>
+          {breakdown ? (
+            <div className="claim-payment-breakdown">
+              {breakdown.claimQuantity > 1 && breakdown.unitPriceAmount != null && (
+                <div className="claim-payment-line">
+                  <span>
+                    {breakdown.claimQuantity} servings × {formatMoney(breakdown.unitPriceAmount)}
+                  </span>
+                  <span>{formatMoney(breakdown.foodSubtotal)}</span>
+                </div>
+              )}
+              {(!breakdown.claimQuantity || breakdown.claimQuantity <= 1) && (
+                <div className="claim-payment-line">
+                  <span>Food subtotal</span>
+                  <span>{formatMoney(breakdown.foodSubtotal)}</span>
+                </div>
+              )}
+              <div className="claim-payment-line">
+                <span>
+                  Delivery ({Number(breakdown.deliveryDistanceKm || 0).toFixed(1)} km × LKR 100/km)
+                </span>
+                <span>{formatMoney(breakdown.deliveryFee)}</span>
+              </div>
+              {breakdown.deliveryDiscount > 0 && (
+                <div className="claim-payment-line claim-payment-line--discount">
+                  <span>Low-income delivery discount (20%)</span>
+                  <span>- {formatMoney(breakdown.deliveryDiscount)}</span>
+                </div>
+              )}
+              <div className="claim-payment-line claim-payment-line--total">
+                <span>Total</span>
+                <span>{formatMoney(breakdown.total ?? amount)}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="claim-payment-amount">{formatMoney(amount)}</p>
+          )}
+          {discountStatus?.eligible && (
+            <p className="claim-payment-discount-note">
+              {discountStatus.remaining} of {discountStatus.monthlyLimit} discounted deliveries left this month
+            </p>
+          )}
         </div>
 
         <form className="claim-payment-form" onSubmit={handleSubmit}>

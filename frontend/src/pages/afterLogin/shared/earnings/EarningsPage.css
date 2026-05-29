@@ -1,0 +1,313 @@
+.earnings-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.earnings-page__header h1 {
+  color: #fff;
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.earnings-page__header p {
+  color: #000;
+  margin: 0 0 24px;
+}
+
+.earnings-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.earnings-card {
+  background: #fff;
+  border: 1px solid #e8ece9;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.earnings-card span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.earnings-card strong {
+  color: #1f4e36;
+  font-size: 1.35rem;
+}
+
+.earnings-card small {
+  color: #4caf50;
+  font-size: 0.8rem;
+}
+
+.earnings-card--highlight {
+  border-color: #4caf50;
+  background: #f6fbf7;
+}
+
+.earnings-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.earnings-panel {
+  background: #fff;
+  border: 1px solid #e8ece9;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.earnings-panel--full {
+  grid-column: 1 / -1;
+}
+
+.earnings-panel h2 {
+  margin: 0 0 12px;
+  color: #1f4e36;
+  font-size: 1.2rem;
+}
+
+.earnings-panel__hint {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+
+.earnings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.earnings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.earnings-form input {
+  border: 1px solid #d9dfd9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+.earnings-form__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.earnings-btn {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.earnings-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.earnings-btn--secondary {
+  background: #fff;
+  color: #1f4e36;
+  border: 1px solid #4caf50;
+}
+
+.earnings-table-wrap {
+  overflow-x: auto;
+}
+
+.earnings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.earnings-table th,
+.earnings-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.earnings-table th {
+  color: #666;
+  font-weight: 600;
+}
+
+.earnings-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef2ee;
+  color: #333;
+}
+
+.earnings-badge--available {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.earnings-badge--locked,
+.earnings-badge--pending {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.earnings-badge--approved {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.earnings-badge--paid,
+.earnings-badge--paid_out {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.earnings-badge--rejected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.earnings-page__message {
+  color: #666;
+}
+
+.earnings-page__error {
+  color: #c62828;
+  margin: 8px 0;
+}
+
+.earnings-page__warning {
+  color: #f57f17;
+  background: #fff8e1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.earnings-explainer {
+  background: #fff;
+  border: 1px solid #e8ece9;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.earnings-explainer h2 {
+  margin: 0 0 16px;
+  color: #1f4e36;
+  font-size: 1.2rem;
+}
+
+.earnings-explainer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.earnings-explainer__card {
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e8ece9;
+}
+
+.earnings-explainer__card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #1f4e36;
+}
+
+.earnings-explainer__card p {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.earnings-explainer__card--card {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.earnings-explainer__card--cod {
+  background: #fff8e1;
+  border-color: #ffcc80;
+}
+
+.earnings-explainer__card--donation {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.earnings-card--cod-stat {
+  border-color: #ffb74d;
+  background: #fffbf0;
+}
+
+.earnings-card--cod-stat small {
+  color: #e65100;
+}
+
+.earnings-pay-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.earnings-pay-badge--cod {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.earnings-pay-badge--card {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.earnings-pay-badge--platform {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.earnings-pay-badge--none {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.earnings-tx-note {
+  display: block;
+  color: #e65100;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .earnings-panels {
+    grid-template-columns: 1fr;
+  }
+}

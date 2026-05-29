@@ -982,6 +982,78 @@ function paymentInvoiceEmail({
   };
 }
 
+function payoutSubmittedEmail({ name, amount, currency, earningsUrl }) {
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">We received your payout request for <strong>${amt}</strong>. Our team will review it shortly.</p>
+      <p style="color: #444; line-height: 1.5;">Track status: <a href="${earningsUrl}" style="color: #4CAF50;">${earningsUrl}</a></p>
+    </div>`;
+  const text = `Hello ${name},\n\nWe received your payout request for ${amt}. Track status: ${earningsUrl}`;
+  return { subject: 'FoodLoop — Payout request submitted', html, text };
+}
+
+function payoutApprovedEmail({ name, amount, currency, earningsUrl, expectedTransferBy }) {
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+  const dueLine = expectedTransferBy
+    ? `Payment of <strong>${amt}</strong> will be credited to your bank account within <strong>2 working days</strong> (by ${expectedTransferBy}).`
+    : `Payment of <strong>${amt}</strong> will be credited to your bank account within <strong>2 working days</strong>.`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your earnings have been verified and your payout request has been approved.</p>
+      <p style="color: #444; line-height: 1.5;">${dueLine}</p>
+      <p style="color: #444; line-height: 1.5;">Details: <a href="${earningsUrl}" style="color: #4CAF50;">${earningsUrl}</a></p>
+    </div>`;
+  const textDue = expectedTransferBy
+    ? `Payment will be credited within 2 working days (by ${expectedTransferBy}).`
+    : 'Payment will be credited within 2 working days.';
+  const text = `Hello ${name},\n\nYour earnings have been verified and your payout request for ${amt} was approved. ${textDue}\nDetails: ${earningsUrl}`;
+  return { subject: 'FoodLoop — Payout verified and approved', html, text };
+}
+
+function payoutRejectedEmail({ name, amount, currency, adminNote, earningsUrl }) {
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+  const note = adminNote ? `<p style="color: #444;">Reason: ${adminNote}</p>` : '';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your payout request for <strong>${amt}</strong> was rejected. The amount is available in your balance again.</p>
+      ${note}
+      <p style="color: #444; line-height: 1.5;">Earnings: <a href="${earningsUrl}" style="color: #4CAF50;">${earningsUrl}</a></p>
+    </div>`;
+  const text = `Hello ${name},\n\nYour payout request for ${amt} was rejected.${adminNote ? `\nReason: ${adminNote}` : ''}\nEarnings: ${earningsUrl}`;
+  return { subject: 'FoodLoop — Payout request update', html, text };
+}
+
+function payoutPaidEmail({ name, amount, currency, earningsUrl }) {
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your payout of <strong>${amt}</strong> has been marked as paid. Thank you for being part of FoodLoop.</p>
+      <p style="color: #444; line-height: 1.5;">Receipt: <a href="${earningsUrl}" style="color: #4CAF50;">${earningsUrl}</a></p>
+    </div>`;
+  const text = `Hello ${name},\n\nYour payout of ${amt} has been paid. Receipt: ${earningsUrl}`;
+  return { subject: 'FoodLoop — Payout completed', html, text };
+}
+
+function payoutAdminAlertEmail({ userName, userEmail, role, amount, currency }) {
+  const amt = `${currency || 'LKR'} ${Number(amount).toLocaleString('en-LK')}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop Admin</h2>
+      <p style="color: #444;">New payout request from ${userName} (${userEmail}) — role: ${role} — amount: ${amt}</p>
+    </div>`;
+  const text = `New payout request: ${userName} (${userEmail}), role ${role}, amount ${amt}`;
+  return { subject: 'FoodLoop — New payout request', html, text };
+}
+
 module.exports = {
   otpEmailHtml,
   otpEmailText,
@@ -1010,4 +1082,9 @@ module.exports = {
   donationDeliveredReceiverEmail,
   customerOrderNewPickupDriverEmail,
   aiPriceReductionAlertEmail,
+  payoutSubmittedEmail,
+  payoutApprovedEmail,
+  payoutRejectedEmail,
+  payoutPaidEmail,
+  payoutAdminAlertEmail,
 };

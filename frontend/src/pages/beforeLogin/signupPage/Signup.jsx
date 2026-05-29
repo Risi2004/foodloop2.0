@@ -42,6 +42,7 @@ function SignupPage() {
     const [successMessage, setSuccessMessage] = useState('');
 
     const [customerIncomeLevel, setCustomerIncomeLevel] = useState('');
+    const [receiverIncomeLevel, setReceiverIncomeLevel] = useState('');
 
     const [formData, setFormData] = useState({
         username: '',
@@ -365,6 +366,12 @@ function SignupPage() {
             const recErr = validateField('receiverName', formData.receiverName);
             if (recErr) newErrors.receiverName = recErr;
             if (!formData.receiverType) newErrors.receiverType = 'Receiver type is required';
+            if (!receiverIncomeLevel) {
+                newErrors.receiverIncomeLevel = 'Please select an income level';
+            }
+            if (receiverIncomeLevel === 'low' && !formData.gramaNiladhariLetter) {
+                newErrors.gramaNiladhariLetter = 'Grama Niladhari letter is required for low income receivers';
+            }
             if (!formData.businessRegFile) newErrors.businessRegFile = 'Business registration file is required';
             if (!formData.addressProofFile) newErrors.addressProofFile = 'Address proof file is required';
         } else if (roleType === 'driver') {
@@ -446,6 +453,10 @@ function SignupPage() {
             } else if (roleType === 'receiver') {
                 submitFormData.append('receiverName', formData.receiverName);
                 submitFormData.append('receiverType', formData.receiverType);
+                submitFormData.append('receiverIncomeLevel', receiverIncomeLevel);
+                if (receiverIncomeLevel === 'low' && formData.gramaNiladhariLetter) {
+                    submitFormData.append('gramaNiladhariLetter', formData.gramaNiladhariLetter);
+                }
                 if (formData.businessRegFile) submitFormData.append('businessRegFile', formData.businessRegFile);
                 if (formData.addressProofFile) submitFormData.append('addressProofFile', formData.addressProofFile);
             } else if (roleType === 'driver') {
@@ -753,6 +764,56 @@ function SignupPage() {
                                         </select>
                                         {errors.receiverType && <span className="error-message">{errors.receiverType}</span>}
                                     </div>
+                                </div>
+                                <div className="income__tier__section">
+                                    <label className="income__tier__label">Income level</label>
+                                    <p className="income__tier__hint">
+                                        Low-income receivers get 20% off delivery fees (up to 20 uses per month). GN letter required for low income.
+                                    </p>
+                                    <div className="income__tier__options">
+                                        <button
+                                            type="button"
+                                            className={`income__tier__card ${receiverIncomeLevel === 'normal' ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setReceiverIncomeLevel('normal');
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    receiverIncomeLevel: undefined,
+                                                    gramaNiladhariLetter: undefined,
+                                                }));
+                                                setFormData((prev) => ({ ...prev, gramaNiladhariLetter: null }));
+                                            }}
+                                        >
+                                            <strong>Normal income</strong>
+                                            <span>Standard delivery rates</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`income__tier__card ${receiverIncomeLevel === 'low' ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setReceiverIncomeLevel('low');
+                                                setErrors((prev) => ({ ...prev, receiverIncomeLevel: undefined }));
+                                            }}
+                                        >
+                                            <strong>Low income</strong>
+                                            <span>Delivery discount — GN letter required</span>
+                                        </button>
+                                    </div>
+                                    {errors.receiverIncomeLevel && (
+                                        <span className="error-message">{errors.receiverIncomeLevel}</span>
+                                    )}
+                                    {receiverIncomeLevel === 'low' && (
+                                        <div className="input__group border__group">
+                                            <label>Grama Niladhari letter</label>
+                                            <span className="file__hint">Upload PDF only (max 10 MB)</span>
+                                            <div className="file__drop" onClick={() => triggerFileUpload('rec-gn-letter-file')}>
+                                                <span>{formData.gramaNiladhariLetter ? formData.gramaNiladhariLetter.name : 'Import or Drag File'}</span>
+                                                <button className="add__file__btn" type="button">Add File</button>
+                                            </div>
+                                            <input type="file" id="rec-gn-letter-file" accept="application/pdf" hidden onChange={(e) => handleFileChange(e, 'gramaNiladhariLetter')} />
+                                            {errors.gramaNiladhariLetter && <span className="error-message">{errors.gramaNiladhariLetter}</span>}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="input__group border__group">
                                     <label>Business Registration Cards</label>

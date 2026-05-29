@@ -39,6 +39,7 @@ const userSchema = new mongoose.Schema(
     businessName: { type: String, trim: true },
     receiverName: { type: String, trim: true },
     receiverType: { type: String, trim: true },
+    receiverIncomeLevel: { type: String, enum: ['normal', 'low'], default: null },
     venueType: {
       type: String,
       enum: ['restaurant', 'wedding_hall'],
@@ -60,6 +61,11 @@ const userSchema = new mongoose.Schema(
 
     customerIncomeLevel: { type: String, enum: ['normal', 'low'], default: null },
     startupDetails: { type: String, default: null },
+
+    payoutBankName: { type: String, default: null, trim: true },
+    payoutAccountName: { type: String, default: null, trim: true },
+    payoutAccountNumber: { type: String, default: null, trim: true },
+    payoutBranch: { type: String, default: null, trim: true },
   },
   { timestamps: true }
 );

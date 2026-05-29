@@ -1,15 +1,17 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import Contact from '../../../../components/beforeLogin/Contact/Contact';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { getCustomerMarketplaceListings } from '../../../../services/donationApi';
 import { mapDonationsToMarketplaceItems } from '../../../../utils/customerMarketplaceMapper';
 import { getListingPriceDisplay } from '../../../../utils/donationDisplay';
+import { customerRoutes } from '../../../../constants/customerRoutes';
 import './CustomerMarketplace.css';
 
 const CustomerMarketplace = () => {
   const { hash } = useLocation();
+  const navigate = useNavigate();
   const { addToCart } = useMarketplace();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,9 +21,44 @@ const CustomerMarketplace = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [selectedListing, setSelectedListing] = useState(null);
+  const [cartToast, setCartToast] = useState(null);
+
+  const buildCartItem = (product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image,
+    price: product.unitPrice ?? product.price,
+    vendorName: product.donorName,
+    listingType: product.listingType,
+  });
+
+  const showAddedToCartToast = (product) => {
+    setCartToast({
+      id: product.id,
+      name: product.name,
+    });
+  };
+
+  const handleAddToCart = (product) => {
+    if (!product.isSell) return;
+    addToCart(buildCartItem(product));
+    showAddedToCartToast(product);
+  };
+
+  const handleBuyNow = (product) => {
+    if (!product.isSell) return;
+    addToCart(buildCartItem(product));
+    navigate(customerRoutes.cart());
+  };
+
+  useEffect(() => {
+    if (!cartToast) return undefined;
+    const timer = setTimeout(() => setCartToast(null), 3500);
+    return () => clearTimeout(timer);
+  }, [cartToast]);
 
   const getMarketplacePriceNode = (listing) => {
-    const display = listing?.priceDisplay || getListingPriceDisplay(listing?.raw || listing);
+    const display = listing?.priceDisplay || getListingPriceDisplay(listing?.raw || listing, { perServing: true });
     if (!listing?.isSell || !display?.hasPrice) return <span className="current-price free">Free donation</span>;
     return (
       <>
@@ -29,6 +66,9 @@ const CustomerMarketplace = () => {
           <span className="previous-price">{display.previous}</span>
         )}
         <span className="current-price">{display.current}</span>
+        {listing.quantity > 1 && (
+          <span className="price-per-piece-hint"> per piece</span>
+        )}
       </>
     );
   };
@@ -212,7 +252,7 @@ const CustomerMarketplace = () => {
                         <div className="social-proof-row">
                           <span>{product.distanceLabel}</span>
                           <span className="separator">|</span>
-                          <span>Qty: {product.quantity}</span>
+                          <span>Available Qty: {product.quantity}</span>
                         </div>
 
                         <div className="card-actions">
@@ -223,24 +263,28 @@ const CustomerMarketplace = () => {
                           >
                             View Details
                           </button>
-                          <button
-                            type="button"
-                            className="floating-cart-btn inline-cart-btn"
-                            disabled={!product.isSell}
-                            onClick={() =>
-                              product.isSell &&
-                              addToCart({
-                                id: product.id,
-                                name: product.name,
-                                image: product.image,
-                                price: product.price,
-                                vendorName: product.donorName,
-                                listingType: product.listingType,
-                              })
-                            }
-                          >
-                            {product.isSell ? 'Add to Cart' : 'Donation'}
-                          </button>
+                          {product.isSell ? (
+                            <>
+                              <button
+                                type="button"
+                                className="floating-cart-btn inline-cart-btn"
+                                onClick={() => handleAddToCart(product)}
+                              >
+                                Add to Cart
+                              </button>
+                              <button
+                                type="button"
+                                className="buy-now-btn"
+                                onClick={() => handleBuyNow(product)}
+                              >
+                                Buy Now
+                              </button>
+                            </>
+                          ) : (
+                            <button type="button" className="floating-cart-btn inline-cart-btn" disabled>
+                              Donation
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -282,14 +326,58 @@ const CustomerMarketplace = () => {
               <p>{selectedListing.description}</p>
               <div className="listing-modal-meta">
                 <p><strong>Supplier:</strong> {selectedListing.donorName} ({selectedListing.donorType})</p>
-                <p><strong>Quantity:</strong> {selectedListing.quantity}</p>
+                <p><strong>Available Qty:</strong> {selectedListing.quantity}</p>
                 <p><strong>Expiry:</strong> {selectedListing.expiryText}</p>
                 <p><strong>Pickup Date:</strong> {selectedListing.pickupDate}</p>
                 <p><strong>Pickup Window:</strong> {selectedListing.pickupWindow}</p>
                 <p><strong>Pickup Address:</strong> {selectedListing.pickupAddress}</p>
                 <p><strong>Distance:</strong> {selectedListing.distanceLabel}</p>
               </div>
+              {selectedListing.isSell && (
+                <div className="listing-modal-actions">
+                  <button
+                    type="button"
+                    className="floating-cart-btn inline-cart-btn"
+                    onClick={() => {
+                      handleAddToCart(selectedListing);
+                      setSelectedListing(null);
+                    }}
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    type="button"
+                    className="buy-now-btn"
+                    onClick={() => {
+                      handleBuyNow(selectedListing);
+                      setSelectedListing(null);
+                    }}
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
+        )}
+
+        {cartToast && (
+          <div className="marketplace-cart-toast" role="status" aria-live="polite">
+            <span className="marketplace-cart-toast__icon" aria-hidden>✓</span>
+            <span className="marketplace-cart-toast__text">
+              <strong>{cartToast.name}</strong> added to cart
+            </span>
+            <Link to={customerRoutes.cart()} className="marketplace-cart-toast__link">
+              View cart
+            </Link>
+            <button
+              type="button"
+              className="marketplace-cart-toast__close"
+              onClick={() => setCartToast(null)}
+              aria-label="Dismiss notification"
+            >
+              ×
+            </button>
           </div>
         )}
       </div>

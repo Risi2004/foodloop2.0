@@ -88,20 +88,18 @@ function DonationMedia({ onImageUploaded, onAnalysisComplete, onError, onAnalysi
                 onImageUploaded(result.imageUrl);
             }
 
-            // Always pass predictions if they exist, even if incomplete
-            // If predictions are null but imageUrl exists, AI was unavailable but image uploaded successfully
             if (onAnalysisComplete) {
                 if (result.predictions) {
-                    console.log('[DonationMedia] Passing predictions to form:', result.predictions);
-                    onAnalysisComplete(result.predictions);
+                    onAnalysisComplete(result.predictions, { manualEntryMode: false });
                 } else if (result.imageUrl) {
-                    console.warn('[DonationMedia] No predictions in result, but image uploaded successfully');
-                    // Image uploaded but AI unavailable - user can fill form manually
-                    onAnalysisComplete(null);
+                    onAnalysisComplete(null, { manualEntryMode: Boolean(result.aiAnalysisFailed) });
                 } else {
-                    console.warn('[DonationMedia] No predictions and no image URL');
-                    onAnalysisComplete(null);
+                    onAnalysisComplete(null, { manualEntryMode: false });
                 }
+            }
+
+            if (result.aiAnalysisFailed && onError) {
+                onError('ℹ️ Image uploaded successfully. AI analysis is temporarily unavailable. Please fill the form manually.');
             }
 
             setAnalyzing(false);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MapContainer, Marker, useMapEvents } from 'react-leaflet';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -170,6 +171,26 @@ const LocationMapModal = ({
     }, [loadFromCoords]);
 
     useEffect(() => {
+        if (!isOpen) return undefined;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape' && !saving && !actionLoading) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [isOpen, saving, actionLoading, onClose]);
+
+    useEffect(() => {
         if (!isOpen) return;
 
         const savedAddress = (initialPickupAddress || '').trim();
@@ -303,11 +324,17 @@ const LocationMapModal = ({
     const displayError = saveError || error;
     const overlayMessage = saving ? savingMessage : loadingMessage;
 
-    return (
-        <div className="location-map-modal-overlay" onClick={handleCancel}>
+    const modal = (
+        <div
+            className="location-map-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="location-map-modal-title"
+            onClick={handleCancel}
+        >
             <div className="location-map-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="location-map-modal-header">
-                    <h2>{title}</h2>
+                    <h2 id="location-map-modal-title">{title}</h2>
                     <button type="button" className="location-map-modal-close" onClick={handleCancel}>
                         ×
                     </button>
@@ -402,6 +429,9 @@ const LocationMapModal = ({
             </div>
         </div>
     );
+
+    if (typeof document === 'undefined') return modal;
+    return createPortal(modal, document.body);
 };
 
 export default LocationMapModal;

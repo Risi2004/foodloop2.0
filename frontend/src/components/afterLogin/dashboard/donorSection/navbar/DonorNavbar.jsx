@@ -133,6 +133,7 @@ function Navbar() {
                     <Link to="/supplier/about">About Us</Link>
                     <Link to="/supplier/dashboard#contact">Contact Us</Link>
                     <Link to="/supplier/my-donation">My Listings</Link>
+                    <Link to="/supplier/earnings">Earnings</Link>
                 </div>
 
                 <div className="navbar__s3">
@@ -207,6 +208,7 @@ function Navbar() {
                         <Link to="/supplier/about" onClick={toggleMenu}>About Us</Link>
                         <Link to="/supplier/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
                         <Link to="/supplier/my-donation" onClick={toggleMenu}>My Listings</Link>
+                        <Link to="/supplier/earnings" onClick={toggleMenu}>Earnings</Link>
                         <Link to="/supplier/profile" onClick={toggleMenu}>View Profile</Link>
                         <div className="navbar__popup__action">
                             <button

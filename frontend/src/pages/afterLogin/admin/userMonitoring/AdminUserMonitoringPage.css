@@ -1,0 +1,147 @@
+.admin-user-monitoring-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  min-height: 520px;
+}
+
+.admin-user-monitoring-sidebar,
+.admin-user-monitoring-main {
+  background: #F6F8F7;
+  border: 1px solid #DBE6E0;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.admin-user-monitoring-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-user-monitoring-filters input,
+.admin-user-monitoring-filters select {
+  border: 1px solid #DBE6E0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #2E4E3F;
+  font-size: 0.9rem;
+}
+
+.admin-user-monitoring-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.admin-user-monitoring-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #DBE6E0;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.admin-user-monitoring-item.active {
+  border-color: #73A13F;
+  background: #E8F5E9;
+}
+
+.admin-user-monitoring-item strong {
+  color: #1F4E36;
+  font-size: 0.95rem;
+}
+
+.admin-user-monitoring-item span {
+  font-size: 0.8rem;
+  color: #618972;
+}
+
+.admin-user-monitoring-role {
+  font-weight: 700;
+  color: #73A13F !important;
+  text-transform: capitalize;
+}
+
+.admin-user-monitoring-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.admin-user-monitoring-counts span {
+  background: #E8F5E9;
+  color: #1F4E36;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem !important;
+  font-weight: 700;
+}
+
+.admin-user-monitoring-main-header h2 {
+  margin: 0 0 4px;
+  color: #1F4E36;
+  font-size: 1.35rem;
+}
+
+.admin-user-monitoring-main-header p {
+  margin: 0 0 12px;
+  color: #618972;
+}
+
+.admin-user-monitoring-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #2E4E3F;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.admin-user-monitoring-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #618972;
+  font-weight: 600;
+}
+
+/* Pagination sits on light panels — override dark-theme white button text */
+.admin-user-monitoring-sidebar .admin-pagination button,
+.admin-user-monitoring-main .admin-pagination button {
+  border: 1px solid #DBE6E0;
+  background: #E8F5E9;
+  color: #1F4E36;
+}
+
+.admin-user-monitoring-sidebar .admin-pagination button:hover:not(:disabled),
+.admin-user-monitoring-main .admin-pagination button:hover:not(:disabled) {
+  background: #C8E6C9;
+}
+
+.admin-user-monitoring-sidebar .admin-pagination span,
+.admin-user-monitoring-main .admin-pagination span {
+  color: #1F4E36;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .admin-user-monitoring-layout {
+    grid-template-columns: 1fr;
+  }
+}

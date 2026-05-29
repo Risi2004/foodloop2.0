@@ -4,6 +4,9 @@ import managementIcon from "../../../../assets/icons/afterLogin/admin/management
 import notificationIcon from "../../../../assets/icons/afterLogin/admin/notifications.svg";
 import reviewIcon from "../../../../assets/icons/afterLogin/admin/review.svg";
 import messageIcon from "../../../../assets/icons/afterLogin/admin/messages.svg"
+import payoutIcon from "../../../../assets/icons/afterLogin/admin/payout.svg";
+import ordersIcon from "../../../../assets/icons/afterLogin/admin/orders.svg";
+import monitoringIcon from "../../../../assets/icons/afterLogin/admin/monitoring.svg";
 import menuIcon from "../../../../assets/icons/navbar/menu-bar.svg";
 import { useState } from 'react';
 import './AdminSideNavbar.css'
@@ -39,6 +42,18 @@ function AdminSideNavbar() {
                         <Link to="/admin/user-management">User Management</Link>
                     </div>
                     <div className='sidebar__links'>
+                        <img src={payoutIcon} alt="" />
+                        <Link to="/admin/payout-requests">Payout Requests</Link>
+                    </div>
+                    <div className='sidebar__links'>
+                        <img src={ordersIcon} alt="" />
+                        <Link to="/admin/orders">All Orders</Link>
+                    </div>
+                    <div className='sidebar__links'>
+                        <img src={monitoringIcon} alt="" />
+                        <Link to="/admin/user-monitoring">User Monitoring</Link>
+                    </div>
+                    <div className='sidebar__links'>
                         <img src={notificationIcon} alt="" />
                         <Link to="/admin/notification">Notification</Link>
                     </div>
@@ -69,6 +84,9 @@ function AdminSideNavbar() {
                     <p onClick={toggleMenu}>X</p>
                     <Link to="/admin/dashboard" onClick={toggleMenu}>Dashboard Overview</Link>
                     <Link to="/admin/user-management" onClick={toggleMenu}>User Management</Link>
+                    <Link to="/admin/payout-requests" onClick={toggleMenu}>Payout Requests</Link>
+                    <Link to="/admin/orders" onClick={toggleMenu}>All Orders</Link>
+                    <Link to="/admin/user-monitoring" onClick={toggleMenu}>User Monitoring</Link>
                     <Link to="/admin/notification" onClick={toggleMenu}>Notification</Link>
                     <Link to="/admin/reviews" onClick={toggleMenu}>Reviews</Link>
                     <Link to="/admin/messages" onClick={toggleMenu}>Messages</Link>

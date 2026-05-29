@@ -5,9 +5,11 @@ import winterIcon from '../../../../../assets/icons/afterLogin/donor/new-donatio
 import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Blur.svg';
 import { getListingPriceDisplay } from '../../../../../utils/donationDisplay';
 
-const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
+const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity, onClaimQuantityChange }) => {
     const donation = item.donation || item;
     const [isClaiming, setIsClaiming] = useState(false);
+    const maxQty = item.impactPeople ?? donation.quantity ?? 1;
+    const qty = claimQuantity ?? 1;
     const storageText = donation.storageRecommendation || 'N/A';
     const storageIconSrc = donation.storageRecommendation === 'Hot' ? sunIcon :
                            donation.storageRecommendation === 'Cold' ? winterIcon :
@@ -17,7 +19,7 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
     const showAIBadge = donation.aiQualityScore !== null && 
                        donation.aiQualityScore !== undefined && 
                        donation.aiQualityScore >= 0.8;
-    const priceDisplay = getListingPriceDisplay(donation);
+    const priceDisplay = getListingPriceDisplay(donation, { perServing: true });
 
     const handleCardClick = () => {
         if (onCardClick) {
@@ -40,7 +42,7 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
 
         setIsClaiming(true);
         try {
-            await onClaim(donationId);
+            await onClaim(donationId, qty);
         } catch (error) {
             console.error('[FoodCard] Error claiming donation:', error);
             // Error handling is done in parent component
@@ -60,16 +62,17 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
                     <span className="card-badge-text">AI Verified</span>
                 </div>
             )}
-            {priceDisplay.hasPrice ? (
+            {priceDisplay.hasPrice && (
                 <div className="card-badge card-badge--price">
                     {priceDisplay.hasDiscountApplied && (
                         <span className="card-badge-text card-price-old">{priceDisplay.previous}</span>
                     )}
                     <span className="card-badge-text">{priceDisplay.current}</span>
                 </div>
-            ) : (
+            )}
+            {item.estimatedDeliveryFee > 0 && (
                 <div className="card-badge delivery-fee">
-                    <span className="card-badge-text">Delivery: LKR 200</span>
+                    <span className="card-badge-text">Delivery from LKR {item.estimatedDeliveryFee.toLocaleString('en-LK')}</span>
                 </div>
             )}
             <button 
@@ -109,12 +112,29 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false }) => {
                     )}
                     {priceDisplay.hasPrice && (
                         <p className="card-meta card-meta--price">
-                            Price:{' '}
+                            Price per serving:{' '}
                             {priceDisplay.hasDiscountApplied && (
                                 <span className="card-price-old">{priceDisplay.previous} </span>
                             )}
                             <span>{priceDisplay.current}</span>
                         </p>
+                    )}
+
+                    {maxQty > 1 && onClaimQuantityChange && (
+                        <div className="card-claim-qty" onClick={(e) => e.stopPropagation()}>
+                            <label htmlFor={`claim-qty-${item.id}`}>Servings to claim</label>
+                            <input
+                                id={`claim-qty-${item.id}`}
+                                type="number"
+                                min={1}
+                                max={maxQty}
+                                value={qty}
+                                onChange={(e) => {
+                                    const next = Math.min(maxQty, Math.max(1, parseInt(e.target.value, 10) || 1));
+                                    onClaimQuantityChange(item.id, next);
+                                }}
+                            />
+                        </div>
                     )}
 
                     <div className="card-qty">

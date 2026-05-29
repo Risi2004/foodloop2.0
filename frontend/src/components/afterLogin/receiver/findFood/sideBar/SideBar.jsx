@@ -11,6 +11,9 @@ const Sidebar = ({
     selectedItemId,
     locationRequired = false,
     maxRadiusKm = 25,
+    claimQuantities = {},
+    onClaimQuantityChange,
+    getClaimQuantityFor,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -354,6 +357,12 @@ const Sidebar = ({
                             onCardClick={onCardClick}
                             onClaim={onClaim}
                             selected={item.id === selectedItemId}
+                            claimQuantity={
+                                getClaimQuantityFor
+                                    ? getClaimQuantityFor(item.id)
+                                    : (claimQuantities[item.id] ?? 1)
+                            }
+                            onClaimQuantityChange={onClaimQuantityChange}
                         />
                     ))
                 )}

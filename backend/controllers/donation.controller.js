@@ -30,6 +30,16 @@ const {
   sendDonationClaimCancelledEmails,
 } = require('../utils/sendNotificationEmail');
 const { verifyPaidPaymentForClaim } = require('./payment.controller');
+const {
+  buildReceiverDeliveryQuoteForDonation,
+  paymentMatchesDeliveryQuote,
+  DELIVERY_QUOTE_RATE_LKR,
+} = require('../utils/receiverDeliveryQuote');
+const {
+  computeClaimFoodSubtotal,
+  forkClaimFromListing,
+  restoreParentQuantityOnCancel,
+} = require('../utils/donationClaimFork');
 
 const DONOR_ROLES = [
   'donor',
@@ -83,6 +93,8 @@ function parseListingAndPrice(listingType, priceAmount) {
   return { listing, price };
 }
 
+const HARD_REJECT_VISION_CODES = new Set(['AI_GENERATED_IMAGE']);
+
 exports.analyzeImage = async (req, res) => {
   try {
     const file = req.file;
@@ -94,26 +106,47 @@ exports.analyzeImage = async (req, res) => {
       });
     }
 
-    const predictions = await analyzeFoodImage(file.buffer, file.mimetype);
     const imageUrl = await uploadDonationImage({
       userId: req.user._id.toString(),
       file,
     });
 
-    return res.json({
-      success: true,
-      imageUrl,
-      predictions,
-    });
-  } catch (err) {
-    if (err instanceof FoodVisionError) {
-      return res.status(err.statusCode).json({
-        success: false,
-        code: err.code,
-        message: err.message,
+    try {
+      const predictions = await analyzeFoodImage(file.buffer, file.mimetype);
+      return res.json({
+        success: true,
+        imageUrl,
+        predictions,
+        aiAnalysisFailed: false,
+      });
+    } catch (visionErr) {
+      if (visionErr instanceof FoodVisionError && HARD_REJECT_VISION_CODES.has(visionErr.code)) {
+        return res.status(visionErr.statusCode).json({
+          success: false,
+          code: visionErr.code,
+          message: visionErr.message,
+        });
+      }
+
+      const failureCode =
+        visionErr instanceof FoodVisionError ? visionErr.code : 'GEMINI_UNAVAILABLE';
+      const failureMessage =
+        visionErr instanceof FoodVisionError
+          ? visionErr.message
+          : visionErr.message || 'Food image analysis is temporarily unavailable.';
+
+      console.warn('[analyzeImage] AI analysis failed after upload; allowing manual entry:', failureMessage);
+
+      return res.json({
+        success: true,
+        imageUrl,
+        predictions: null,
+        aiAnalysisFailed: true,
+        aiFailureCode: failureCode,
+        message: failureMessage,
       });
     }
-
+  } catch (err) {
     console.error('analyzeImage error:', err);
     return res.status(500).json({
       success: false,
@@ -216,6 +249,7 @@ exports.createDonation = async (req, res) => {
       foodCategory: foodCategory.trim(),
       itemName: itemName.trim(),
       quantity: qty,
+      initialQuantity: qty,
       storageRecommendation: storageRecommendation.trim(),
       imageUrl: imageUrl.trim(),
       preferredPickupDate,
@@ -284,7 +318,11 @@ exports.getAvailableDonations = async (req, res) => {
       });
     }
 
-    const donations = await Donation.find({ status: 'available' })
+    const donations = await Donation.find({
+      status: 'available',
+      parentListingId: null,
+      quantity: { $gt: 0 },
+    })
       .populate('donorId', 'username businessName role')
       .sort({ createdAt: -1 });
 
@@ -327,6 +365,67 @@ exports.getAvailableDonations = async (req, res) => {
   }
 };
 
+exports.getDeliveryQuote = async (req, res) => {
+  try {
+    if (!isReceiverRole(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only receivers can request delivery quotes.',
+      });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid donation id.' });
+    }
+
+    const lat = req.query.lat;
+    const lng = req.query.lng;
+    const claimQuantity = Math.max(1, Math.round(Number(req.query.quantity) || 1));
+
+    const donation = await Donation.findById(id);
+    if (!donation) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+    if (donation.status !== 'available' || donation.parentListingId) {
+      return res.status(400).json({
+        success: false,
+        message: 'This listing is no longer available.',
+      });
+    }
+    if (claimQuantity > donation.quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Only ${donation.quantity} serving(s) available.`,
+      });
+    }
+
+    const quoteResult = await buildReceiverDeliveryQuoteForDonation(
+      donation,
+      req.user,
+      lat,
+      lng,
+      claimQuantity
+    );
+    if (quoteResult.error) {
+      return res.status(400).json({ success: false, message: quoteResult.error });
+    }
+
+    return res.json({
+      success: true,
+      quote: quoteResult,
+      itemName: donation.itemName || 'Food listing',
+      listingType: donation.listingType,
+    });
+  } catch (err) {
+    console.error('getDeliveryQuote error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to calculate delivery quote',
+    });
+  }
+};
+
 exports.claimDonation = async (req, res) => {
   try {
     if (!isReceiverRole(req.user.role)) {
@@ -343,6 +442,7 @@ exports.claimDonation = async (req, res) => {
 
     const body = req.body || {};
     const { receiverLatitude, receiverLongitude, receiverAddress } = body;
+    const claimQuantity = Math.max(1, Math.round(Number(body.claimQuantity) || 1));
     const lat = Number(receiverLatitude);
     const lng = Number(receiverLongitude);
 
@@ -365,24 +465,31 @@ exports.claimDonation = async (req, res) => {
       });
     }
 
-    const donation = await Donation.findById(id);
-    if (!donation) {
+    const parentListing = await Donation.findById(id);
+    if (!parentListing) {
       return res.status(404).json({ success: false, message: 'Donation not found.' });
     }
-    if (donation.status !== 'available') {
+    if (parentListing.status !== 'available' || parentListing.parentListingId) {
       return res.status(400).json({
         success: false,
         message: 'This donation is no longer available.',
       });
     }
-    if (isDonationExpired(donation.userProvidedExpiryDate)) {
+    if (isDonationExpired(parentListing.userProvidedExpiryDate)) {
       return res.status(400).json({
         success: false,
         message: 'This donation has expired.',
       });
     }
+    if (claimQuantity > parentListing.quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Only ${parentListing.quantity} serving(s) available.`,
+      });
+    }
 
-    if (donation.listingType === 'sell' && donation.priceAmount > 0) {
+    let payment = null;
+    if (parentListing.listingType === 'sell' && parentListing.priceAmount > 0) {
       const paymentOrderId = body.paymentOrderId?.trim();
       if (!paymentOrderId) {
         return res.status(402).json({
@@ -392,7 +499,7 @@ exports.claimDonation = async (req, res) => {
       }
       const paymentCheck = await verifyPaidPaymentForClaim({
         paymentOrderId,
-        donationId: donation._id,
+        donationId: parentListing._id,
         receiverId: req.user._id,
       });
       if (!paymentCheck.ok) {
@@ -401,38 +508,116 @@ exports.claimDonation = async (req, res) => {
           message: paymentCheck.message,
         });
       }
+      payment = paymentCheck.payment;
+      if (!paymentMatchesDeliveryQuote(payment, lat, lng)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Delivery location does not match your paid checkout. Please pay again with the correct location.',
+        });
+      }
+      const summary = payment.orderSummary || {};
+      const expectedFood = computeClaimFoodSubtotal(parentListing, claimQuantity);
+      const paidQty = Math.max(1, Math.round(Number(summary.claimQuantity) || 1));
+      if (paidQty !== claimQuantity) {
+        return res.status(400).json({
+          success: false,
+          message: 'Claim quantity does not match your paid checkout.',
+        });
+      }
+      const paidFood = Number(summary.foodSubtotal ?? 0);
+      if (Math.abs(paidFood - expectedFood) > 0.01) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment amount does not match the selected quantity.',
+        });
+      }
     }
 
-    donation.status = 'claimed';
-    donation.receiverId = req.user._id;
-    donation.receiverLatitude = lat;
-    donation.receiverLongitude = lng;
-    donation.receiverAddress = receiverAddress.trim();
-    donation.claimedAt = new Date();
-    await donation.save();
+    let parent;
+    let child;
+    try {
+      ({ parent, child } = await forkClaimFromListing({
+        parentId: parentListing._id,
+        claimQuantity,
+        receiverId: req.user._id,
+        receiverLatitude: lat,
+        receiverLongitude: lng,
+        receiverAddress: receiverAddress.trim(),
+      }));
+    } catch (forkErr) {
+      if (forkErr.statusCode === 409) {
+        return res.status(409).json({ success: false, message: forkErr.message });
+      }
+      throw forkErr;
+    }
 
-    await donation.populate([
+    if (parentListing.listingType === 'sell' && parentListing.priceAmount > 0 && payment) {
+      const summary = payment.orderSummary || {};
+      child.deliveryDistanceKm = summary.deliveryDistanceKm ?? null;
+      child.deliveryFeeQuoted = summary.deliveryFeeAfterDiscount ?? summary.deliveryFee ?? 0;
+      child.deliveryFeeDiscount = summary.deliveryDiscount ?? 0;
+      child.deliveryQuotedRatePerKm = summary.deliveryQuotedRatePerKm ?? DELIVERY_QUOTE_RATE_LKR;
+      child.deliveryPayer = 'receiver';
+    } else {
+      const quoteResult = await buildReceiverDeliveryQuoteForDonation(
+        parentListing,
+        req.user,
+        lat,
+        lng,
+        claimQuantity
+      );
+      if (quoteResult.error) {
+        await restoreParentQuantityOnCancel(child);
+        child.status = 'cancelled';
+        await child.save();
+        return res.status(400).json({ success: false, message: quoteResult.error });
+      }
+      child.deliveryDistanceKm = quoteResult.distanceKm;
+      child.deliveryFeeQuoted = 0;
+      child.deliveryFeeDiscount = 0;
+      child.deliveryQuotedRatePerKm = DELIVERY_QUOTE_RATE_LKR;
+      child.deliveryPayer = 'platform';
+    }
+
+    await child.save();
+
+    await child.populate([
       { path: 'donorId', select: 'username businessName role email' },
       { path: 'receiverId', select: 'username receiverName email' },
     ]);
 
-    const donationId = donation._id.toString();
-    const donorId = donation.donorId._id?.toString?.() || donation.donorId.toString();
-    const claimPayload = toClaimJSON(donation);
+    const childId = child._id.toString();
+    const parentId = parent._id.toString();
+    const donorId = child.donorId._id?.toString?.() || child.donorId.toString();
+    const claimPayload = toClaimJSON(child);
+    const parentPayload = toAvailableDonationJSON(parent, null);
 
-    emitToReceivers('donation:claimed', { donationId });
+    if (parent.quantity > 0) {
+      emitToReceivers('donation:stockUpdated', {
+        donationId: parentId,
+        donation: parentPayload,
+        claimedChildId: childId,
+      });
+    } else {
+      emitToReceivers('donation:claimed', { donationId: parentId });
+    }
+
     emitToDonor(donorId, 'donation:claimedForDonor', {
-      donationId,
+      donationId: childId,
+      parentListingId: parentId,
       donorId,
       donation: claimPayload,
+      parentListing: parentPayload,
     });
-    emitToDrivers('donation:newPickup', { donationId, donation: claimPayload });
+    emitToDrivers('donation:newPickup', { donationId: childId, donation: claimPayload });
 
-    sendDonationClaimedEmails(donation, donation.donorId, donation.receiverId);
+    sendDonationClaimedEmails(child, child.donorId, child.receiverId);
 
     return res.json({
       success: true,
       donation: claimPayload,
+      parentListing: parentPayload,
+      claimQuantity,
     });
   } catch (err) {
     console.error('claimDonation error:', err);
@@ -483,27 +668,48 @@ exports.cancelClaim = async (req, res) => {
 
     const receiverUser = donation.receiverId;
     const donorUser = donation.donorId;
+    const parentListingId = donation.parentListingId?.toString?.() || null;
 
-    donation.status = 'available';
     donation.receiverId = null;
     donation.receiverLatitude = null;
     donation.receiverLongitude = null;
     donation.receiverAddress = null;
     donation.claimedAt = null;
-    await donation.save();
+
+    let parentPayload = null;
+    if (parentListingId) {
+      donation.status = 'cancelled';
+      await donation.save();
+      const parent = await restoreParentQuantityOnCancel(donation);
+      if (parent) {
+        parentPayload = toAvailableDonationJSON(parent, null);
+      }
+    } else {
+      donation.status = 'available';
+      await donation.save();
+      parentPayload = donation.toPublicJSON();
+    }
 
     const donationId = donation._id.toString();
     const donorId = donorUser._id?.toString?.() || donorUser.toString();
-    const availablePayload = donation.toPublicJSON();
 
-    emitToReceivers('donation:claimCancelled', {
-      donationId,
-      donation: availablePayload,
-    });
+    if (parentListingId && parentPayload) {
+      emitToReceivers('donation:stockUpdated', {
+        donationId: parentListingId,
+        donation: parentPayload,
+      });
+    } else {
+      emitToReceivers('donation:claimCancelled', {
+        donationId,
+        donation: parentPayload,
+      });
+    }
+
     emitToDonor(donorId, 'donation:claimCancelledForDonor', {
       donationId,
       donorId,
-      donation: availablePayload,
+      donation: donation.toPublicJSON(),
+      parentListing: parentPayload,
     });
     emitToDrivers('donation:claimCancelled', { donationId });
 
@@ -511,8 +717,11 @@ exports.cancelClaim = async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Claim cancelled. The listing is available for receivers again.',
-      donation: availablePayload,
+      message: parentListingId
+        ? 'Claim cancelled. Servings returned to the listing.'
+        : 'Claim cancelled. The listing is available for receivers again.',
+      donation: donation.toPublicJSON(),
+      parentListing: parentPayload,
     });
   } catch (err) {
     console.error('cancelClaim error:', err);
@@ -664,7 +873,18 @@ exports.updateDonation = async (req, res) => {
       if (!qty || qty < 1) {
         return res.status(400).json({ success: false, message: 'Quantity must be at least 1.' });
       }
+      const initialQty = donation.initialQuantity ?? donation.quantity;
+      const claimedQty = Math.max(0, initialQty - donation.quantity);
+      if (qty < claimedQty) {
+        return res.status(400).json({
+          success: false,
+          message: `Quantity cannot be less than ${claimedQty} already claimed.`,
+        });
+      }
       donation.quantity = qty;
+      if (!donation.parentListingId) {
+        donation.initialQuantity = qty;
+      }
     }
     if (storageRecommendation !== undefined) {
       if (!storageRecommendation?.trim()) {

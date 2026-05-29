@@ -130,6 +130,7 @@ function Navbar() {
                     <Link to="/driver/dashboard#contact">Contact Us</Link>
                     <Link to="/driver/delivery">Delivery</Link>
                     <Link to="/driver/my-pickups">My Pickups</Link>
+                    <Link to="/driver/earnings">Earnings</Link>
                 </div>
 
                 <div className="navbar__s3">
@@ -199,6 +200,7 @@ function Navbar() {
                         <Link to="/driver/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
                         <Link to="/driver/delivery" onClick={toggleMenu}>Delivery</Link>
                         <Link to="/driver/my-pickups" onClick={toggleMenu}>My Pickups</Link>
+                        <Link to="/driver/earnings" onClick={toggleMenu}>Earnings</Link>
                         <Link to="/driver/profile" onClick={toggleMenu}>View Profile</Link>
                         <div className="navbar__popup__action">
                             <button

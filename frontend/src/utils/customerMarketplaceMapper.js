@@ -43,8 +43,18 @@ export function mapDonationToMarketplaceItem(donation = {}) {
   const priceAmount = listingType === 'sell' && !Number.isNaN(amount) && amount > 0 ? amount : 0;
   const quantity = Number(donation.quantity);
   const safeQuantity = Number.isNaN(quantity) || quantity < 1 ? 1 : quantity;
+  const initialQtyRaw = Number(donation.initialQuantity ?? donation.quantity);
+  const initialQuantity =
+    Number.isNaN(initialQtyRaw) || initialQtyRaw < 1 ? safeQuantity : initialQtyRaw;
+  const unitPriceFromApi = Number(donation.unitPriceAmount);
+  const unitPrice =
+    listingType === 'sell' && !Number.isNaN(unitPriceFromApi) && unitPriceFromApi > 0
+      ? unitPriceFromApi
+      : priceAmount > 0 && initialQuantity > 0
+        ? Math.round((priceAmount / initialQuantity) * 100) / 100
+        : 0;
   const category = toTitleCase(donation.foodCategory);
-  const priceDisplay = getListingPriceDisplay(donation);
+  const priceDisplay = getListingPriceDisplay(donation, { perServing: true });
 
   return {
     id: donation.id || donation._id || `listing-${Math.random().toString(16).slice(2)}`,
@@ -53,15 +63,18 @@ export function mapDonationToMarketplaceItem(donation = {}) {
     description: normalizeText(donation.storageRecommendation, 'No description provided'),
     category,
     quantity: safeQuantity,
+    availableQuantity: safeQuantity,
+    initialQuantity,
     listingType,
     isDonation: listingType === 'donate',
     isSell: listingType === 'sell',
-    price: priceAmount,
+    price: unitPrice,
+    unitPrice,
     priceCurrency: normalizeText(donation.priceCurrency, 'LKR'),
     priceLabel:
       normalizeText(donation.priceLabel) ||
       (listingType === 'sell'
-        ? `LKR ${priceAmount.toLocaleString('en-LK', {
+        ? `LKR ${unitPrice.toLocaleString('en-LK', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}`

@@ -63,7 +63,49 @@ export function getDiscountedPriceDetails(donation) {
   };
 }
 
-export function getListingPriceDisplay(donation) {
+export function getUnitPriceDisplay(donation) {
+  if (!donation) return null;
+  if ((donation.listingType || '').toLowerCase() !== 'sell') return null;
+  const unitAmount = Number(donation.unitPriceAmount);
+  if (!Number.isNaN(unitAmount) && unitAmount > 0) {
+    const currency = (donation.priceCurrency || 'LKR').trim();
+    return `${currency} ${unitAmount.toLocaleString('en-LK', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+  const total = Number(donation.priceAmount);
+  const qty = Number(donation.initialQuantity ?? donation.quantity);
+  if (Number.isNaN(total) || total <= 0 || !qty || qty <= 0) return null;
+  const currency = (donation.priceCurrency || 'LKR').trim();
+  const perUnit = total / qty;
+  return `${currency} ${perUnit.toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function getListingPriceDisplay(donation, { perServing = false } = {}) {
+  if (perServing) {
+    const unitFormatted = getUnitPriceDisplay(donation);
+    if (!unitFormatted) {
+      return {
+        hasPrice: false,
+        hasDiscountApplied: false,
+        current: null,
+        previous: null,
+        isPerServing: true,
+      };
+    }
+    return {
+      hasPrice: true,
+      hasDiscountApplied: false,
+      current: unitFormatted,
+      previous: null,
+      isPerServing: true,
+    };
+  }
+
   const discounted = getDiscountedPriceDetails(donation);
   if (discounted) {
     return {

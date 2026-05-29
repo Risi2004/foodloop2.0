@@ -82,6 +82,24 @@
     border: 1px solid #dcfce7;
 }
 
+.delivery__earnings-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.delivery__cod-badge {
+    background: #fff8e1;
+    color: #e65100;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid #ffcc80;
+    white-space: nowrap;
+}
+
 .delivery__earnings-badge.earned {
     background: #f1f5f9;
     color: #475569;

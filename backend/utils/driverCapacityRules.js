@@ -1,6 +1,7 @@
 const VEHICLE_LIMITS = {
   motorbike: 18,
   three_wheeler: 45,
+  car: 80,
   van: 120,
   truck: 260,
 };
@@ -18,6 +19,8 @@ const CATEGORY_WEIGHTS = {
 function normalizeVehicleType(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (!raw) return 'motorbike';
+  if (raw.includes('scooter')) return 'motorbike';
+  if (raw.includes('car')) return 'car';
   if (raw.includes('bike') || raw.includes('motor')) return 'motorbike';
   if (raw.includes('three') || raw.includes('3wheel') || raw.includes('tuk')) return 'three_wheeler';
   if (raw.includes('van')) return 'van';

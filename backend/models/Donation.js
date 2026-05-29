@@ -7,6 +7,13 @@ const donationSchema = new mongoose.Schema(
     foodCategory: { type: String, required: true, trim: true },
     itemName: { type: String, required: true, trim: true },
     quantity: { type: Number, required: true, min: 1 },
+    initialQuantity: { type: Number, default: null, min: 1 },
+    parentListingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Donation',
+      default: null,
+      index: true,
+    },
     storageRecommendation: { type: String, required: true, trim: true },
     imageUrl: { type: String, required: true, trim: true },
     preferredPickupDate: { type: String, required: true, trim: true },
@@ -66,6 +73,19 @@ const donationSchema = new mongoose.Schema(
       index: true,
     },
     trackingId: { type: String, unique: true, sparse: true, trim: true },
+
+    deliveryDistanceKm: { type: Number, default: null, min: 0 },
+    deliveryFeeQuoted: { type: Number, default: null, min: 0 },
+    deliveryFeeDiscount: { type: Number, default: null, min: 0 },
+    deliveryFeeFinal: { type: Number, default: null, min: 0 },
+    deliveryPayer: {
+      type: String,
+      enum: ['receiver', 'platform'],
+      default: null,
+    },
+    deliveryQuotedRatePerKm: { type: Number, default: null, min: 0 },
+    deliveryFinalRatePerKm: { type: Number, default: null, min: 0 },
+    deliveryVehicleTier: { type: String, default: null, trim: true },
   },
   { timestamps: true }
 );
@@ -82,6 +102,15 @@ donationSchema.pre('save', function generateTrackingId() {
 donationSchema.methods.toPublicJSON = function toPublicJSON() {
   const obj = this.toObject();
   const id = obj._id.toString();
+  const initialQuantity = obj.initialQuantity != null ? obj.initialQuantity : obj.quantity;
+  const listingType = (obj.listingType || '').toLowerCase();
+  let unitPriceAmount = null;
+  if (listingType === 'sell' && obj.priceAmount != null && initialQuantity > 0) {
+    const total = Number(obj.priceAmount);
+    if (!Number.isNaN(total) && total > 0) {
+      unitPriceAmount = Math.round((total / initialQuantity) * 100) / 100;
+    }
+  }
 
   return {
     id,
@@ -91,6 +120,9 @@ donationSchema.methods.toPublicJSON = function toPublicJSON() {
     foodCategory: obj.foodCategory,
     itemName: obj.itemName,
     quantity: obj.quantity,
+    initialQuantity,
+    parentListingId: obj.parentListingId?.toString?.() || obj.parentListingId || null,
+    unitPriceAmount,
     storageRecommendation: obj.storageRecommendation,
     imageUrl: obj.imageUrl,
     preferredPickupDate: obj.preferredPickupDate,
@@ -134,6 +166,14 @@ donationSchema.methods.toPublicJSON = function toPublicJSON() {
     deliveredAt: obj.deliveredAt || null,
     status: obj.status,
     trackingId: obj.trackingId,
+    deliveryDistanceKm: obj.deliveryDistanceKm ?? null,
+    deliveryFeeQuoted: obj.deliveryFeeQuoted ?? null,
+    deliveryFeeDiscount: obj.deliveryFeeDiscount ?? null,
+    deliveryFeeFinal: obj.deliveryFeeFinal ?? null,
+    deliveryPayer: obj.deliveryPayer ?? null,
+    deliveryQuotedRatePerKm: obj.deliveryQuotedRatePerKm ?? null,
+    deliveryFinalRatePerKm: obj.deliveryFinalRatePerKm ?? null,
+    deliveryVehicleTier: obj.deliveryVehicleTier ?? null,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
   };

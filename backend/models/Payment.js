@@ -43,6 +43,8 @@ const paymentSchema = new mongoose.Schema(
       deliveryFee: { type: Number, min: 0, default: 0 },
       total: { type: Number, min: 0, default: 0 },
       address: { type: String, default: '' },
+      customerLatitude: { type: Number, default: null },
+      customerLongitude: { type: Number, default: null },
       paymentMethod: { type: String, default: 'card' },
     },
     status: {

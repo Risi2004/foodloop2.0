@@ -26,12 +26,18 @@ const {
   paymentInvoiceEmail,
   customerOrderNewPickupDriverEmail,
   aiPriceReductionAlertEmail,
+  payoutSubmittedEmail,
+  payoutApprovedEmail,
+  payoutRejectedEmail,
+  payoutPaidEmail,
+  payoutAdminAlertEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
   getReceiverDisplayName,
   getDriverDisplayName,
 } = require('./donationHelpers');
+const { formatTransferDueDate } = require('./workingDays');
 
 function getFrontendBase() {
   return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
@@ -557,6 +563,85 @@ async function sendAiPriceReductionToReceiversAndCustomers({ donation, oldPrice,
   }
 }
 
+function getDriverEarningsUrl() {
+  return `${getFrontendBase()}/driver/earnings`;
+}
+
+function getSupplierEarningsUrl() {
+  return `${getFrontendBase()}/supplier/earnings`;
+}
+
+function getEarningsUrlForUser(user) {
+  const role = (user?.role || '').toLowerCase();
+  if (role === 'driver') return getDriverEarningsUrl();
+  return getSupplierEarningsUrl();
+}
+
+async function sendPayoutSubmittedEmail(user, payout) {
+  if (!user?.email) return;
+  const name = getUserDisplayName(user);
+  const tpl = payoutSubmittedEmail({
+    name,
+    amount: payout.amount,
+    currency: payout.currency,
+    earningsUrl: getEarningsUrlForUser(user),
+  });
+  await sendMail({ to: user.email, ...tpl });
+}
+
+async function sendPayoutApprovedEmail(user, payout) {
+  if (!user?.email) return;
+  const name = getUserDisplayName(user);
+  const tpl = payoutApprovedEmail({
+    name,
+    amount: payout.amount,
+    currency: payout.currency,
+    earningsUrl: getEarningsUrlForUser(user),
+    expectedTransferBy: payout.expectedTransferBy
+      ? formatTransferDueDate(payout.expectedTransferBy)
+      : null,
+  });
+  await sendMail({ to: user.email, ...tpl });
+}
+
+async function sendPayoutRejectedEmail(user, payout) {
+  if (!user?.email) return;
+  const name = getUserDisplayName(user);
+  const tpl = payoutRejectedEmail({
+    name,
+    amount: payout.amount,
+    currency: payout.currency,
+    adminNote: payout.adminNote,
+    earningsUrl: getEarningsUrlForUser(user),
+  });
+  await sendMail({ to: user.email, ...tpl });
+}
+
+async function sendPayoutPaidEmail(user, payout) {
+  if (!user?.email) return;
+  const name = getUserDisplayName(user);
+  const tpl = payoutPaidEmail({
+    name,
+    amount: payout.amount,
+    currency: payout.currency,
+    earningsUrl: getEarningsUrlForUser(user),
+  });
+  await sendMail({ to: user.email, ...tpl });
+}
+
+async function sendPayoutAdminAlertEmail(user, payout) {
+  const to = process.env.SMTP_FROM || process.env.SMTP_USER;
+  if (!to) return;
+  const tpl = payoutAdminAlertEmail({
+    userName: getUserDisplayName(user),
+    userEmail: user.email,
+    role: user.role,
+    amount: payout.amount,
+    currency: payout.currency,
+  });
+  await sendMail({ to, ...tpl });
+}
+
 module.exports = {
   getLoginUrl,
   getSupplierMyDonationsUrl,
@@ -587,4 +672,9 @@ module.exports = {
   sendPaymentInvoiceEmail,
   sendCustomerOrderNewPickupToDrivers,
   sendAiPriceReductionToReceiversAndCustomers,
+  sendPayoutSubmittedEmail,
+  sendPayoutApprovedEmail,
+  sendPayoutRejectedEmail,
+  sendPayoutPaidEmail,
+  sendPayoutAdminAlertEmail,
 };

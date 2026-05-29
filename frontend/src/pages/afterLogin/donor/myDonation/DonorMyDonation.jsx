@@ -10,23 +10,29 @@ function DonorMyDontaion() {
     const [imageUrl, setImageUrl] = useState(null);
     const [error, setError] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [manualEntryMode, setManualEntryMode] = useState(false);
 
-    const handleAnalysisComplete = (predictions) => {
+    const handleAnalysisComplete = (predictions, options = {}) => {
         setAiPredictions(predictions);
-        setError(null);
+        setManualEntryMode(Boolean(options.manualEntryMode));
+        if (!options.manualEntryMode) {
+            setError(null);
+        }
     };
 
     const handleImageUploaded = (url) => {
         setImageUrl(url || null);
         if (!url) {
             setAiPredictions(null);
+            setManualEntryMode(false);
         }
     };
 
     const handleError = (errorMessage) => {
         setError(errorMessage);
-        // Clear predictions on error
-        setAiPredictions(null);
+        if (errorMessage && !String(errorMessage).includes('temporarily unavailable')) {
+            setAiPredictions(null);
+        }
     };
 
     return (
@@ -46,6 +52,7 @@ function DonorMyDontaion() {
                             imageUrl={imageUrl}
                             error={error}
                             isAnalyzing={isAnalyzing}
+                            manualEntryMode={manualEntryMode}
                         />
                     </main>
                 </div>

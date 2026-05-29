@@ -1,5 +1,10 @@
 const User = require('../models/User');
 const {
+  listAllOrders,
+  getOrderDetail,
+  getUserMonitoringList,
+} = require('../services/adminOrdersService');
+const {
   sendAccountApprovedEmail,
   sendAccountRejectedEmail,
   sendAccountDeactivatedEmail,
@@ -207,5 +212,71 @@ exports.updateUserStatus = async (req, res) => {
   } catch (err) {
     console.error('updateUserStatus error:', err);
     return res.status(500).json({ success: false, message: 'Failed to update user status' });
+  }
+};
+
+exports.getAllOrders = async (req, res) => {
+  try {
+    const { type, status, search, page, limit, dateFrom, dateTo } = req.query;
+    const result = await listAllOrders({ type, status, search, page, limit, dateFrom, dateTo });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('getAllOrders error:', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Failed to load orders',
+    });
+  }
+};
+
+exports.getOrderDetail = async (req, res) => {
+  try {
+    const { orderType, id } = req.params;
+    const order = await getOrderDetail(orderType, id);
+    return res.json({ success: true, order });
+  } catch (err) {
+    console.error('getOrderDetail error:', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Failed to load order detail',
+    });
+  }
+};
+
+exports.getUserMonitoring = async (req, res) => {
+  try {
+    const { search, role, status, page, limit } = req.query;
+    const result = await getUserMonitoringList({ search, role, status, page, limit });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('getUserMonitoring error:', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Failed to load user monitoring data',
+    });
+  }
+};
+
+exports.getUserOrders = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, status, search, page, limit, dateFrom, dateTo } = req.query;
+    const result = await listAllOrders({
+      type,
+      status,
+      search,
+      page,
+      limit,
+      dateFrom,
+      dateTo,
+      userId: id,
+    });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('getUserOrders error:', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Failed to load user orders',
+    });
   }
 };

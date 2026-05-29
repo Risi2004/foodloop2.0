@@ -101,6 +101,10 @@ export function onDonationClaimed(handler) {
   return subscribe('donation:claimed', handler);
 }
 
+export function onDonationStockUpdated(handler) {
+  return subscribe('donation:stockUpdated', handler);
+}
+
 export function onDonationClaimedForDonor(handler) {
   return subscribe('donation:claimedForDonor', handler);
 }

@@ -26,6 +26,10 @@ function DeliveryCard({
     const expiryText = donation.expiryText || 'Expiry unknown';
     const totalRoute = donation.totalRouteDistanceFormatted;
     const totalEta = donation.totalEtaFormatted;
+    const isCod = (donation.paymentMethod || donation.donation?.paymentMethod || '').toLowerCase() === 'cod';
+    const codAmount = Number(donation.codAmount || donation.donation?.codAmount || 0);
+    const deliveryFee = Number(donation.deliveryFee || donation.donation?.deliveryFee || donation.earnings || 350);
+    const bankPayout = Number(donation.earnings || deliveryFee || 350);
 
     let acceptTitle = 'Accept order';
     if (hasActiveDelivery) {
@@ -49,8 +53,15 @@ function DeliveryCard({
         >
             <div className="delivery__card__s1">
                 <h4>{donorName}</h4>
-                <div className="delivery__earnings-badge">
-                    Earn: LKR {donation.earnings || 350}
+                <div className="delivery__earnings-badges">
+                    {isCod && (
+                        <div className="delivery__cod-badge">
+                            COD · Collect LKR {codAmount.toLocaleString('en-LK')}
+                        </div>
+                    )}
+                    <div className="delivery__earnings-badge">
+                        Bank payout: LKR {bankPayout.toLocaleString('en-LK')}
+                    </div>
                 </div>
             </div>
             <p style={{ marginBottom: "15px" }}>{itemName} • {quantity}</p>

@@ -14,6 +14,7 @@ import {
     getSocket,
     onDonationCreated,
     onDonationClaimed,
+    onDonationStockUpdated,
     onDonationCancelled,
     onDonationClaimCancelled,
     MAX_RECEIVER_RADIUS_KM,
@@ -83,6 +84,10 @@ function transformDonationToItem(donation, receiverPosition) {
         priceAmount: donation.priceAmount,
         priceCurrency: donation.priceCurrency,
         discountMeta: donation.discountMeta || null,
+        estimatedDeliveryFee:
+            donation.listingType === 'sell' && distanceKm != null
+                ? Math.round(distanceKm * 100)
+                : null,
     };
 }
 
@@ -109,6 +114,28 @@ const FindFood = () => {
     const [paymentNotice, setPaymentNotice] = useState(null);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [paymentCheckout, setPaymentCheckout] = useState(null);
+    const [pendingClaimLocation, setPendingClaimLocation] = useState(null);
+    const [claimIsSellFlow, setClaimIsSellFlow] = useState(false);
+    const [pendingClaimQuantity, setPendingClaimQuantity] = useState(1);
+    const [claimQuantities, setClaimQuantities] = useState({});
+
+    const getClaimQuantityFor = (donationId) => claimQuantities[donationId] ?? 1;
+
+    const handleClaimQuantityChange = (donationId, qty) => {
+        setClaimQuantities((prev) => ({ ...prev, [donationId]: qty }));
+    };
+
+    const applyParentListingAfterClaim = useCallback((prev, donationId, parentListing) => {
+        if (!parentListing || parentListing.quantity <= 0) {
+            return prev.filter((item) => item.id !== donationId);
+        }
+        if (!receiverPosition) return prev;
+        const updatedItem = transformDonationToItem(parentListing, receiverPosition);
+        if (!isWithinRadius(updatedItem)) {
+            return prev.filter((item) => item.id !== donationId);
+        }
+        return prev.map((item) => (item.id === donationId ? updatedItem : item));
+    }, [receiverPosition]);
 
     const fetchDonations = useCallback(async (lat, lng) => {
         try {
@@ -180,25 +207,44 @@ const FindFood = () => {
         };
 
         const mergeClaimCancelled = (payload) => {
-            const donation = payload?.donation;
-            if (!donation || !receiverPosition) return;
-            const item = transformDonationToItem(donation, receiverPosition);
+            const parentListing = payload?.parentListing || payload?.donation;
+            if (!parentListing || !receiverPosition) return;
+            const item = transformDonationToItem(parentListing, receiverPosition);
             if (!isWithinRadius(item)) return;
             setItems((prev) => {
-                if (prev.some((i) => i.id === item.id)) return prev;
+                if (prev.some((i) => i.id === item.id)) {
+                    return prev.map((i) => (i.id === item.id ? item : i));
+                }
                 return [item, ...prev];
             });
             refreshFromServer();
         };
 
+        const mergeStockUpdated = (payload) => {
+            const donation = payload?.donation;
+            if (!donation || !receiverPosition) return;
+            const item = transformDonationToItem(donation, receiverPosition);
+            if (!isWithinRadius(item)) {
+                setItems((prev) => prev.filter((i) => i.id !== item.id));
+                return;
+            }
+            setItems((prev) => {
+                const exists = prev.some((i) => i.id === item.id);
+                if (!exists) return [item, ...prev];
+                return prev.map((i) => (i.id === item.id ? item : i));
+            });
+        };
+
         const unsubCreated = onDonationCreated(mergeCreated);
         const unsubClaimed = onDonationClaimed(removeById);
+        const unsubStockUpdated = onDonationStockUpdated(mergeStockUpdated);
         const unsubCancelled = onDonationCancelled(removeById);
         const unsubClaimCancelled = onDonationClaimCancelled(mergeClaimCancelled);
 
         return () => {
             unsubCreated();
             unsubClaimed();
+            unsubStockUpdated();
             unsubCancelled();
             unsubClaimCancelled();
         };
@@ -220,50 +266,69 @@ const FindFood = () => {
         setShowLocationModal(false);
     };
 
-    const handlePaymentSuccess = (orderId) => {
-        const donationId = paymentCheckout?.donationId;
-        const item = items.find((i) => i.id === donationId);
+    const handlePaymentSuccess = async (orderId) => {
+        const donationId = paymentCheckout?.donationId || claimingDonationId;
+        const location = pendingClaimLocation;
         setPaymentModalOpen(false);
         setPaymentCheckout(null);
-        setPaidOrderId(orderId);
-        setClaimingDonationId(donationId);
-        setClaimLocationModalOpen(true);
-        const priceText = item?.priceLabel || (item?.priceAmount ? `LKR ${item.priceAmount}` : '');
-        setPaymentNotice(
-            priceText
-                ? `Payment received (${priceText}). Set your delivery location.`
-                : 'Payment received. Set your delivery location.'
-        );
+
+        if (!donationId || !location) {
+            setPaymentNotice('Payment received. Please claim again from the listing.');
+            return;
+        }
+
+        setClaimSaving(true);
+        setClaimSaveError(null);
+        const claimQuantity = paymentCheckout?.claimQuantity ?? pendingClaimQuantity;
+        try {
+            const response = await claimDonation(donationId, {
+                receiverLatitude: location.lat,
+                receiverLongitude: location.lng,
+                receiverAddress: location.address || '',
+                paymentOrderId: orderId,
+                claimQuantity,
+            });
+            if (response.success) {
+                setReceiverPosition([location.lat, location.lng]);
+                setReceiverAddress(location.address || 'Location set');
+                setItems((prev) =>
+                    applyParentListingAfterClaim(prev, donationId, response.parentListing)
+                );
+                setSelectedItemId((current) => {
+                    if (response.parentListing?.quantity > 0 && current === donationId) return donationId;
+                    return current === donationId ? null : current;
+                });
+                setClaimingDonationId(null);
+                setPendingClaimLocation(null);
+                setPendingClaimQuantity(1);
+                setClaimIsSellFlow(false);
+                setPaidOrderId(null);
+                setPaymentNotice(null);
+                navigate('/receiver/my-claims');
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || err.message || 'Failed to claim after payment.';
+            setClaimSaveError(msg);
+            setPaymentNotice(msg);
+        } finally {
+            setClaimSaving(false);
+        }
     };
 
-    const handleClaim = async (donationId) => {
+    const handleClaim = async (donationId, claimQuantity = 1) => {
         setClaimSaveError(null);
         setPaymentNotice(null);
+        setPaidOrderId(null);
+        setPendingClaimLocation(null);
+        setPendingClaimQuantity(claimQuantity);
 
         const item = items.find((i) => i.id === donationId);
         const isSell =
             item?.listingType === 'sell' &&
             (item?.priceAmount > 0 || (item?.donation?.priceAmount > 0));
 
-        if (isSell) {
-            setPaidOrderId(null);
-            const checkout = await createClaimCheckout(donationId);
-            if (!checkout?.orderId) {
-                throw new Error('Invalid payment response from server.');
-            }
-            setPaymentCheckout({
-                orderId: checkout.orderId,
-                amount: checkout.amount,
-                currency: checkout.currency,
-                itemName: checkout.itemName,
-                donationId,
-            });
-            setPaymentModalOpen(true);
-            return;
-        }
-
-        setPaidOrderId(null);
         setClaimingDonationId(donationId);
+        setClaimIsSellFlow(Boolean(isSell));
         setClaimLocationModalOpen(true);
     };
 
@@ -271,27 +336,65 @@ const FindFood = () => {
         const donationId = claimingDonationId;
         if (!donationId) return;
 
+        if (claimIsSellFlow) {
+            setClaimSaving(true);
+            setClaimSaveError(null);
+            try {
+                const checkout = await createClaimCheckout(
+                    donationId,
+                    lat,
+                    lng,
+                    pendingClaimQuantity
+                );
+                if (!checkout?.orderId) {
+                    throw new Error('Invalid payment response from server.');
+                }
+                setPendingClaimLocation({ lat, lng, address: address || '' });
+                setPaymentCheckout({
+                    orderId: checkout.orderId,
+                    amount: checkout.amount,
+                    currency: checkout.currency,
+                    itemName: checkout.itemName,
+                    donationId,
+                    claimQuantity: pendingClaimQuantity,
+                    breakdown: checkout.breakdown,
+                    discountStatus: checkout.discountStatus,
+                });
+                setClaimLocationModalOpen(false);
+                setPaymentModalOpen(true);
+            } catch (err) {
+                const msg = err.response?.data?.message || err.message || 'Failed to start checkout.';
+                setClaimSaveError(msg);
+                throw new Error(msg);
+            } finally {
+                setClaimSaving(false);
+            }
+            return;
+        }
+
         setClaimSaving(true);
         setClaimSaveError(null);
         try {
-            const claimPayload = {
+            const response = await claimDonation(donationId, {
                 receiverLatitude: lat,
                 receiverLongitude: lng,
                 receiverAddress: address || '',
-            };
-            if (paidOrderId) {
-                claimPayload.paymentOrderId = paidOrderId;
-            }
-
-            const response = await claimDonation(donationId, claimPayload);
+                claimQuantity: pendingClaimQuantity,
+            });
             if (response.success) {
                 setReceiverPosition([lat, lng]);
                 setReceiverAddress(address || 'Location set');
-                setItems((prev) => prev.filter((item) => item.id !== donationId));
-                setSelectedItemId((current) => (current === donationId ? null : current));
+                setItems((prev) =>
+                    applyParentListingAfterClaim(prev, donationId, response.parentListing)
+                );
+                setSelectedItemId((current) => {
+                    if (response.parentListing?.quantity > 0 && current === donationId) return donationId;
+                    return current === donationId ? null : current;
+                });
                 setClaimLocationModalOpen(false);
                 setClaimingDonationId(null);
-                setPaidOrderId(null);
+                setPendingClaimQuantity(1);
+                setClaimIsSellFlow(false);
                 setPaymentNotice(null);
                 navigate('/receiver/my-claims');
             }
@@ -381,6 +484,9 @@ const FindFood = () => {
                         selectedItemId={selectedItemId}
                         locationRequired={locationRequired}
                         maxRadiusKm={MAX_RECEIVER_RADIUS_KM}
+                        claimQuantities={claimQuantities}
+                        onClaimQuantityChange={handleClaimQuantityChange}
+                        getClaimQuantityFor={getClaimQuantityFor}
                     />
                 </div>
                 <div className="map-section">
@@ -425,6 +531,8 @@ const FindFood = () => {
                     setClaimingDonationId(null);
                     setClaimSaveError(null);
                     setPaidOrderId(null);
+                    setPendingClaimLocation(null);
+                    setClaimIsSellFlow(false);
                 }}
                 onConfirm={handleClaimLocationConfirm}
                 defaultAddress={receiverAddress || profileAddress}
@@ -433,8 +541,8 @@ const FindFood = () => {
                 autoFetchOnOpen={!receiverPosition}
                 saving={claimSaving}
                 saveError={claimSaveError}
-                title="Set delivery location"
-                confirmLabel="Confirm & claim"
+                title={claimIsSellFlow ? 'Set delivery location' : 'Set delivery location'}
+                confirmLabel={claimIsSellFlow ? 'Continue to payment' : 'Confirm & claim'}
                 addressLabel="Delivery address"
                 addressPlaceholder="Enter where you want the food delivered"
             />

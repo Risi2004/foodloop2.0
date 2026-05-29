@@ -16,6 +16,7 @@ const routingRoutes = require('./routes/routing.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const customerOrderRoutes = require('./routes/customerOrder.routes');
 const weatherRoutes = require('./routes/weather.routes');
+const earningsRoutes = require('./routes/earnings.routes');
 const { isR2Configured } = require('./config/r2');
 const { setIO, attachSocketAuth } = require('./socket');
 
@@ -114,6 +115,7 @@ app.use('/api/routing', routingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/customer-orders', customerOrderRoutes);
 app.use('/api/weather', weatherRoutes);
+app.use('/api/earnings', earningsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

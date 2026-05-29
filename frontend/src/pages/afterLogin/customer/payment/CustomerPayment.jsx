@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
+import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { getUser } from '../../../../utils/auth';
 import { customerRoutes } from '../../../../constants/customerRoutes';
@@ -27,8 +28,13 @@ const CustomerPayment = () => {
   const user = getUser();
 
   const [paymentMethod, setPaymentMethod] = useState('card');
-  const [address, setAddress] = useState(user?.address || '123 Main Street, Colombo, Sri Lanka');
-  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [address, setAddress] = useState(user?.address || '');
+  const [deliveryLat, setDeliveryLat] = useState(null);
+  const [deliveryLng, setDeliveryLng] = useState(null);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [pendingPaymentMethod, setPendingPaymentMethod] = useState('card');
+  const [locationModalPurpose, setLocationModalPurpose] = useState('payment');
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -67,7 +73,7 @@ const CustomerPayment = () => {
     }
   }, [cart, showSuccess, navigate]);
 
-  const buildCheckoutPayload = (method = 'card') => {
+  const buildCheckoutPayload = (method = 'card', lat = deliveryLat, lng = deliveryLng, deliveryAddress = address) => {
     const items = cart.map((item) => ({
       id: item.id,
       name: item.name,
@@ -79,19 +85,20 @@ const CustomerPayment = () => {
       subtotal,
       deliveryFee: getDeliveryFee(),
       total,
-      address,
+      address: deliveryAddress,
+      customerLatitude: lat,
+      customerLongitude: lng,
       paymentMethod: method,
       discountOffer: discountOfferPayload,
     };
   };
 
-  const handleConfirmPayment = () => {
-    if (isProcessing) return;
+  const proceedWithPayment = (method, lat, lng, deliveryAddress) => {
     setPageError('');
 
-    if (paymentMethod === 'cod') {
+    if (method === 'cod') {
       setIsProcessing(true);
-      placeCustomerCodOrder(buildCheckoutPayload('cod'))
+      placeCustomerCodOrder(buildCheckoutPayload('cod', lat, lng, deliveryAddress))
         .then((res) => {
           setPlacedOrderId(res?.orderId || '');
           setShowSuccess(true);
@@ -107,7 +114,7 @@ const CustomerPayment = () => {
     }
 
     setIsProcessing(true);
-    createCustomerCheckout(buildCheckoutPayload('card'))
+    createCustomerCheckout(buildCheckoutPayload('card', lat, lng, deliveryAddress))
       .then((res) => {
         setCheckout(res);
         setIsPaymentModalOpen(true);
@@ -120,6 +127,31 @@ const CustomerPayment = () => {
       });
   };
 
+  const handleConfirmPayment = () => {
+    if (isProcessing) return;
+    setPageError('');
+    setPendingPaymentMethod(paymentMethod);
+    setLocationModalPurpose('payment');
+    setLocationModalOpen(true);
+  };
+
+  const handleLocationConfirm = async (lat, lng, confirmedAddress) => {
+    setDeliveryLat(lat);
+    setDeliveryLng(lng);
+    setAddress(confirmedAddress);
+    setLocationConfirmed(true);
+    setLocationModalOpen(false);
+
+    if (locationModalPurpose === 'payment') {
+      proceedWithPayment(pendingPaymentMethod, lat, lng, confirmedAddress);
+    }
+  };
+
+  const openLocationPreview = () => {
+    setLocationModalPurpose('preview');
+    setLocationModalOpen(true);
+  };
+
   const handleCardPaymentSuccess = () => {
     setPlacedOrderId(checkout?.orderId || '');
     setIsPaymentModalOpen(false);
@@ -128,9 +160,14 @@ const CustomerPayment = () => {
     clearCart();
   };
 
-  const isFormValid = () => {
-    return address.length > 5;
-  };
+  const isFormValid = () => cart.length > 0;
+
+  const locationConfirmLabel =
+    locationModalPurpose === 'payment'
+      ? pendingPaymentMethod === 'cod'
+        ? 'Confirm & place order'
+        : 'Confirm & continue to payment'
+      : 'Save delivery location';
 
   const successPopup = showSuccess ? (
     <div className="success-overlay">
@@ -170,24 +207,22 @@ const CustomerPayment = () => {
           <div className="payment-options-section">
             <div className="payment-card customer-panel address-box">
               <div className="card-header">
-                <h3>Delivery Address</h3>
+                <h3>Delivery Location</h3>
                 <button
                   type="button"
                   className="edit-btn"
-                  onClick={() => setIsEditingAddress(!isEditingAddress)}
+                  onClick={openLocationPreview}
                 >
-                  {isEditingAddress ? 'Save' : 'Edit'}
+                  {locationConfirmed ? 'Change on map' : 'Set on map'}
                 </button>
               </div>
-              {isEditingAddress ? (
-                <textarea
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="address-textarea"
-                  rows={3}
-                />
-              ) : (
+              {locationConfirmed && address ? (
                 <p className="address-display">{address}</p>
+              ) : (
+                <p className="address-display address-display--hint">
+                  You will confirm your delivery location on the map when you proceed to payment.
+                  Live location is used to pin your address accurately.
+                </p>
               )}
             </div>
 
@@ -289,7 +324,7 @@ const CustomerPayment = () => {
                 {isProcessing ? (
                   <span className="loader">Processing...</span>
                 ) : (
-                  <>{paymentMethod === 'cod' ? 'Confirm Cash on Delivery' : 'Continue to Payment'}</>
+                  <>{paymentMethod === 'cod' ? 'Confirm location & place order' : 'Confirm location & pay'}</>
                 )}
               </button>
               {pageError && <p className="payment-page-error">{pageError}</p>}
@@ -309,6 +344,27 @@ const CustomerPayment = () => {
         }}
         checkout={checkout}
         onSuccess={handleCardPaymentSuccess}
+      />
+
+      <LocationMapModal
+        isOpen={locationModalOpen}
+        onClose={() => {
+          if (isProcessing) return;
+          setLocationModalOpen(false);
+        }}
+        onConfirm={handleLocationConfirm}
+        defaultAddress={address || user?.address || ''}
+        defaultLat={deliveryLat ?? undefined}
+        defaultLng={deliveryLng ?? undefined}
+        autoFetchOnOpen={locationModalPurpose === 'payment' || !locationConfirmed}
+        saving={isProcessing}
+        saveError={pageError}
+        title="Confirm delivery location"
+        confirmLabel={locationConfirmLabel}
+        addressLabel="Delivery address"
+        addressPlaceholder="Enter your delivery address"
+        instructions="Allow live location or drag the marker to set where your order should be delivered."
+        savingMessage="Placing order…"
       />
     </CustomerPageLayout>
   );

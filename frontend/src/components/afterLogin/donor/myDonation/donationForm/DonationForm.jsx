@@ -21,7 +21,7 @@ import './DonationForm.css';
 const getTimeString = (d) =>
     `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
-function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialData, isAnalyzing = false }) {
+function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialData, isAnalyzing = false, manualEntryMode = false }) {
     const navigate = useNavigate();
     const isEditMode = !!editDonationId && !!initialData;
     const isFormLocked = !isEditMode && (!imageUrl || isAnalyzing);
@@ -117,7 +117,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         const isTimeRangeValid = hasPickupTimeFrom && hasPickupTimeTo && pickupTimeFrom < pickupTimeTo;
         
         // Check quality score (must be >= 80% or 0.8)
-        const qualityScore = aiQualityScore || aiPredictions?.qualityScore;
+        const qualityScore = manualEntryMode ? null : (aiQualityScore || aiPredictions?.qualityScore);
         const hasValidQuality = qualityScore === null || qualityScore === undefined || qualityScore >= 0.8;
         
         // Check if expiry date is provided (required for all products)
@@ -154,7 +154,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 reasons.push('Enter a valid price (LKR) for cash listings');
             }
         }
-        const qualityScore = aiQualityScore || aiPredictions?.qualityScore;
+        const qualityScore = manualEntryMode ? null : (aiQualityScore || aiPredictions?.qualityScore);
         if (qualityScore !== null && qualityScore !== undefined && qualityScore < 0.8) {
             const qualityPercent = Math.round(qualityScore * 100);
             reasons.push(`Food quality score is ${qualityPercent}% (minimum 80% required)`);
@@ -165,8 +165,15 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
 
     const formCanSubmit = !isFormLocked && isFormValid();
     const disabledReasons = getDisabledReasons();
-    const fieldReadOnly = isFormLocked || (!isEditing && isAiFilled);
-    const fieldDisabled = isFormLocked || (!isEditing && isAiFilled);
+    const fieldReadOnly = isFormLocked || (!manualEntryMode && !isEditing && isAiFilled);
+    const fieldDisabled = isFormLocked || (!manualEntryMode && !isEditing && isAiFilled);
+
+    useEffect(() => {
+        if (manualEntryMode && !isEditMode) {
+            setIsEditing(true);
+            setIsAiFilled(false);
+        }
+    }, [manualEntryMode, isEditMode]);
 
     // Auto-fill form when AI predictions are received
     useEffect(() => {
@@ -638,7 +645,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
 
                 {listingType === 'sell' && (
                     <div className="form-group form-group-full">
-                        <label>Price (LKR) <span className="required-asterisk">*</span></label>
+                        <label>Total price for all servings (LKR) <span className="required-asterisk">*</span></label>
                         <div className="price-input-row">
                             <input
                                 type="number"
@@ -664,6 +671,11 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                                 </button>
                             )}
                         </div>
+                        {quantity > 1 && Number(priceAmount) > 0 && (
+                            <p className="price-hint">
+                                Receivers will see Rs. {Math.round(Number(priceAmount) / quantity).toLocaleString()} per serving
+                            </p>
+                        )}
                         {aiSuggestedPrice != null && aiSuggestedPrice > 0 && (
                             <p className="price-hint">
                                 AI suggested Rs. {aiSuggestedPrice.toLocaleString()} based on the photo

@@ -30,6 +30,7 @@ router.post('/:id/claim', verifyJwt, donationController.claimDonation);
 router.post('/:id/cancel-claim', verifyJwt, donationController.cancelClaim);
 router.post('/:id/discount-suggestion', verifyJwt, donationController.getDiscountSuggestion);
 router.patch('/:id/apply-discount', verifyJwt, donationController.applyDiscountSuggestion);
+router.get('/:id/delivery-quote', verifyJwt, donationController.getDeliveryQuote);
 router.get('/:id', verifyJwt, donationController.getDonationById);
 router.patch('/:id', verifyJwt, donationController.updateDonation);
 router.delete('/:id', verifyJwt, donationController.deleteDonation);

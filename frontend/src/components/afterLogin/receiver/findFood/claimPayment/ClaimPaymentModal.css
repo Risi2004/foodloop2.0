@@ -79,6 +79,39 @@
   color: #1b4332;
 }
 
+.claim-payment-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.claim-payment-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.claim-payment-line--discount {
+  color: #2e7d32;
+}
+
+.claim-payment-line--total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  font-weight: 700;
+  color: #1b4332;
+}
+
+.claim-payment-discount-note {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
 .claim-payment-form {
   padding: 20px;
   display: flex;

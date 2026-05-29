@@ -1,0 +1,104 @@
+.admin-payout-note {
+  flex: 1;
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.admin-payout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.admin-payout-actions .admin-btn {
+  width: 100%;
+}
+
+.admin-payout-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 10000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-payout-drawer {
+  width: min(560px, 100%);
+  height: 100%;
+  background: #F6F8F7;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-payout-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #DBE6E0;
+  background: #162F26;
+}
+
+.admin-payout-drawer-header h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.25rem;
+}
+
+.admin-payout-drawer-header button {
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #A5D6A7;
+}
+
+.admin-payout-drawer-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  color: #2E4E3F;
+}
+
+.admin-payout-drawer-body section {
+  margin-bottom: 24px;
+}
+
+.admin-payout-drawer-body h3 {
+  margin: 0 0 12px;
+  color: #1F4E36;
+  font-size: 1rem;
+}
+
+.admin-payout-tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-payout-tx-table th,
+.admin-payout-tx-table td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #EBF1EE;
+}
+
+.admin-payout-tx-table th {
+  background: #E8F5E9;
+  color: #1F4E36;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.admin-payout-drawer-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}

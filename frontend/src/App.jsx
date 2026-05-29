@@ -50,6 +50,11 @@ import ReceiverFindFood from "./pages/afterLogin/receiver/findFood/ReceiverFindF
 import ReceiptForm from "./pages/afterLogin/receiver/receiptForm/ReceiptForm";
 import Myclaims from "./pages/afterLogin/receiver/myClaims/MyClaims";
 import ReceiverTrackingPage from "./pages/afterLogin/receiver/trackingPage/ReceiverTrackingPage";
+import SupplierEarnings from "./pages/afterLogin/donor/earnings/SupplierEarnings";
+import DriverEarnings from "./pages/afterLogin/driver/earnings/DriverEarnings";
+import AdminPayoutRequestsPage from "./pages/afterLogin/admin/payoutRequests/AdminPayoutRequestsPage";
+import AdminOrdersPage from "./pages/afterLogin/admin/orders/AdminOrdersPage";
+import AdminUserMonitoringPage from "./pages/afterLogin/admin/userMonitoring/AdminUserMonitoringPage";
 
 import CustomerMarketplace from "./pages/afterLogin/customer/marketplace/CustomerMarketplace";
 import CustomerCart from "./pages/afterLogin/customer/cart/CustomerCart";
@@ -122,6 +127,7 @@ function App() {
           <Route path="track-order" element={<DonorTrackingPage />} />
           <Route path="digital-receipt" element={<DigitalReceipt />} />
           <Route path="individual-edit-profile" element={<IndividualEditProfile />} />
+          <Route path="earnings" element={<SupplierEarnings />} />
         </Route>
 
         <Route path="/donor/*" element={<LegacyDonorRedirect />} />
@@ -154,6 +160,7 @@ function App() {
           <Route path="edit-profile" element={<EditProfile />} />
           <Route path="my-pickups" element={<MyPickups />} />
           <Route path="pickup" element={<Pickup />} />
+          <Route path="earnings" element={<DriverEarnings />} />
         </Route>
 
         {/* Admin Routes - Only accessible by Admin role */}
@@ -163,6 +170,9 @@ function App() {
           <Route path="user-management" element={<AdminUserManagementPage />} />
           <Route path="reviews" element={<AdminReviewManagementPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
+          <Route path="payout-requests" element={<AdminPayoutRequestsPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="user-monitoring" element={<AdminUserMonitoringPage />} />
         </Route>
 
         {/* Customer Routes - Accessible by Customer role */}

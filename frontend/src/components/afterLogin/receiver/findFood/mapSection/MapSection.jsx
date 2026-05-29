@@ -139,7 +139,7 @@ const formatTime = (time) => {
 const SelectedDonationPanel = ({ selectedItem }) => {
     if (!selectedItem) return null;
     const donation = selectedItem.donation || selectedItem;
-    const priceDisplay = getListingPriceDisplay(donation);
+    const priceDisplay = getListingPriceDisplay(donation, { perServing: true });
 
     return (
         <div className="selected-donation-panel">
@@ -151,7 +151,7 @@ const SelectedDonationPanel = ({ selectedItem }) => {
             )}
             {priceDisplay.hasPrice && (
                 <p className="selected-donation-panel__row selected-donation-panel__price">
-                    <strong>Price:</strong>{' '}
+                    <strong>Price per serving:</strong>{' '}
                     {priceDisplay.hasDiscountApplied && (
                         <span style={{ textDecoration: 'line-through', color: '#6b7280', marginRight: 6 }}>
                             {priceDisplay.previous}
@@ -228,7 +228,7 @@ const MapSection = ({
 
                     const donation = item.donation || item;
                     const isSelected = item.id === selectedItemId;
-                    const priceDisplay = getListingPriceDisplay(donation);
+                    const priceDisplay = getListingPriceDisplay(donation, { perServing: true });
 
                     return (
                         <Marker
@@ -256,7 +256,7 @@ const MapSection = ({
                                     )}
                                     {priceDisplay.hasPrice && (
                                         <div style={{ marginBottom: '2px', color: '#047857', fontWeight: 600 }}>
-                                            <strong>Price:</strong>{' '}
+                                            <strong>Per serving:</strong>{' '}
                                             {priceDisplay.hasDiscountApplied && (
                                                 <span style={{ textDecoration: 'line-through', color: '#6b7280', marginRight: 6 }}>
                                                     {priceDisplay.previous}

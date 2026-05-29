@@ -3,7 +3,15 @@ const Donation = require('../models/Donation');
 const Payment = require('../models/Payment');
 const CustomerOrder = require('../models/CustomerOrder');
 const CustomerDiscountUsage = require('../models/CustomerDiscountUsage');
-const { isReceiverRole } = require('../utils/donationHelpers');
+const { isReceiverRole, isWithinSriLanka } = require('../utils/donationHelpers');
+const {
+  buildReceiverDeliveryQuoteForDonation,
+  getReceiverDeliveryDiscountStatus,
+  incrementReceiverDeliveryDiscountUsage,
+  validateReceiverCoords,
+  getCurrentYearMonth,
+} = require('../utils/receiverDeliveryQuote');
+const { getUnitPriceAmount } = require('../utils/donationClaimFork');
 const {
   sendPaymentInvoiceEmail,
   sendCustomerOrderNewPickupToDrivers,
@@ -79,8 +87,16 @@ function validateCustomerCheckoutPayload(body = {}) {
   const total = Number(body.total);
   const address = String(body.address || '').trim();
   const paymentMethod = String(body.paymentMethod || 'card').trim().toLowerCase();
+  const lat = Number(body.customerLatitude);
+  const lng = Number(body.customerLongitude);
 
   if (!address || address.length < 6) return { ok: false, message: 'A valid delivery address is required.' };
+  if (Number.isNaN(lat) || Number.isNaN(lng)) {
+    return { ok: false, message: 'Please confirm your delivery location on the map.' };
+  }
+  if (!isWithinSriLanka(lat, lng)) {
+    return { ok: false, message: 'Delivery location must be within Sri Lanka.' };
+  }
   if (!['card', 'cod'].includes(paymentMethod)) {
     return { ok: false, message: 'Payment method must be card or cod.' };
   }
@@ -102,15 +118,11 @@ function validateCustomerCheckoutPayload(body = {}) {
       deliveryFee,
       total: computedTotal,
       address,
+      customerLatitude: lat,
+      customerLongitude: lng,
       paymentMethod,
     },
   };
-}
-
-function getCurrentYearMonth() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${now.getFullYear()}-${month}`;
 }
 
 function toMoney(value) {
@@ -273,6 +285,14 @@ async function createCustomerOrderFromPayment(payment, customer) {
       address: String(payment.orderSummary?.address || ''),
     },
     customerAddress: String(payment.orderSummary?.address || ''),
+    customerLatitude:
+      payment.orderSummary?.customerLatitude != null
+        ? Number(payment.orderSummary.customerLatitude)
+        : null,
+    customerLongitude:
+      payment.orderSummary?.customerLongitude != null
+        ? Number(payment.orderSummary.customerLongitude)
+        : null,
   });
 
   sendCustomerOrderNewPickupToDrivers(order, customer).catch(() => {});
@@ -287,8 +307,11 @@ async function loadSellDonation(donationId) {
   if (!donation) {
     return { error: { status: 404, message: 'Donation not found.' } };
   }
-  if (donation.status !== 'available') {
+  if (donation.status !== 'available' || donation.parentListingId) {
     return { error: { status: 400, message: 'This listing is no longer available.' } };
+  }
+  if (!donation.quantity || donation.quantity < 1) {
+    return { error: { status: 400, message: 'This listing is sold out.' } };
   }
   if (donation.listingType !== 'sell' || !donation.priceAmount || donation.priceAmount <= 0) {
     return { error: { status: 400, message: 'Payment is only required for cash listings.' } };
@@ -300,7 +323,13 @@ exports.createClaimCheckout = async (req, res) => {
   try {
     if (!requireReceiver(req, res)) return;
 
-    const { donationId } = req.body || {};
+    const { donationId, receiverLatitude, receiverLongitude, claimQuantity: rawClaimQty } = req.body || {};
+    const claimQuantity = Math.max(1, Math.round(Number(rawClaimQty) || 1));
+    const coordCheck = validateReceiverCoords(receiverLatitude, receiverLongitude);
+    if (!coordCheck.ok) {
+      return res.status(400).json({ success: false, message: coordCheck.message });
+    }
+
     const loaded = await loadSellDonation(donationId);
     if (loaded.error) {
       return res.status(loaded.error.status).json({
@@ -310,18 +339,24 @@ exports.createClaimCheckout = async (req, res) => {
     }
 
     const { donation } = loaded;
+    if (claimQuantity > donation.quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Only ${donation.quantity} serving(s) available.`,
+      });
+    }
+
     const receiverId = req.user._id;
 
-    const blocking = await Payment.findOne({
-      donationId: donation._id,
-      status: { $in: ['paid', 'consumed'] },
-      receiverId: { $ne: receiverId },
-    });
-    if (blocking) {
-      return res.status(409).json({
-        success: false,
-        message: 'Another receiver has already paid for this listing.',
-      });
+    const quoteResult = await buildReceiverDeliveryQuoteForDonation(
+      donation,
+      req.user,
+      coordCheck.latitude,
+      coordCheck.longitude,
+      claimQuantity
+    );
+    if (quoteResult.error) {
+      return res.status(400).json({ success: false, message: quoteResult.error });
     }
 
     const existingPaid = await Payment.findOne({
@@ -331,14 +366,28 @@ exports.createClaimCheckout = async (req, res) => {
       expiresAt: { $gt: new Date() },
     });
     if (existingPaid) {
-      return res.json({
-        success: true,
-        orderId: existingPaid.orderId,
-        amount: existingPaid.amount,
-        currency: existingPaid.currency || 'LKR',
-        itemName: donation.itemName || 'Food listing',
-        reused: true,
-      });
+      const summary = existingPaid.orderSummary || {};
+      const paidQty = Math.max(1, Math.round(Number(summary.claimQuantity) || 1));
+      if (paidQty === claimQuantity) {
+        return res.json({
+          success: true,
+          orderId: existingPaid.orderId,
+          amount: existingPaid.amount,
+          currency: existingPaid.currency || 'LKR',
+          itemName: donation.itemName || 'Food listing',
+          reused: true,
+          breakdown: {
+            claimQuantity: paidQty,
+            unitPriceAmount: getUnitPriceAmount(donation),
+            foodSubtotal: summary.foodSubtotal ?? quoteResult.foodSubtotal,
+            deliveryFee: summary.deliveryFee ?? 0,
+            deliveryDiscount: summary.deliveryDiscount ?? 0,
+            deliveryFeeAfterDiscount: summary.deliveryFeeAfterDiscount ?? summary.deliveryFee ?? 0,
+            deliveryDistanceKm: summary.deliveryDistanceKm ?? null,
+            total: existingPaid.amount,
+          },
+        });
+      }
     }
 
     await Payment.updateMany(
@@ -352,7 +401,8 @@ exports.createClaimCheckout = async (req, res) => {
     );
 
     const orderId = generateOrderId(donation._id);
-    const amount = donation.priceAmount;
+    const foodSubtotal = quoteResult.foodSubtotal;
+    const amount = quoteResult.totalAmount;
     const currency = donation.priceCurrency || 'LKR';
 
     await Payment.create({
@@ -363,6 +413,19 @@ exports.createClaimCheckout = async (req, res) => {
       currency,
       status: 'pending',
       expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
+      orderSummary: {
+        claimQuantity,
+        foodSubtotal,
+        deliveryFee: quoteResult.deliveryFee,
+        deliveryDiscount: quoteResult.deliveryDiscount,
+        deliveryFeeAfterDiscount: quoteResult.deliveryFeeAfterDiscount,
+        deliveryDistanceKm: quoteResult.distanceKm,
+        deliveryQuotedRatePerKm: quoteResult.ratePerKm,
+        discountApplied: quoteResult.discountApplied,
+        receiverLatitude: coordCheck.latitude,
+        receiverLongitude: coordCheck.longitude,
+        total: amount,
+      },
     });
 
     return res.json({
@@ -372,6 +435,18 @@ exports.createClaimCheckout = async (req, res) => {
       currency,
       itemName: donation.itemName || 'Food listing',
       reused: false,
+      breakdown: {
+        claimQuantity,
+        unitPriceAmount: getUnitPriceAmount(donation),
+        foodSubtotal,
+        deliveryFee: quoteResult.deliveryFee,
+        deliveryDiscount: quoteResult.deliveryDiscount,
+        deliveryFeeAfterDiscount: quoteResult.deliveryFeeAfterDiscount,
+        deliveryDistanceKm: quoteResult.distanceKm,
+        discountApplied: quoteResult.discountApplied,
+        total: amount,
+      },
+      discountStatus: quoteResult.discountStatus,
     });
   } catch (err) {
     console.error('createClaimCheckout error:', err);
@@ -431,6 +506,13 @@ exports.confirmClaimPayment = async (req, res) => {
     payment.status = 'paid';
     payment.cardLast4 = last4;
     await payment.save();
+
+    if (payment.orderSummary?.discountApplied) {
+      await incrementReceiverDeliveryDiscountUsage(
+        req.user._id,
+        getCurrentYearMonth()
+      );
+    }
 
     const donation = await Donation.findById(payment.donationId);
     sendPaymentInvoiceEmail(req.user, { payment, donation }).catch(() => {});
@@ -781,6 +863,20 @@ exports.getCustomerDiscountOfferStatus = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message || 'Failed to load discount offer status',
+    });
+  }
+};
+
+exports.getReceiverDeliveryDiscountStatus = async (req, res) => {
+  try {
+    if (!requireReceiver(req, res)) return;
+    const status = await getReceiverDeliveryDiscountStatus(req.user);
+    return res.json({ success: true, ...status });
+  } catch (err) {
+    console.error('getReceiverDeliveryDiscountStatus error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to load delivery discount status',
     });
   }
 };

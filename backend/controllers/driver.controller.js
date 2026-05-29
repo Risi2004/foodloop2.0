@@ -22,6 +22,8 @@ const {
   sendDonationDeliveredEmails,
 } = require('../utils/sendNotificationEmail');
 const { isOrderCompatible, normalizeVehicleType } = require('../utils/driverCapacityRules');
+const { creditDeliveryEarnings } = require('../services/earningsService');
+const { computeFinalDeliveryFee } = require('../utils/deliveryPricing');
 const {
   emitToDrivers,
   emitToDonor,
@@ -93,7 +95,10 @@ function toDriverCustomerOrderJSON(order) {
     codAmount: Number(base.codAmount || 0),
     currency: base.currency || 'LKR',
     totalAmount: Number(base.orderSummary?.total || 0),
-    earnings: DRIVER_EARNINGS_LKR,
+    deliveryFee: Number(base.orderSummary?.deliveryFee || 0),
+    earnings: Number(base.orderSummary?.deliveryFee) > 0
+      ? Number(base.orderSummary.deliveryFee)
+      : DRIVER_EARNINGS_LKR,
     expiryText: 'Customer order ready for delivery',
     createdAt: base.createdAt,
     updatedAt: base.updatedAt,
@@ -543,6 +548,18 @@ exports.acceptPickup = async (req, res) => {
     donation.driverId = req.user._id;
     donation.status = 'driver_assigned';
     donation.assignedAt = new Date();
+
+    const finalDelivery = computeFinalDeliveryFee(donation, req.user.vehicleType);
+    if (finalDelivery) {
+      donation.deliveryDistanceKm = finalDelivery.deliveryDistanceKm;
+      donation.deliveryFeeFinal = finalDelivery.deliveryFeeFinal;
+      donation.deliveryFinalRatePerKm = finalDelivery.deliveryFinalRatePerKm;
+      donation.deliveryVehicleTier = finalDelivery.deliveryVehicleTier;
+      if (!donation.deliveryPayer) {
+        donation.deliveryPayer = donation.listingType === 'sell' ? 'receiver' : 'platform';
+      }
+    }
+
     await donation.save();
 
     await donation.populate(TRACKING_POPULATE);
@@ -773,6 +790,16 @@ exports.confirmDelivery = async (req, res) => {
         'driverId',
         'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
       );
+
+      try {
+        await creditDeliveryEarnings({
+          customerOrder,
+          driverId: req.user._id,
+        });
+      } catch (earningsErr) {
+        console.error('creditDeliveryEarnings (customer order) error:', earningsErr);
+      }
+
       return res.json({
         success: true,
         message: 'Delivery confirmed.',
@@ -812,6 +839,15 @@ exports.confirmDelivery = async (req, res) => {
       donation.receiverId,
       donation.driverId
     );
+
+    try {
+      await creditDeliveryEarnings({
+        donation,
+        driverId: req.user._id,
+      });
+    } catch (earningsErr) {
+      console.error('creditDeliveryEarnings (donation) error:', earningsErr);
+    }
 
     return res.json({
       success: true,

@@ -81,7 +81,7 @@ Default admin: `admin` / `admin123` (change after first login).
 | `R2_BUCKET_NAME` | Yes | |
 | `R2_PUBLIC_BASE_URL` | Yes | Public R2 URL, no trailing slash |
 | `GEMINI_API_KEY` | Yes | |
-| `GEMINI_MODEL` | No | e.g. `gemini-2.5-flash` |
+| `GEMINI_MODEL` | No | e.g. `gemini-3.5-flash` |
 | `OSRM_BASE_URL` | No | Default `https://router.project-osrm.org`; set to self-hosted OSRM for production scale |
 | `WEATHER_API_KEY` | Yes | OpenWeather API key used by `/api/weather/*` backend proxy |
 

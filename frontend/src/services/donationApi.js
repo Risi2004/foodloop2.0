@@ -199,50 +199,51 @@ export const getDonorStatistics = async () => ({
   },
 });
 
-export const getDriverStatistics = async () => ({
-  success: true,
-  statistics: {
-    totalDeliveriesCompleted: 145,
-    deliveriesTrend: 12,
-    totalDistanceTravelledFormatted: '1,240 Km',
-    distanceTrend: 8,
-    totalEarnings: 48500, // LKR
-    earningsTrend: 15,
-    impactProgress: {
-      badgeLevel: 'Hero',
-      currentCount: 145,
-      nextBadgeTarget: 200,
-      progressPercentage: 72,
-      remainingForNextBadge: 55
-    }
-  },
-});
-
-export const getDriverCompletedDeliveries = async () => ({
-  success: true,
-  deliveries: [
-    {
-      id: 'd1',
-      itemName: 'Mixed Vegetables Bag',
-      quantity: 1,
-      donorName: 'Green Market',
-      receiverName: 'Colombo Ops Center',
-      deliveredAt: new Date(Date.now() - 3600000).toISOString(),
-      earnings: 350,
-      status: 'delivered'
+export const getDriverStatistics = async () => {
+  const { getEarningsSummary } = await import('./earningsApi');
+  const res = await getEarningsSummary();
+  const summary = res.summary || {};
+  const deliveryCount = summary.transactionCount || 0;
+  return {
+    success: true,
+    statistics: {
+      totalDeliveriesCompleted: deliveryCount,
+      deliveriesTrend: summary.earningsTrend || 0,
+      totalDistanceTravelledFormatted: '—',
+      distanceTrend: 0,
+      totalEarnings: summary.totalEarned || 0,
+      earningsTrend: summary.earningsTrend || 0,
+      thisMonthEarned: summary.thisMonthEarned || 0,
+      availableBalance: summary.availableBalance || 0,
+      impactProgress: {
+        badgeLevel: 'Hero',
+        currentCount: deliveryCount,
+        nextBadgeTarget: Math.max(deliveryCount + 10, 10),
+        progressPercentage: Math.min(100, (deliveryCount % 10) * 10),
+        remainingForNextBadge: Math.max(0, 10 - (deliveryCount % 10)),
+      },
     },
-    {
-      id: 'd2',
-      itemName: 'Assorted Pastries',
-      quantity: 10,
-      donorName: 'French Patisserie',
-      receiverName: 'Welfare Society',
-      deliveredAt: new Date(Date.now() - 86400000).toISOString(),
-      earnings: 350,
-      status: 'delivered'
-    }
-  ],
-});
+  };
+};
+
+export const getDriverCompletedDeliveries = async () => {
+  const { getEarningsTransactions } = await import('./earningsApi');
+  const res = await getEarningsTransactions({ limit: 10, page: 1 });
+  const deliveries = (res.transactions || []).map((tx) => ({
+    id: tx.id,
+    itemName: tx.referenceLabel || 'Delivery',
+    quantity: 1,
+    donorName: tx.sourceType === 'customer_order_delivery' ? 'FoodLoop Customer' : 'Supplier',
+    receiverName: tx.sourceType === 'customer_order_delivery' ? 'Customer' : 'Receiver',
+    deliveredAt: tx.creditedAt,
+    earnings: tx.deliveryFeeAmount ?? tx.amount,
+    deliveryFeeAmount: tx.deliveryFeeAmount ?? tx.amount,
+    paymentMethod: tx.paymentMethod,
+    codAmount: tx.codAmountCollected,
+    status: 'delivered',
+  }));
+  return { success: true, deliveries };
+};
 
 export const getDonationTracking = async (donationId) => {
   const response = await fetch(buildUrl(`/api/driver/donations/${donationId}/tracking`), {

@@ -1,0 +1,25 @@
+.admin-orders-parties {
+  max-width: 220px;
+  color: #618972;
+  font-size: 0.85rem;
+}
+
+.admin-orders-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #E8F5E9;
+  color: #1F4E36;
+}
+
+.admin-orders-badge--claim_payment {
+  background: #E3F2FD;
+  color: #1565C0;
+}
+
+.admin-orders-badge--customer_order {
+  background: #FFF3E0;
+  color: #E65100;
+}

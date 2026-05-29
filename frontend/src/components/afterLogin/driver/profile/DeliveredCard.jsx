@@ -46,6 +46,9 @@ function DeliveredCard({ donation }) {
     const quantity = donation.quantity || 0;
     const donorName = donation.donorName || 'Supplier';
     const deliveryDate = formatDeliveryDate(donation.deliveredAt);
+    const isCod = (donation.paymentMethod || donation.donation?.paymentMethod || '').toLowerCase() === 'cod';
+    const codAmount = Number(donation.codAmount || donation.donation?.codAmount || 0);
+    const bankPayout = Number(donation.earnings || donation.deliveryFeeAmount || donation.deliveryFee || 350);
 
     return (
         <>
@@ -59,8 +62,15 @@ function DeliveredCard({ donation }) {
                         <h4>{donorName}</h4>
                         <h5>{donation.receiverName || 'Receiver'}</h5>
                     </div>
-                    <div className="delivery__earnings-badge earned">
-                        Earned: LKR {donation.earnings || 350}
+                    <div className="delivery__earnings-badges">
+                        {isCod && codAmount > 0 && (
+                            <div className="delivery__cod-badge">
+                                Cash collected: LKR {codAmount.toLocaleString('en-LK')}
+                            </div>
+                        )}
+                        <div className="delivery__earnings-badge earned">
+                            Bank payout: LKR {bankPayout.toLocaleString('en-LK')}
+                        </div>
                     </div>
                 </div>
                 <p style={{ marginBottom: "15px" }}>{itemName} • {formatQuantity(quantity)}</p>

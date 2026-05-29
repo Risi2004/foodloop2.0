@@ -151,6 +151,16 @@ exports.signup = async (req, res) => {
       if (!req.files?.addressProofFile?.[0]) {
         errors.push({ field: 'addressProofFile', message: 'Address proof file is required' });
       }
+      const level = (body.receiverIncomeLevel || '').toLowerCase();
+      if (!['normal', 'low'].includes(level)) {
+        errors.push({ field: 'receiverIncomeLevel', message: 'Please select an income level' });
+      }
+      if (level === 'low' && !(req.files?.gramaNiladhariLetter?.[0])) {
+        errors.push({
+          field: 'gramaNiladhariLetter',
+          message: 'Grama Niladhari letter is required for low income receivers',
+        });
+      }
     }
 
     if (['restaurant', 'supermarket', 'business'].includes(role)) {
@@ -259,6 +269,7 @@ exports.signup = async (req, res) => {
     if (role === 'receiver') {
       userData.receiverName = (body.receiverName || '').trim();
       userData.receiverType = (body.receiverType || '').trim();
+      userData.receiverIncomeLevel = (body.receiverIncomeLevel || '').toLowerCase();
     }
 
     if (role === 'driver') {
