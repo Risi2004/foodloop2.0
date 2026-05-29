@@ -1,5 +1,32 @@
 /** @typedef {{ phase?: string, blockNewOrders?: boolean, showMaintenanceUI?: boolean, banner?: object|null, scheduledStart?: string|null, scheduledEnd?: string|null, scheduledMessage?: string }} MaintenanceStatus */
 
+const MAINTENANCE_STATUS_CACHE_KEY = 'foodloop_maintenance_status_v1';
+
+export function readCachedMaintenanceStatus() {
+  try {
+    const raw = sessionStorage.getItem(MAINTENANCE_STATUS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeCachedMaintenanceStatus(status) {
+  if (!status) return;
+  try {
+    sessionStorage.setItem(MAINTENANCE_STATUS_CACHE_KEY, JSON.stringify(status));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function getInitialMaintenanceStatus() {
+  const cached = readCachedMaintenanceStatus();
+  return cached ? applyClientSchedulePhase(cached) : null;
+}
+
 export function getScheduleTimes(status) {
   if (!status) return null;
   const start = status.scheduledStart || status.banner?.scheduledStart;
@@ -109,5 +136,22 @@ export function shouldUseFastTick(status) {
     status.phase === 'scheduled_active' ||
     Math.abs(times.startMs - now) < soon ||
     Math.abs(times.endMs - now) < soon
+  );
+}
+
+/** Avoid re-rendering the whole app when poll/tick returns the same maintenance state. */
+export function maintenanceStatusEquals(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.phase === b.phase &&
+    Boolean(a.blockNewOrders) === Boolean(b.blockNewOrders) &&
+    Boolean(a.showMaintenanceUI) === Boolean(b.showMaintenanceUI) &&
+    (a.ongoingCount ?? 0) === (b.ongoingCount ?? 0) &&
+    (a.scheduledMessage || '') === (b.scheduledMessage || '') &&
+    (a.scheduledStart || null) === (b.scheduledStart || null) &&
+    (a.scheduledEnd || null) === (b.scheduledEnd || null) &&
+    JSON.stringify(a.banner || null) === JSON.stringify(b.banner || null) &&
+    JSON.stringify(a.ongoingBreakdown || null) === JSON.stringify(b.ongoingBreakdown || null)
   );
 }

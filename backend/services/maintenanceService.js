@@ -3,6 +3,7 @@ const CustomerOrder = require('../models/CustomerOrder');
 const MaintenanceConfig = require('../models/MaintenanceConfig');
 const {
   sendMaintenanceCancelledAnnouncementEmails,
+  sendScheduledMaintenanceStartedEmails,
 } = require('../utils/sendNotificationEmail');
 
 /** Food is with the driver and not yet delivered — only these block sudden maintenance UI. */
@@ -71,7 +72,7 @@ async function maybeAutoClearExpired(config) {
     if (!Number.isNaN(end.getTime()) && now > end) {
       const emailPayload = {
         maintenanceType: 'scheduled',
-        reason: 'auto_completed',
+        reason: 'maintenance_finished',
         mode: config.mode,
         phase: PHASES.SCHEDULED_ACTIVE,
         scheduledStart: config.scheduledStart,
@@ -83,6 +84,7 @@ async function maybeAutoClearExpired(config) {
       config.scheduledStart = null;
       config.scheduledEnd = null;
       config.scheduledMessage = '';
+      config.scheduledStartEmailSentAt = null;
       await config.save();
 
       sendMaintenanceCancelledAnnouncementEmails(emailPayload).catch((err) => {
@@ -104,10 +106,41 @@ async function maybePromoteSuddenDrain(config) {
   return config;
 }
 
+async function maybeNotifyScheduledMaintenanceStarted(config) {
+  const now = new Date();
+  if (config.mode !== 'scheduled' || config.scheduledStartEmailSentAt) {
+    return config;
+  }
+
+  const start = config.scheduledStart ? new Date(config.scheduledStart) : null;
+  const end = config.scheduledEnd ? new Date(config.scheduledEnd) : null;
+  if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return config;
+  }
+  if (now < start || now > end) return config;
+
+  const phase = resolvePhase(config, now);
+  if (phase !== PHASES.SCHEDULED_ACTIVE) return config;
+
+  config.scheduledStartEmailSentAt = now;
+  await config.save();
+
+  sendScheduledMaintenanceStartedEmails({
+    scheduledMessage: config.scheduledMessage || '',
+    scheduledStart: config.scheduledStart,
+    scheduledEnd: config.scheduledEnd,
+  }).catch((err) => {
+    console.error('[email] Scheduled maintenance start broadcast failed:', err.message);
+  });
+
+  return config;
+}
+
 async function getEffectiveState() {
   let config = await getConfigDoc();
   config = await maybeAutoClearExpired(config);
   config = await maybePromoteSuddenDrain(config);
+  config = await maybeNotifyScheduledMaintenanceStarted(config);
 
   const phase = resolvePhase(config);
   const ongoing = await countInDeliveryOrders();
@@ -161,6 +194,9 @@ async function setScheduled({ scheduledStart, scheduledEnd, scheduledMessage, ad
   }
 
   const config = await getConfigDoc();
+  const prevStartMs = config.scheduledStart ? new Date(config.scheduledStart).getTime() : null;
+  const prevEndMs = config.scheduledEnd ? new Date(config.scheduledEnd).getTime() : null;
+
   config.mode = 'scheduled';
   config.scheduledStart = start;
   config.scheduledEnd = end;
@@ -168,6 +204,11 @@ async function setScheduled({ scheduledStart, scheduledEnd, scheduledMessage, ad
   config.suddenStartedAt = null;
   config.suddenActivatedAt = null;
   config.updatedBy = adminId || null;
+
+  if (prevStartMs !== start.getTime() || prevEndMs !== end.getTime()) {
+    config.scheduledStartEmailSentAt = null;
+  }
+
   await config.save();
   return getEffectiveState();
 }
@@ -178,6 +219,7 @@ async function cancelMaintenance(adminId) {
   config.scheduledStart = null;
   config.scheduledEnd = null;
   config.scheduledMessage = '';
+  config.scheduledStartEmailSentAt = null;
   config.suddenStartedAt = null;
   config.suddenActivatedAt = null;
   config.updatedBy = adminId || null;

@@ -3,3 +3,10 @@
   overflow-x: hidden;
   max-width: 100%;
 }
+
+.role-layout__maintenance-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #0d1b12;
+}

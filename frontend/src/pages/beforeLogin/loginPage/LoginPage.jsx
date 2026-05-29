@@ -1,8 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../../../services/api';
+import { getMaintenanceStatus } from '../../../services/maintenanceApi';
 import { setToken, setUser, getDashboardPath } from '../../../utils/auth';
+import {
+  applyClientSchedulePhase,
+  writeCachedMaintenanceStatus,
+} from '../../../utils/maintenanceStatusUtils';
 import './LoginPage.css';
 import loginImage from '../../../assets/images/login/login.svg';
 import eye from "../../../assets/icons/login/eye-icon.svg"
@@ -17,6 +22,12 @@ const PENDING_APPROVAL_BODY =
 function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    useEffect(() => {
+        getMaintenanceStatus()
+            .then((res) => writeCachedMaintenanceStatus(applyClientSchedulePhase(res)))
+            .catch(() => {});
+    }, []);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);

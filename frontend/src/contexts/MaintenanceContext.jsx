@@ -3,26 +3,36 @@ import { getMaintenanceStatus } from '../services/maintenanceApi';
 import { getUser } from '../utils/auth';
 import {
   applyClientSchedulePhase,
+  getInitialMaintenanceStatus,
   getNextScheduleBoundaryMs,
   getPollIntervalMs,
+  maintenanceStatusEquals,
   shouldUseFastTick,
+  writeCachedMaintenanceStatus,
 } from '../utils/maintenanceStatusUtils';
 
 const MaintenanceContext = createContext(null);
 
 export function MaintenanceProvider({ children }) {
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState(() => getInitialMaintenanceStatus());
   const [loading, setLoading] = useState(true);
   const refreshInFlightRef = useRef(false);
+  const user = getUser();
+  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
+
+  const commitStatus = useCallback((next) => {
+    if (next) writeCachedMaintenanceStatus(next);
+    setStatus((prev) => (maintenanceStatusEquals(prev, next) ? prev : next));
+  }, []);
 
   const refresh = useCallback(async () => {
     if (refreshInFlightRef.current) return;
     refreshInFlightRef.current = true;
     try {
       const res = await getMaintenanceStatus();
-      setStatus(applyClientSchedulePhase(res));
+      commitStatus(applyClientSchedulePhase(res));
     } catch {
-      setStatus({
+      commitStatus({
         phase: 'off',
         blockNewOrders: false,
         showMaintenanceUI: false,
@@ -32,7 +42,7 @@ export function MaintenanceProvider({ children }) {
       refreshInFlightRef.current = false;
       setLoading(false);
     }
-  }, []);
+  }, [commitStatus]);
 
   const syncFromServer = useCallback(() => {
     refresh();
@@ -41,10 +51,10 @@ export function MaintenanceProvider({ children }) {
   useEffect(() => {
     refresh();
     const phase = status?.phase || 'off';
-    const intervalMs = getPollIntervalMs(phase);
+    const intervalMs = isAdmin ? 30000 : getPollIntervalMs(phase);
     const id = setInterval(refresh, intervalMs);
     return () => clearInterval(id);
-  }, [refresh, status?.phase]);
+  }, [refresh, status?.phase, isAdmin]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -61,20 +71,21 @@ export function MaintenanceProvider({ children }) {
   }, [syncFromServer]);
 
   useEffect(() => {
-    if (!shouldUseFastTick(status)) return undefined;
+    if (isAdmin || !shouldUseFastTick(status)) return undefined;
 
     const tick = () => {
       setStatus((prev) => {
         if (!prev) return prev;
         const next = applyClientSchedulePhase(prev);
         const changed =
-          next.phase !== prev.phase ||
-          next.blockNewOrders !== prev.blockNewOrders ||
-          next.showMaintenanceUI !== prev.showMaintenanceUI;
+          !maintenanceStatusEquals(prev, next) &&
+          (next.phase !== prev.phase ||
+            next.blockNewOrders !== prev.blockNewOrders ||
+            next.showMaintenanceUI !== prev.showMaintenanceUI);
         if (changed) {
           syncFromServer();
         }
-        return next;
+        return maintenanceStatusEquals(prev, next) ? prev : next;
       });
     };
 
@@ -82,6 +93,7 @@ export function MaintenanceProvider({ children }) {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [
+    isAdmin,
     status?.phase,
     status?.scheduledStart,
     status?.scheduledEnd,
@@ -91,16 +103,22 @@ export function MaintenanceProvider({ children }) {
   ]);
 
   useEffect(() => {
+    if (isAdmin) return undefined;
     const delay = getNextScheduleBoundaryMs(status);
     if (delay == null || delay <= 0) return undefined;
 
     const id = setTimeout(() => {
-      setStatus((prev) => (prev ? applyClientSchedulePhase(prev) : prev));
+      setStatus((prev) => {
+        if (!prev) return prev;
+        const next = applyClientSchedulePhase(prev);
+        return maintenanceStatusEquals(prev, next) ? prev : next;
+      });
       syncFromServer();
     }, Math.min(delay + 50, 2_147_483_647));
 
     return () => clearTimeout(id);
   }, [
+    isAdmin,
     status?.phase,
     status?.scheduledStart,
     status?.scheduledEnd,
@@ -108,9 +126,6 @@ export function MaintenanceProvider({ children }) {
     status?.banner?.scheduledEnd,
     syncFromServer,
   ]);
-
-  const user = getUser();
-  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
 
   const value = useMemo(
     () => ({

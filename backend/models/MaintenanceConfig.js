@@ -13,6 +13,7 @@ const maintenanceConfigSchema = new mongoose.Schema(
     scheduledStart: { type: Date, default: null },
     scheduledEnd: { type: Date, default: null },
     scheduledMessage: { type: String, default: '', trim: true },
+    scheduledStartEmailSentAt: { type: Date, default: null },
     suddenStartedAt: { type: Date, default: null },
     suddenActivatedAt: { type: Date, default: null },
     updatedBy: {
@@ -39,6 +40,7 @@ maintenanceConfigSchema.methods.toPublicJSON = function toPublicJSON() {
     scheduledStart: obj.scheduledStart || null,
     scheduledEnd: obj.scheduledEnd || null,
     scheduledMessage: obj.scheduledMessage || '',
+    scheduledStartEmailSentAt: obj.scheduledStartEmailSentAt || null,
     suddenStartedAt: obj.suddenStartedAt || null,
     suddenActivatedAt: obj.suddenActivatedAt || null,
     updatedAt: obj.updatedAt,

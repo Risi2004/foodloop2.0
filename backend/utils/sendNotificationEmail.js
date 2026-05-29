@@ -32,6 +32,8 @@ const {
   payoutPaidEmail,
   payoutAdminAlertEmail,
   scheduledMaintenanceAnnouncementEmail,
+  scheduledMaintenanceStartedEmail,
+  scheduledMaintenanceUpdatedEmail,
   suddenMaintenanceAnnouncementEmail,
   maintenanceCancelledEmail,
 } = require('./emailTemplates');
@@ -645,7 +647,7 @@ async function sendPayoutAdminAlertEmail(user, payout) {
   await sendMail({ to, ...tpl });
 }
 
-async function sendMaintenanceAnnouncementEmails({ type, state }) {
+async function sendMaintenanceAnnouncementEmails({ type, state, previous }) {
   if (!state || !type) return;
 
   try {
@@ -674,6 +676,25 @@ async function sendMaintenanceAnnouncementEmails({ type, state }) {
         let tpl;
         if (type === 'scheduled') {
           tpl = scheduledMaintenanceAnnouncementEmail({
+            name,
+            loginUrl,
+            scheduledMessage: state.scheduledMessage,
+            scheduledStart: state.scheduledStart,
+            scheduledEnd: state.scheduledEnd,
+          });
+        } else if (type === 'scheduled_updated' && previous) {
+          tpl = scheduledMaintenanceUpdatedEmail({
+            name,
+            loginUrl,
+            scheduledMessage: state.scheduledMessage,
+            scheduledStart: state.scheduledStart,
+            scheduledEnd: state.scheduledEnd,
+            previousMessage: previous.scheduledMessage,
+            previousStart: previous.scheduledStart,
+            previousEnd: previous.scheduledEnd,
+          });
+        } else if (type === 'scheduled_started') {
+          tpl = scheduledMaintenanceStartedEmail({
             name,
             loginUrl,
             scheduledMessage: state.scheduledMessage,
@@ -712,6 +733,18 @@ async function sendMaintenanceAnnouncementEmails({ type, state }) {
 
 function sendScheduledMaintenanceAnnouncementEmails(state) {
   return sendMaintenanceAnnouncementEmails({ type: 'scheduled', state });
+}
+
+function sendScheduledMaintenanceUpdatedEmails({ previous, current }) {
+  return sendMaintenanceAnnouncementEmails({
+    type: 'scheduled_updated',
+    state: current,
+    previous,
+  });
+}
+
+async function sendScheduledMaintenanceStartedEmails(state) {
+  return sendMaintenanceAnnouncementEmails({ type: 'scheduled_started', state });
 }
 
 function sendSuddenMaintenanceAnnouncementEmails(state) {
@@ -820,6 +853,8 @@ module.exports = {
   sendPayoutPaidEmail,
   sendPayoutAdminAlertEmail,
   sendScheduledMaintenanceAnnouncementEmails,
+  sendScheduledMaintenanceStartedEmails,
+  sendScheduledMaintenanceUpdatedEmails,
   sendSuddenMaintenanceAnnouncementEmails,
   sendMaintenanceCancelledAnnouncementEmails,
 };

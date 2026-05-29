@@ -22,6 +22,15 @@ function toDatetimeLocalValue(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Earliest allowed end = start + 1 minute (end must be after start). */
+function minEndAfterStart(startLocal) {
+  if (!startLocal) return '';
+  const d = new Date(startLocal);
+  if (Number.isNaN(d.getTime())) return '';
+  d.setMinutes(d.getMinutes() + 1);
+  return toDatetimeLocalValue(d.toISOString());
+}
+
 function AdminMaintenancePage() {
   const { refresh: refreshPublic } = useMaintenance();
   const [config, setConfig] = useState(null);
@@ -38,37 +47,44 @@ function AdminMaintenancePage() {
   const [scheduledStart, setScheduledStart] = useState('');
   const [scheduledEnd, setScheduledEnd] = useState('');
   const [scheduledMessage, setScheduledMessage] = useState('');
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
 
-  const applyState = (res) => {
+  const applyState = (res, { syncForm = true } = {}) => {
     setConfig(res.config || null);
     setPhase(res.phase || 'off');
     setOngoingCount(res.ongoingCount ?? 0);
     setOngoingBreakdown(res.ongoingBreakdown || null);
     setBlockNewOrders(Boolean(res.blockNewOrders));
     setShowMaintenanceUI(Boolean(res.showMaintenanceUI));
-    if (res.config) {
+    if (syncForm && res.config) {
       setScheduledStart(toDatetimeLocalValue(res.config.scheduledStart));
       setScheduledEnd(toDatetimeLocalValue(res.config.scheduledEnd));
       setScheduledMessage(res.config.scheduledMessage || '');
     }
   };
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
     try {
       const res = await getAdminMaintenance();
-      applyState(res);
+      applyState(res, { syncForm: !silent });
     } catch (err) {
-      setError(err.message || 'Failed to load maintenance settings.');
+      if (!silent) {
+        setError(err.message || 'Failed to load maintenance settings.');
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 15000);
+    const id = setInterval(() => load({ silent: true }), 15000);
     return () => clearInterval(id);
   }, [load]);
 
@@ -78,8 +94,29 @@ function AdminMaintenancePage() {
     await refreshPublic();
   };
 
+  const handleScheduledStartChange = (value) => {
+    setScheduledStart(value);
+    if (!value || !scheduledEnd) return;
+    const startMs = new Date(value).getTime();
+    const endMs = new Date(scheduledEnd).getTime();
+    if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs <= startMs) {
+      setScheduledEnd('');
+    }
+  };
+
+  const minScheduledEnd = minEndAfterStart(scheduledStart);
+  const endPickerDisabled = submitting || !scheduledStart;
+
   const handleSaveScheduled = async (e) => {
     e.preventDefault();
+    if (scheduledStart && scheduledEnd) {
+      const startMs = new Date(scheduledStart).getTime();
+      const endMs = new Date(scheduledEnd).getTime();
+      if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs <= startMs) {
+        setError('End date and time must be after the start date and time.');
+        return;
+      }
+    }
     setSubmitting(true);
     setError('');
     setMessage('');
@@ -90,11 +127,32 @@ function AdminMaintenancePage() {
         scheduledMessage,
       });
       await afterAction(res);
+      setIsEditingSchedule(false);
     } catch (err) {
       setError(err.message || 'Failed to save schedule.');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const syncFormFromConfig = () => {
+    if (!config) return;
+    setScheduledStart(toDatetimeLocalValue(config.scheduledStart));
+    setScheduledEnd(toDatetimeLocalValue(config.scheduledEnd));
+    setScheduledMessage(config.scheduledMessage || '');
+  };
+
+  const handleEditScheduled = () => {
+    syncFormFromConfig();
+    setIsEditingSchedule(true);
+    setError('');
+    setMessage('');
+  };
+
+  const handleCancelEditScheduled = () => {
+    syncFormFromConfig();
+    setIsEditingSchedule(false);
+    setError('');
   };
 
   const handleStartSudden = async () => {
@@ -139,6 +197,13 @@ function AdminMaintenancePage() {
   };
 
   const handleEnd = async () => {
+    if (
+      !window.confirm(
+        'End maintenance now? Users will be notified that maintenance work has finished.'
+      )
+    ) {
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -154,18 +219,34 @@ function AdminMaintenancePage() {
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancelScheduled = async () => {
+    const beforeStart = phase === 'scheduled_upcoming';
+    const confirmMsg = beforeStart
+      ? 'Cancel this scheduled maintenance? Users will be notified that maintenance was cancelled before it started.'
+      : 'Cancel scheduled maintenance now? Users will be notified that maintenance work has finished.';
+    if (!window.confirm(confirmMsg)) return;
+
     setSubmitting(true);
     setError('');
+    setMessage('');
     try {
       const res = await cancelMaintenance();
       await afterAction(res);
+      setScheduledStart('');
+      setScheduledEnd('');
+      setScheduledMessage('');
+      setIsEditingSchedule(false);
     } catch (err) {
-      setError(err.message || 'Failed to cancel maintenance.');
+      setError(err.message || 'Failed to cancel scheduled maintenance.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const hasScheduledMaintenance =
+    config?.mode === 'scheduled' ||
+    phase === 'scheduled_upcoming' ||
+    phase === 'scheduled_active';
 
   const isActive =
     phase !== 'off' && phase !== 'scheduled_upcoming';
@@ -205,20 +286,129 @@ function AdminMaintenancePage() {
                   road: {ongoingBreakdown.customerOrders}
                 </p>
               )}
-              {config?.scheduledStart && (
-                <p className="admin-maintenance-schedule-preview">
-                  Scheduled window: {formatMaintenanceDateTime(config.scheduledStart)} —{' '}
-                  {formatMaintenanceDateTime(config.scheduledEnd)}
-                </p>
-              )}
             </section>
 
+            {hasScheduledMaintenance && (
+              <section className="admin-scheduled-maintenance-active">
+                <div className="admin-scheduled-maintenance-active__head">
+                  <h2>Scheduled Maintenance</h2>
+                  <span className="admin-scheduled-maintenance-active__badge">
+                    {phaseLabel(phase)}
+                  </span>
+                </div>
+
+                {!isEditingSchedule ? (
+                  <>
+                    {config?.scheduledMessage?.trim() && (
+                      <p className="admin-scheduled-maintenance-active__message">
+                        {config.scheduledMessage.trim()}
+                      </p>
+                    )}
+                    <p className="admin-scheduled-maintenance-active__window">
+                      <strong>Start:</strong> {formatMaintenanceDateTime(config?.scheduledStart)}
+                      <br />
+                      <strong>End:</strong> {formatMaintenanceDateTime(config?.scheduledEnd)}
+                    </p>
+                    <p className="admin-scheduled-maintenance-active__hint">
+                      {phase === 'scheduled_upcoming'
+                        ? 'Not started yet — edit or cancel anytime before the window begins.'
+                        : 'Maintenance is in progress — edit the window or cancel when work is finished.'}
+                    </p>
+                    <div className="admin-scheduled-maintenance-active__actions">
+                      <button
+                        type="button"
+                        className="admin-btn"
+                        onClick={handleEditScheduled}
+                        disabled={submitting}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn--danger"
+                        onClick={handleCancelScheduled}
+                        disabled={submitting}
+                      >
+                        Cancel scheduled maintenance
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="admin-scheduled-maintenance-active__hint">
+                      Update dates or message — users will be emailed if anything changes.
+                    </p>
+                    <form
+                      className="admin-maintenance-form admin-maintenance-form--in-card"
+                      onSubmit={handleSaveScheduled}
+                    >
+                      <label>
+                        Start
+                        <input
+                          type="datetime-local"
+                          value={scheduledStart}
+                          onChange={(e) => handleScheduledStartChange(e.target.value)}
+                          required
+                          disabled={submitting}
+                        />
+                      </label>
+                      <label>
+                        End
+                        <input
+                          type="datetime-local"
+                          value={scheduledEnd}
+                          min={minScheduledEnd || undefined}
+                          onChange={(e) => setScheduledEnd(e.target.value)}
+                          required
+                          disabled={endPickerDisabled}
+                          title={
+                            scheduledStart
+                              ? 'Must be after the start date and time'
+                              : 'Choose a start date and time first'
+                          }
+                        />
+                      </label>
+                      {!scheduledStart && (
+                        <p className="admin-maintenance-field-hint admin-maintenance-field-hint--light">
+                          Select a start date and time before choosing the end.
+                        </p>
+                      )}
+                      <label>
+                        Message
+                        <textarea
+                          rows={3}
+                          value={scheduledMessage}
+                          onChange={(e) => setScheduledMessage(e.target.value)}
+                          placeholder="Brief message shown on dashboards and during maintenance"
+                          disabled={submitting}
+                        />
+                      </label>
+                      <div className="admin-maintenance-actions">
+                        <button type="submit" className="admin-btn" disabled={submitting}>
+                          Save changes
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--secondary"
+                          onClick={handleCancelEditScheduled}
+                          disabled={submitting}
+                        >
+                          Cancel edit
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </section>
+            )}
+
             <div className="admin-maintenance-grid">
+              {!hasScheduledMaintenance && (
               <section className="admin-maintenance-panel">
                 <h2>Scheduled maintenance</h2>
                 <p className="admin-maintenance-hint">
-                  Before the window, a banner appears on all role home dashboards. During the window,
-                  users see the maintenance screen and new orders are blocked.
+                  Users receive a login popup before the window. During the window, new orders are
+                  blocked and the maintenance screen is shown.
                 </p>
                 <form className="admin-maintenance-form" onSubmit={handleSaveScheduled}>
                   <label>
@@ -226,7 +416,7 @@ function AdminMaintenancePage() {
                     <input
                       type="datetime-local"
                       value={scheduledStart}
-                      onChange={(e) => setScheduledStart(e.target.value)}
+                      onChange={(e) => handleScheduledStartChange(e.target.value)}
                       required
                       disabled={submitting}
                     />
@@ -236,11 +426,22 @@ function AdminMaintenancePage() {
                     <input
                       type="datetime-local"
                       value={scheduledEnd}
+                      min={minScheduledEnd || undefined}
                       onChange={(e) => setScheduledEnd(e.target.value)}
                       required
-                      disabled={submitting}
+                      disabled={endPickerDisabled}
+                      title={
+                        scheduledStart
+                          ? 'Must be after the start date and time'
+                          : 'Choose a start date and time first'
+                      }
                     />
                   </label>
+                  {!scheduledStart && (
+                    <p className="admin-maintenance-field-hint">
+                      Select a start date and time before choosing the end.
+                    </p>
+                  )}
                   <label>
                     Message
                     <textarea
@@ -255,17 +456,10 @@ function AdminMaintenancePage() {
                     <button type="submit" className="admin-btn" disabled={submitting}>
                       Save schedule
                     </button>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn--secondary"
-                      onClick={handleCancel}
-                      disabled={submitting || config?.mode !== 'scheduled'}
-                    >
-                      Cancel schedule
-                    </button>
                   </div>
                 </form>
               </section>
+              )}
 
               <section className="admin-maintenance-panel">
                 <h2>Sudden maintenance</h2>

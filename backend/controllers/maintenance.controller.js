@@ -1,9 +1,33 @@
 const maintenanceService = require('../services/maintenanceService');
 const {
   sendScheduledMaintenanceAnnouncementEmails,
+  sendScheduledMaintenanceUpdatedEmails,
   sendSuddenMaintenanceAnnouncementEmails,
   sendMaintenanceCancelledAnnouncementEmails,
 } = require('../utils/sendNotificationEmail');
+
+function wasScheduledMaintenance(state) {
+  if (!state) return false;
+  return (
+    state.mode === 'scheduled' ||
+    state.phase === 'scheduled_upcoming' ||
+    state.phase === 'scheduled_active'
+  );
+}
+
+function scheduleDetailsChanged(before, after) {
+  const toMs = (value) => {
+    if (!value) return null;
+    const ms = new Date(value).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  };
+  if (toMs(before.scheduledStart) !== toMs(after.scheduledStart)) return true;
+  if (toMs(before.scheduledEnd) !== toMs(after.scheduledEnd)) return true;
+  if ((before.scheduledMessage || '').trim() !== (after.scheduledMessage || '').trim()) {
+    return true;
+  }
+  return false;
+}
 
 function notifyMaintenanceEmails(fn, payload) {
   fn(payload).catch((err) => {
@@ -11,8 +35,25 @@ function notifyMaintenanceEmails(fn, payload) {
   });
 }
 
-function buildCancellationEmailPayload(beforeState, reason) {
+function maintenanceHadStarted(phase) {
+  return (
+    phase === 'scheduled_active' ||
+    phase === 'sudden_drain' ||
+    phase === 'sudden_active'
+  );
+}
+
+function resolveMaintenanceEmailReason(beforeState, action) {
   if (!beforeState || beforeState.phase === 'off') return null;
+
+  if (action === 'end' || maintenanceHadStarted(beforeState.phase)) {
+    return 'maintenance_finished';
+  }
+  return 'cancelled_before_start';
+}
+
+function buildCancellationEmailPayload(beforeState, emailReason) {
+  if (!beforeState || beforeState.phase === 'off' || !emailReason) return null;
 
   const isScheduled =
     beforeState.mode === 'scheduled' ||
@@ -21,7 +62,7 @@ function buildCancellationEmailPayload(beforeState, reason) {
 
   return {
     maintenanceType: isScheduled ? 'scheduled' : 'sudden',
-    reason,
+    reason: emailReason,
     mode: beforeState.mode,
     phase: beforeState.phase,
     scheduledStart: beforeState.scheduledStart,
@@ -31,8 +72,9 @@ function buildCancellationEmailPayload(beforeState, reason) {
   };
 }
 
-function notifyMaintenanceCancelledIfNeeded(beforeState, reason) {
-  const payload = buildCancellationEmailPayload(beforeState, reason);
+function notifyMaintenanceCancelledIfNeeded(beforeState, action) {
+  const emailReason = resolveMaintenanceEmailReason(beforeState, action);
+  const payload = buildCancellationEmailPayload(beforeState, emailReason);
   if (payload) {
     notifyMaintenanceEmails(sendMaintenanceCancelledAnnouncementEmails, payload);
   }
@@ -75,16 +117,34 @@ exports.getAdminMaintenance = async (req, res) => {
 exports.setScheduled = async (req, res) => {
   try {
     const { scheduledStart, scheduledEnd, scheduledMessage } = req.body || {};
+    const before = await maintenanceService.getEffectiveState();
+    const wasScheduled = wasScheduledMaintenance(before);
+
     const state = await maintenanceService.setScheduled({
       scheduledStart,
       scheduledEnd,
       scheduledMessage,
       adminId: req.user._id,
     });
-    notifyMaintenanceEmails(sendScheduledMaintenanceAnnouncementEmails, state);
+
+    if (wasScheduled && scheduleDetailsChanged(before, state)) {
+      notifyMaintenanceEmails(sendScheduledMaintenanceUpdatedEmails, {
+        previous: before,
+        current: state,
+      });
+    } else if (!wasScheduled) {
+      notifyMaintenanceEmails(sendScheduledMaintenanceAnnouncementEmails, state);
+    }
+
+    const responseMessage = wasScheduled
+      ? scheduleDetailsChanged(before, state)
+        ? 'Scheduled maintenance updated.'
+        : 'Scheduled maintenance saved (no changes).'
+      : 'Scheduled maintenance saved.';
+
     return res.json({
       success: true,
-      message: 'Scheduled maintenance saved.',
+      message: responseMessage,
       phase: state.phase,
       config: state.config.toPublicJSON(),
       ongoingCount: state.ongoingCount,
@@ -153,7 +213,7 @@ exports.endMaintenance = async (req, res) => {
   try {
     const before = await maintenanceService.getEffectiveState();
     const state = await maintenanceService.endMaintenance(req.user._id);
-    notifyMaintenanceCancelledIfNeeded(before, 'admin_end');
+    notifyMaintenanceCancelledIfNeeded(before, 'end');
     return res.json({
       success: true,
       message: 'Maintenance ended.',
@@ -177,7 +237,7 @@ exports.cancelMaintenance = async (req, res) => {
   try {
     const before = await maintenanceService.getEffectiveState();
     const state = await maintenanceService.cancelMaintenance(req.user._id);
-    notifyMaintenanceCancelledIfNeeded(before, 'admin_cancel');
+    notifyMaintenanceCancelledIfNeeded(before, 'cancel');
     return res.json({
       success: true,
       message: 'Maintenance cancelled.',

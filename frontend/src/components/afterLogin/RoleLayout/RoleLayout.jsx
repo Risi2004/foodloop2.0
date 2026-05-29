@@ -1,18 +1,15 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import PageLoader from "../../common/PageLoader/PageLoader";
 import { ResourceLoadProvider } from "../../../contexts/ResourceLoadContext";
 import { MaintenanceProvider, useMaintenance } from "../../../contexts/MaintenanceContext";
-import MaintenanceBanner from "../../maintenance/MaintenanceBanner";
+import MaintenanceNoticeModal, {
+  dismissMaintenanceNotice,
+  isMaintenanceNoticeDismissed,
+} from "../../maintenance/MaintenanceNoticeModal";
 import MaintenanceScreen from "../../maintenance/MaintenanceScreen";
 import { usePageResourcesReady } from "../../../hooks/usePageResourcesReady";
 import "./RoleLayout.css";
-
-/** Role home dashboards + customer marketplace — show scheduled maintenance banner */
-function isHomeDashboardRoute(pathname) {
-  if (/^\/customer\/marketplace\/?$/.test(pathname)) return true;
-  return /^\/(supplier|donor|receiver|driver|admin)\/dashboard\/?$/.test(pathname);
-}
 
 function isDashboardRoute(pathname) {
   return /^\/(supplier|donor|receiver|driver|admin)\/dashboard\/?$/.test(pathname);
@@ -34,7 +31,15 @@ function RoleLayoutContent() {
     showScheduledBanner,
     banner,
     loading: maintenanceLoading,
+    isAdmin,
   } = useMaintenance();
+
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+
+  const handleDismissNotice = useCallback(() => {
+    if (banner) dismissMaintenanceNotice(banner);
+    setShowNoticeModal(false);
+  }, [banner]);
 
   useEffect(() => {
     if (isDashboard && resourcesReady) {
@@ -42,15 +47,31 @@ function RoleLayoutContent() {
     }
   }, [isDashboard, resourcesReady]);
 
+  useEffect(() => {
+    if (maintenanceLoading || !showScheduledBanner || !banner) {
+      setShowNoticeModal(false);
+      return;
+    }
+    if (isMaintenanceNoticeDismissed(banner)) {
+      setShowNoticeModal(false);
+      return;
+    }
+    setShowNoticeModal(true);
+  }, [maintenanceLoading, showScheduledBanner, banner]);
+
   const showFullPageLoader =
     isDashboard && !resourcesReady && !hasDashboardLoadedRef.current;
 
-  if (!maintenanceLoading && showMaintenanceUI && !isAdminRoute(pathname)) {
-    return <MaintenanceScreen />;
-  }
+  const isNonAdminProtectedRoute = !isAdminRoute(pathname) && !isAdmin;
 
-  const showBanner =
-    !maintenanceLoading && showScheduledBanner && isHomeDashboardRoute(pathname);
+  if (isNonAdminProtectedRoute) {
+    if (showMaintenanceUI) {
+      return <MaintenanceScreen />;
+    }
+    if (maintenanceLoading) {
+      return <div className="role-layout__maintenance-gate" role="status" aria-label="Loading" />;
+    }
+  }
 
   return (
     <>
@@ -60,7 +81,11 @@ function RoleLayoutContent() {
           className={loaderHidden ? "page-loader--hidden" : ""}
         />
       )}
-      {showBanner && <MaintenanceBanner banner={banner} />}
+      <MaintenanceNoticeModal
+        banner={banner}
+        open={showNoticeModal}
+        onDismiss={handleDismissNotice}
+      />
       <div ref={containerRef} className="role-layout__container">
         <Outlet />
       </div>

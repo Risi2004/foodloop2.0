@@ -4,6 +4,80 @@
   margin-bottom: 16px;
 }
 
+.admin-scheduled-maintenance-active {
+  margin-bottom: 24px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 248, 225, 0.12) 0%, rgba(255, 243, 224, 0.06) 100%);
+  border: 1px solid rgba(255, 204, 128, 0.45);
+}
+
+.admin-scheduled-maintenance-active__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-scheduled-maintenance-active__head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.admin-scheduled-maintenance-active__badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 204, 128, 0.2);
+  border: 1px solid rgba(255, 204, 128, 0.5);
+  color: #ffe0b2;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-scheduled-maintenance-active__message {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.admin-scheduled-maintenance-active__window {
+  margin: 0 0 12px;
+  color: #a5d6a7;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.admin-scheduled-maintenance-active__window strong {
+  color: #c8e6c9;
+}
+
+.admin-scheduled-maintenance-active__hint {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.admin-scheduled-maintenance-active__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-maintenance-form--in-card label {
+  color: #1f4e36;
+}
+
+.admin-maintenance-field-hint--light {
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .admin-maintenance-status {
   margin-bottom: 24px;
   padding: 20px;
@@ -106,6 +180,19 @@
   padding: 10px 12px;
   font-size: 0.92rem;
   font-family: inherit;
+}
+
+.admin-maintenance-form input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  background: #eef2ef;
+}
+
+.admin-maintenance-field-hint {
+  margin: -4px 0 8px;
+  font-size: 0.82rem;
+  color: #5a7a66;
+  line-height: 1.4;
 }
 
 .admin-maintenance-actions {
