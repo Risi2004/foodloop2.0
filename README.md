@@ -205,8 +205,4 @@ An internal RAG (Retrieval-Augmented Generation) chatbot. Ingests all project He
 * **Driver Logistics Routing & Capacity limits**: Pickups are automatically filtered by vehicle capacity tiers (Bicycle, Scooter, Car, Van). Cougars can simulate active routes using "Demo Simulation", which updates coordinates dynamically via WebSockets, transferring statuses on receivers' tracking panels instantly.
 * **Admin Auditing & Financial Withdrawals**: System administrators audit platform card inflows and payout requests. Clicking review loads details in a slide drawer, letting admins approve or reject withdrawals before marking them as fully paid.
 
----
 
-## 📄 Operational Manual
-For detailed guides on utilizing the platform as a Supplier, NGO, Customer, Driver, or Admin, refer to the compiled document:
-📘 **[FoodLoop 2.0 User Manual](file:///c:/Users/Risikesan/OneDrive/Desktop/FoodLoop2.0/FoodLoop_2.0_User_Manual.pdf)**
