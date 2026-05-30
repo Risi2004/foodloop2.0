@@ -584,6 +584,7 @@ exports.getMyClaims = async (req, res) => {
     })
       .populate('donorId', 'username businessName role')
       .populate('receiverId', 'username receiverName')
+      .populate('driverId', 'username driverName email contactNo')
       .populate('parentListingId')
       .sort({ claimedAt: -1, createdAt: -1 });
 

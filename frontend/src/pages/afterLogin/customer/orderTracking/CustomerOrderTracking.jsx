@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import { getCustomerOrders } from '../../../../services/paymentApi';
 import './CustomerOrderTracking.css';
@@ -16,6 +17,7 @@ function statusLabel(status) {
 }
 
 function CustomerOrderTracking() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -119,6 +121,31 @@ function CustomerOrderTracking() {
                       <strong>Driver:</strong> {order.driver?.name || 'Not assigned yet'}
                     </p>
                   </div>
+                  {order.status !== 'finding_driver' && (
+                    <div className="tracking-card-actions" style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        className="track-map-btn"
+                        onClick={() => navigate(`/customer/track-order?donationId=${order.id || order._id}`)}
+                        style={{
+                          padding: '0.45rem 1rem',
+                          backgroundColor: '#1f4e36',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '999px',
+                          cursor: 'pointer',
+                          fontWeight: '700',
+                          fontSize: '0.86rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          transition: 'transform 0.16s ease, box-shadow 0.16s ease'
+                        }}
+                      >
+                        📍 View Map / Track Order
+                      </button>
+                    </div>
+                  )}
                 </article>
               ))}
             </div>

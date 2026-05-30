@@ -21,22 +21,29 @@ const InTransitCard = ({ donation }) => {
 
     const itemName = donation.itemName || 'Food Item';
     const quantity = donation.quantity || 0;
-    const driverName = donation.driverName || `Driver #${donation.assignedDriverId?.slice(-3) || 'N/A'}`;
+    
+    // Resolve driverName from populated driverId, or fallback
+    const resolvedDriver = donation.driverId && typeof donation.driverId === 'object' ? donation.driverId : null;
+    const driverName = donation.driverName || (resolvedDriver ? (resolvedDriver.driverName || resolvedDriver.username) : null) || `Driver #${donation.assignedDriverId?.slice(-3) || 'N/A'}`;
+    
+    const isPickedUp = donation.status === 'picked_up' || donation.status === 'in_transit';
+    const statusText = isPickedUp ? `Picked up by ${driverName}` : `Driver assigned: ${driverName}`;
+    const badgeText = isPickedUp ? 'In Transit' : 'Assigned';
     const imageUrl = donation.imageUrl || foodImage;
 
     return (
         <div className="donation-card">
             <div className="top">
                 <div className="div-flex">
-                    <div className="span-bg-blue-100">
+                    <div className="span-bg-blue-100" style={{ width: badgeText === 'Assigned' ? '85px' : '97.22px' }}>
                         <div className="span-size-1-5"></div>
-                        <div className="in-transit">In Transit</div>
+                        <div className="in-transit" style={{ width: badgeText === 'Assigned' ? '55px' : '63.23px' }}>{badgeText}</div>
                     </div>
                 </div>
                 <div className="tool">
                     <Link to={trackOrderUrl} className="edit" style={{ textDecoration: 'none', color: 'inherit', cursor: donationId ? 'pointer' : 'default' }} aria-label="Follow map to track delivery">
                         <img className="swap" src={swapIcon} alt="Follow map" />
-                        <div className="supplied">Follow Map</div>
+                        <div className="supplied">View Map</div>
                     </Link>
                 </div>
             </div>
@@ -52,7 +59,7 @@ const InTransitCard = ({ donation }) => {
                 <div className="detail">
                     <div className="name">
                         <div className="bag-of-fuji-apples">{itemName} ({formatQuantity(quantity)})</div>
-                        <div className="listed-2-mins-ago">Picked up by {driverName}</div>
+                        <div className="listed-2-mins-ago">{statusText}</div>
                         <ListingPriceLine donation={donation} className="listed-2-mins-ago listing-price-line" />
                     </div>
                     <div className="wight">

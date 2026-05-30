@@ -190,6 +190,7 @@ function App() {
           <Route path="payment" element={<CustomerPayment />} />
           <Route path="order-history" element={<CustomerOrderHistory />} />
           <Route path="order-tracking" element={<CustomerOrderTracking />} />
+          <Route path="track-order" element={<ReceiverTrackingPage />} />
           <Route path="profile" element={<CustomerProfile />} />
           <Route path="about" element={<CustomerAbout />} />
           <Route path="notifications" element={<CustomerNotifications />} />
