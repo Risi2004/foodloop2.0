@@ -381,7 +381,7 @@ const DonorMyDonationDashboard = () => {
                                         <InTransitCard key={donation.id} donation={donation} />
                                     ))
                                 ) : (
-                                    <p style={{ color: '#fff', padding: '20px', textAlign: 'center' }}>
+                                    <p style={{ color: '#618972', padding: '20px', textAlign: 'center' }}>
                                         No donations in transit
                                     </p>
                                 )}
@@ -403,7 +403,7 @@ const DonorMyDonationDashboard = () => {
                                         />
                                     ))
                                 ) : (
-                                    <p style={{ color: '#fff', padding: '20px', textAlign: 'center' }}>
+                                    <p style={{ color: '#618972', padding: '20px', textAlign: 'center' }}>
                                         No donations waiting for driver
                                     </p>
                                 )}
@@ -426,7 +426,7 @@ const DonorMyDonationDashboard = () => {
                                         />
                                     ))
                                 ) : (
-                                    <p style={{ color: '#fff', padding: '20px', textAlign: 'center' }}>
+                                    <p style={{ color: '#618972', padding: '20px', textAlign: 'center' }}>
                                         No donations waiting for receiver
                                     </p>
                                 )}
@@ -442,7 +442,7 @@ const DonorMyDonationDashboard = () => {
                                         <CompletedHistoryCard key={donation.id} donation={donation} />
                                     ))
                                 ) : (
-                                    <p style={{ color: '#fff', padding: '20px', textAlign: 'center' }}>
+                                    <p style={{ color: '#618972', padding: '20px', textAlign: 'center' }}>
                                         No completed donations
                                     </p>
                                 )}
