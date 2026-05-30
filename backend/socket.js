@@ -6,6 +6,12 @@ const CustomerOrder = require('./models/CustomerOrder');
 const { userCanViewTracking } = require('./utils/donationHelpers');
 
 const DONOR_ROLES = ['donor', 'restaurant', 'supermarket', 'business', 'individual'];
+const FOOD_LISTING_ROLES = ['receiver', 'customer'];
+
+function joinFoodListingRoom(socket) {
+  if (!socket) return;
+  socket.join('receivers');
+}
 
 let io = null;
 
@@ -69,8 +75,8 @@ function attachSocketAuth(socketServer) {
     const role = (socket.user?.role || '').toLowerCase();
     const userId = socket.user?._id?.toString();
 
-    if (role === 'receiver') {
-      socket.join('receivers');
+    if (FOOD_LISTING_ROLES.includes(role)) {
+      joinFoodListingRoom(socket);
     }
     if (role === 'driver') {
       socket.join('drivers');
@@ -81,6 +87,11 @@ function attachSocketAuth(socketServer) {
     if (role === 'customer' && userId) {
       socket.join(`customer:${userId}`);
     }
+
+    socket.on('join_food_listings', (payload, callback) => {
+      joinFoodListingRoom(socket);
+      callback?.({ success: true });
+    });
 
     socket.on('join_donation', async (payload, callback) => {
       try {

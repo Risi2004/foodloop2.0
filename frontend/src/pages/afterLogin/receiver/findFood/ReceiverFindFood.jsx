@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ReceiverFindFood.css';
 import Sidebar from '../../../../components/afterLogin/receiver/findFood/sideBar/SideBar';
@@ -12,6 +12,7 @@ import ClaimPaymentModal from '../../../../components/afterLogin/receiver/findFo
 import { getCurrentUser } from '../../../../services/api';
 import {
     getSocket,
+    joinFoodListings,
     onDonationCreated,
     onDonationClaimed,
     onDonationStockUpdated,
@@ -120,6 +121,7 @@ const FindFood = () => {
     const [pendingClaimQuantity, setPendingClaimQuantity] = useState(1);
     const [claimQuantities, setClaimQuantities] = useState({});
     const [pendingRetryOrderId, setPendingRetryOrderId] = useState(null);
+    const receiverPositionRef = useRef(null);
 
     const getClaimQuantityFor = (donationId) => claimQuantities[donationId] ?? 1;
 
@@ -139,9 +141,10 @@ const FindFood = () => {
         return prev.map((item) => (item.id === donationId ? updatedItem : item));
     }, [receiverPosition]);
 
-    const fetchDonations = useCallback(async (lat, lng) => {
+    const fetchDonations = useCallback(async (lat, lng, options = {}) => {
+        const { silent = false } = options;
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             setError(null);
             const response = await getAvailableDonations(lat, lng);
 
@@ -161,12 +164,20 @@ const FindFood = () => {
             }
         } catch (err) {
             console.error('[ReceiverFindFood] Error fetching donations:', err);
-            setError(err.message || 'Failed to load donations');
-            setItems([]);
+            if (!silent) {
+                setError(err.message || 'Failed to load donations');
+            }
+            if (!silent) {
+                setItems([]);
+            }
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        receiverPositionRef.current = receiverPosition;
+    }, [receiverPosition]);
 
     useEffect(() => {
         if (!receiverPosition) return;
@@ -176,27 +187,35 @@ const FindFood = () => {
 
     useEffect(() => {
         getSocket();
+        const leaveFoodListings = joinFoodListings();
 
         const refreshFromServer = () => {
-            if (!receiverPosition) return;
-            const [lat, lng] = receiverPosition;
-            fetchDonations(lat, lng);
+            const pos = receiverPositionRef.current;
+            if (!pos) return;
+            const [lat, lng] = pos;
+            fetchDonations(lat, lng, { silent: true });
         };
 
         const mergeCreated = (payload) => {
             const donation = payload?.donation;
-            if (!donation || !receiverPosition) return;
+            const pos = receiverPositionRef.current;
+            if (!donation || !pos) {
+                refreshFromServer();
+                return;
+            }
 
             const item = transformDonationToItem(
                 { ...donation, donorName: payload.donorName || donation.donorName },
-                receiverPosition
+                pos
             );
-            if (!isWithinRadius(item)) return;
-
-            setItems((prev) => {
-                if (prev.some((i) => i.id === item.id)) return prev;
-                return [item, ...prev];
-            });
+            if (isWithinRadius(item)) {
+                setItems((prev) => {
+                    if (prev.some((i) => i.id === item.id)) {
+                        return prev.map((i) => (i.id === item.id ? item : i));
+                    }
+                    return [item, ...prev];
+                });
+            }
             refreshFromServer();
         };
 
@@ -210,8 +229,12 @@ const FindFood = () => {
 
         const mergeClaimCancelled = (payload) => {
             const parentListing = payload?.parentListing || payload?.donation;
-            if (!parentListing || !receiverPosition) return;
-            const item = transformDonationToItem(parentListing, receiverPosition);
+            const pos = receiverPositionRef.current;
+            if (!parentListing || !pos) {
+                refreshFromServer();
+                return;
+            }
+            const item = transformDonationToItem(parentListing, pos);
             if (!isWithinRadius(item)) return;
             setItems((prev) => {
                 if (prev.some((i) => i.id === item.id)) {
@@ -224,7 +247,11 @@ const FindFood = () => {
 
         const mergeStockUpdated = (payload) => {
             const donation = payload?.donation;
-            if (!donation || !receiverPosition) return;
+            const pos = receiverPositionRef.current;
+            if (!donation || !pos) {
+                refreshFromServer();
+                return;
+            }
             const donationId = donation.id || donation._id || payload?.donationId;
             const maxQty = Math.max(1, Number(donation.quantity) || 1);
 
@@ -234,12 +261,10 @@ const FindFood = () => {
                     if (current <= maxQty) return prev;
                     return { ...prev, [donationId]: maxQty };
                 });
-                if (pendingClaimQuantity > maxQty) {
-                    setPendingClaimQuantity(maxQty);
-                }
+                setPendingClaimQuantity((current) => (current > maxQty ? maxQty : current));
             }
 
-            const item = transformDonationToItem(donation, receiverPosition);
+            const item = transformDonationToItem(donation, pos);
             if (!isWithinRadius(item)) {
                 setItems((prev) => prev.filter((i) => i.id !== item.id));
                 return;
@@ -258,19 +283,29 @@ const FindFood = () => {
         const unsubClaimCancelled = onDonationClaimCancelled(mergeClaimCancelled);
 
         return () => {
+            leaveFoodListings();
             unsubCreated();
             unsubClaimed();
             unsubStockUpdated();
             unsubCancelled();
             unsubClaimCancelled();
         };
-    }, [receiverPosition, fetchDonations]);
+    }, [fetchDonations]);
 
     useEffect(() => {
         let cancelled = false;
         getCurrentUser()
             .then((res) => {
-                if (!cancelled && res?.user?.address) setProfileAddress(res.user.address);
+                if (cancelled || !res?.user) return;
+                if (res.user.address) setProfileAddress(res.user.address);
+                const lat = Number(res.user.receiverLatitude);
+                const lng = Number(res.user.receiverLongitude);
+                if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+                    setReceiverPosition((current) => current || [lat, lng]);
+                    if (res.user.address) {
+                        setReceiverAddress((current) => current || res.user.address);
+                    }
+                }
             })
             .catch(() => {});
         return () => { cancelled = true; };

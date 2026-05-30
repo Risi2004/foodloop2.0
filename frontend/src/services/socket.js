@@ -93,6 +93,28 @@ export function onDriverLocation(handler) {
   return subscribe('driver:location', handler);
 }
 
+export function joinFoodListings() {
+  const s = getSocket();
+  if (!s) return () => {};
+
+  const emitJoin = () => {
+    s.emit('join_food_listings', {}, () => {});
+  };
+
+  if (s.connected) {
+    emitJoin();
+  } else {
+    s.once('connect', emitJoin);
+  }
+
+  const onReconnect = () => emitJoin();
+  s.on('connect', onReconnect);
+
+  return () => {
+    s.off('connect', onReconnect);
+  };
+}
+
 export function onDonationCreated(handler) {
   return subscribe('donation:created', handler);
 }

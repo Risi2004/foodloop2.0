@@ -12,6 +12,7 @@ import { getUser } from '../../../../../utils/auth';
 import { calculateDistance } from '../../../../../utils/distance';
 import {
     getSocket,
+    joinFoodListings,
     onDonationCreated,
     onDonationClaimed,
     onDonationStockUpdated,
@@ -173,6 +174,7 @@ function DonorMap() {
 
     useEffect(() => {
         getSocket();
+        const leaveFoodListings = joinFoodListings();
 
         const refreshFromServer = () => loadDonorLocations(receiverCenter);
 
@@ -235,6 +237,7 @@ function DonorMap() {
         const unsubClaimCancelled = onDonationClaimCancelled(mergeClaimCancelled);
 
         return () => {
+            leaveFoodListings();
             unsubCreated();
             unsubClaimed();
             unsubStockUpdated();

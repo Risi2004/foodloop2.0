@@ -12,6 +12,7 @@ import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
 import SupplierNameWithPremium from '../../../../components/afterLogin/shared/SupplierNameWithPremium';
 import {
   getSocket,
+  joinFoodListings,
   onDonationCreated,
   onDonationClaimed,
   onDonationStockUpdated,
@@ -135,6 +136,7 @@ const CustomerMarketplace = () => {
 
   useEffect(() => {
     getSocket();
+    const leaveFoodListings = joinFoodListings();
 
     const mergeStockUpdated = (payload) => {
       const donation = payload?.donation;
@@ -186,6 +188,7 @@ const CustomerMarketplace = () => {
     const unsubCancelled = onDonationCancelled(removeById);
 
     return () => {
+      leaveFoodListings();
       unsubCreated();
       unsubClaimed();
       unsubStockUpdated();

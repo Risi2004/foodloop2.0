@@ -459,18 +459,101 @@ async function lockTransactionsForPayout(userId, amount, payoutRequestId, sessio
 
   for (const tx of txs) {
     if (lockedSum >= requested) break;
+
+    const remaining = roundCurrency(requested - lockedSum);
+    const txAmount = roundCurrency(tx.amount);
+
+    if (txAmount <= remaining) {
+      tx.status = 'locked';
+      tx.payoutRequestId = payoutRequestId;
+      await tx.save({ session: session || undefined });
+      lockedIds.push(tx._id);
+      lockedSum = roundCurrency(lockedSum + txAmount);
+      continue;
+    }
+
+    // Partial lock: split this transaction so only the requested remainder is locked.
+    const lockedPortion = remaining;
+    const remainderAmount = roundCurrency(txAmount - lockedPortion);
+    const lockedRatio = lockedPortion / txAmount;
+    const remainderRatio = remainderAmount / txAmount;
+
+    const originalGross = tx.grossAmount;
+    const originalPlatformFee = tx.platformFee;
+    const originalCod = tx.codAmountCollected;
+    const originalDeliveryFee = tx.deliveryFeeAmount;
+    const originalFoodSubtotal = tx.foodSubtotal;
+
+    tx.amount = lockedPortion;
+    if (originalGross != null) tx.grossAmount = roundCurrency(Number(originalGross) * lockedRatio);
+    if (originalPlatformFee != null) {
+      tx.platformFee = roundCurrency(Number(originalPlatformFee) * lockedRatio);
+    }
+    if (originalCod != null) tx.codAmountCollected = roundCurrency(Number(originalCod) * lockedRatio);
+    if (originalDeliveryFee != null) {
+      tx.deliveryFeeAmount = roundCurrency(Number(originalDeliveryFee) * lockedRatio);
+    }
+    if (originalFoodSubtotal != null) {
+      tx.foodSubtotal = roundCurrency(Number(originalFoodSubtotal) * lockedRatio);
+    }
+
     tx.status = 'locked';
     tx.payoutRequestId = payoutRequestId;
     await tx.save({ session: session || undefined });
     lockedIds.push(tx._id);
-    lockedSum = roundCurrency(lockedSum + tx.amount);
+    lockedSum = requested;
+
+    if (remainderAmount > 0) {
+      await EarningsTransaction.create(
+        [
+          {
+            userId: tx.userId,
+            roleType: tx.roleType,
+            amount: remainderAmount,
+            currency: tx.currency,
+            sourceType: tx.sourceType,
+            sourceId: new mongoose.Types.ObjectId(),
+            referenceLabel: tx.referenceLabel
+              ? `${tx.referenceLabel} (remainder)`
+              : 'Earnings remainder',
+            paymentId: tx.paymentId,
+            donationId: tx.donationId,
+            customerOrderId: tx.customerOrderId,
+            grossAmount:
+              originalGross != null
+                ? roundCurrency(Number(originalGross) * remainderRatio)
+                : null,
+            platformFee:
+              originalPlatformFee != null
+                ? roundCurrency(Number(originalPlatformFee) * remainderRatio)
+                : null,
+            paymentMethod: tx.paymentMethod,
+            codAmountCollected:
+              originalCod != null ? roundCurrency(Number(originalCod) * remainderRatio) : null,
+            deliveryFeeAmount:
+              originalDeliveryFee != null
+                ? roundCurrency(Number(originalDeliveryFee) * remainderRatio)
+                : null,
+            foodSubtotal:
+              originalFoodSubtotal != null
+                ? roundCurrency(Number(originalFoodSubtotal) * remainderRatio)
+                : null,
+            status: 'available',
+            creditedAt: tx.creditedAt,
+          },
+        ],
+        { session }
+      );
+    }
+
+    break;
   }
 
   if (lockedSum < requested) {
     throw new Error('Could not lock enough transactions for this payout amount.');
   }
 
-  return { lockedIds, lockedSum };
+  return { lockedIds, lockedSum: requested };
 }
 
 async function unlockTransactionsForPayout(payoutRequestId, session) {
@@ -536,13 +619,13 @@ async function createPayoutRequest(user, payload) {
       { session }
     );
     const payoutDoc = payout[0];
-    const { lockedIds, lockedSum } = await lockTransactionsForPayout(
+    const { lockedIds } = await lockTransactionsForPayout(
       user._id,
       amount,
       payoutDoc._id,
       session
     );
-    payoutDoc.amount = lockedSum;
+    payoutDoc.amount = amount;
     payoutDoc.transactionIds = lockedIds;
     await payoutDoc.save({ session });
 
