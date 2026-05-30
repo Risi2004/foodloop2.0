@@ -45,6 +45,24 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
         }
     };
 
+    const handleAdmitAll = async () => {
+        if (updatingId || users.length === 0) return;
+        if (!window.confirm(`Are you sure you want to approve all ${users.length} pending registration requests?`)) {
+            return;
+        }
+        setUpdatingId('bulk');
+        setError(null);
+        try {
+            // Approve all users in parallel
+            await Promise.all(users.map(u => updateUserStatus(u._id, 'completed')));
+            onStatusUpdated?.();
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to approve all requests');
+        } finally {
+            setUpdatingId(null);
+        }
+    };
+
     const handleViewDetails = (user) => {
         setSelectedUser(user);
         setIsModalOpen(true);
@@ -59,7 +77,18 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
         <div className="recent-requests-container">
             <div className="requests-header">
                 <h3>Recent Requests</h3>
-                <Link to="/admin/user-management" className="view-all-btn">View All</Link>
+                <div className="header-actions">
+                    {users.length > 0 && (
+                        <button
+                            className="admit-all-btn"
+                            onClick={handleAdmitAll}
+                            disabled={updatingId !== null}
+                        >
+                            {updatingId === 'bulk' ? 'Admitting All…' : 'Admit All'}
+                        </button>
+                    )}
+                    <Link to="/admin/user-management" className="view-all-btn">View All</Link>
+                </div>
             </div>
             {error && <p className="recent-requests-error">{error}</p>}
             <div className="requests-table-container">
