@@ -170,7 +170,7 @@ function PrivacyPolicy() {
                         <div className="privacy-section__contact">
                             <div className="privacy-section__contact-item common-contact-row common-contact-row--start">
                                 <img className="privacy-section__contact-icon common-icon" src={sign} />
-                                <div className="privacy-section__contact-text">foodloop.official@gmail.com</div>
+                                <div className="privacy-section__contact-text">foodloop.official27@gmail.com</div>
                             </div>
                             <div className="privacy-section__contact-item common-contact-row common-contact-row--start">
                                 <img className="privacy-section__contact-icon common-icon" src={location} />

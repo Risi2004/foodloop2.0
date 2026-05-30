@@ -7,7 +7,8 @@ import profileIcon from "../../../../assets/icons/afterLogin/navbar/profile.svg"
 import infoIcon from "../../../../assets/icons/afterLogin/receiver/profile/Business-Group.svg";
 import memberProfile from "../../../../assets/icons/afterLogin/receiver/profile/member.svg";
 import { getCurrentUser } from '../../../../services/api';
-import { getMyClaims } from '../../../../services/donationApi';
+import { getMyClaims, getReceiverStatistics } from '../../../../services/donationApi';
+import AchievementsCard from '../../../../components/afterLogin/badges/AchievementsCard';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -19,6 +20,7 @@ function ReceiverProfile() {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [claims, setClaims] = useState([]);
+  const [badgeProgress, setBadgeProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -28,19 +30,24 @@ function ReceiverProfile() {
       try {
         setLoading(true);
         setError(null);
-        const [userRes, claimsRes] = await Promise.all([
+        const [userRes, claimsRes, statsRes] = await Promise.all([
           getCurrentUser(),
           getMyClaims(),
+          getReceiverStatistics().catch(() => ({ success: false })),
         ]);
         if (cancelled) return;
         if (userRes?.user) setUser(userRes.user);
         if (claimsRes?.donations) setClaims(claimsRes.donations);
+        if (statsRes?.success && statsRes?.statistics?.badgeProgress) {
+          setBadgeProgress(statsRes.statistics.badgeProgress);
+        }
       } catch (err) {
         if (!cancelled) setError(err.message || 'Failed to load profile');
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
+
     fetchData();
     return () => { cancelled = true; };
   }, [location.pathname]);
@@ -146,6 +153,10 @@ function ReceiverProfile() {
                 </div>
               </div>
 
+              <div className="receiverProfile__membersBox glass-card" style={{ background: 'linear-gradient(180deg, #1b4332 0%, #2d6a4f 100%)' }}>
+                <AchievementsCard badgeProgress={badgeProgress} unitLabel="claims" />
+              </div>
+
               <div className="receiverProfile__membersBox glass-card">
                 <div className="receiverProfile__sectionHeader">
                   <img src={infoIcon} alt="Members" />
@@ -163,6 +174,7 @@ function ReceiverProfile() {
                 </div>
               </div>
             </aside>
+
 
             {/* Main Content: Stats, About, Donations */}
             <main className="receiverProfile__contentArea glass-card">

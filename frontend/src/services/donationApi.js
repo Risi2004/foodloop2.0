@@ -173,18 +173,36 @@ export const getActiveDeliveries = async (lat, lng) => {
   return parseResponse(response);
 };
 
-export const getDonorStatistics = async () => ({
-  success: true,
-  statistics: {
-    badgeProgress: null,
-  },
-});
+export const getDonorStatistics = async () => {
+  const response = await fetch(buildUrl('/api/stats/achievements'), {
+    headers: getAuthHeaders(),
+  });
+  const data = await parseResponse(response);
+  return {
+    success: true,
+    statistics: {
+      badgeProgress: data.badgeProgress,
+    },
+  };
+};
 
 export const getDriverStatistics = async () => {
   const { getEarningsSummary } = await import('./earningsApi');
   const res = await getEarningsSummary();
   const summary = res.summary || {};
   const deliveryCount = summary.transactionCount || 0;
+
+  let badgeProgress = null;
+  try {
+    const achResponse = await fetch(buildUrl('/api/stats/achievements'), {
+      headers: getAuthHeaders(),
+    });
+    const achData = await parseResponse(achResponse);
+    badgeProgress = achData.badgeProgress;
+  } catch (err) {
+    console.error('Failed to fetch achievements for driver:', err);
+  }
+
   return {
     success: true,
     statistics: {
@@ -196,6 +214,7 @@ export const getDriverStatistics = async () => {
       earningsTrend: summary.earningsTrend || 0,
       thisMonthEarned: summary.thisMonthEarned || 0,
       availableBalance: summary.availableBalance || 0,
+      badgeProgress,
       impactProgress: {
         badgeLevel: 'Hero',
         currentCount: deliveryCount,
@@ -206,6 +225,20 @@ export const getDriverStatistics = async () => {
     },
   };
 };
+
+export const getReceiverStatistics = async () => {
+  const response = await fetch(buildUrl('/api/stats/achievements'), {
+    headers: getAuthHeaders(),
+  });
+  const data = await parseResponse(response);
+  return {
+    success: true,
+    statistics: {
+      badgeProgress: data.badgeProgress,
+    },
+  };
+};
+
 
 export const getDriverCompletedDeliveries = async () => {
   const { getEarningsTransactions } = await import('./earningsApi');

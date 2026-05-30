@@ -10,6 +10,7 @@ const {
   rejectPayoutRequest,
   markPayoutPaid,
 } = require('../services/earningsService');
+const { logActivity } = require('../utils/auditLogger');
 const {
   isSupplierRole,
   isDriverRoleForEarnings,
@@ -139,6 +140,7 @@ exports.approvePayoutRequest = async (req, res) => {
     const { id } = req.params;
     const { adminNote } = req.body || {};
     const payoutRequest = await approvePayoutRequest(id, req.user, adminNote);
+    await logActivity(req.user._id, 'PAYOUT_APPROVED', { id, amount: payoutRequest?.amount }, req);
     return res.json({ success: true, payoutRequest });
   } catch (err) {
     console.error('approvePayoutRequest error:', err);
@@ -154,6 +156,7 @@ exports.rejectPayoutRequest = async (req, res) => {
     const { id } = req.params;
     const { adminNote } = req.body || {};
     const payoutRequest = await rejectPayoutRequest(id, req.user, adminNote);
+    await logActivity(req.user._id, 'PAYOUT_REJECTED', { id, amount: payoutRequest?.amount }, req);
     return res.json({ success: true, payoutRequest });
   } catch (err) {
     console.error('rejectPayoutRequest error:', err);
@@ -168,6 +171,7 @@ exports.markPayoutPaid = async (req, res) => {
   try {
     const { id } = req.params;
     const payoutRequest = await markPayoutPaid(id, req.user);
+    await logActivity(req.user._id, 'PAYOUT_MARK_PAID', { id, amount: payoutRequest?.amount }, req);
     return res.json({ success: true, payoutRequest });
   } catch (err) {
     console.error('markPayoutPaid error:', err);

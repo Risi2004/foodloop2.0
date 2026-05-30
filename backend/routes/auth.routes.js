@@ -31,5 +31,7 @@ router.post('/verify-reset-otp', authController.verifyResetOtp);
 router.post('/resend-reset-otp', authController.resendResetOtp);
 router.post('/reset-password', authController.resetPassword);
 router.get('/me', verifyJwt, authController.me);
+router.delete('/me', verifyJwt, authController.deleteMe);
 
 module.exports = router;
+

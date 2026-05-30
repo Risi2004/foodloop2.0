@@ -123,8 +123,8 @@ function TermsAndConditions() {
                         <p className="termsPage__contactSubtitle">
                             Contact our official legal and support team at:
                         </p>
-                        <a href="mailto:foodloop.official@gmail.com" className="termsPage__contactEmail">
-                            foodloop.official@gmail.com
+                        <a href="mailto:foodloop.official27@gmail.com" className="termsPage__contactEmail">
+                            foodloop.official27@gmail.com
                         </a>
                     </footer>
                 </div>

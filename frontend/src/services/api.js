@@ -153,7 +153,14 @@ export const getAllUsers = async (filters = {}) => {
   return parseResponse(response);
 };
 
-export const deleteAccount = async () => ({ success: true });
+export const deleteAccount = async () => {
+  const response = await fetch(buildUrl('/api/auth/me'), {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
 
 export const uploadProfileImage = async () => {
   const me = await getCurrentUser();
@@ -197,6 +204,31 @@ export const stopDemo = async () => {
   const response = await fetch(buildUrl('/api/driver/demo/stop'), {
     method: 'POST',
     headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
+// Audit Logs Management API services
+export const getAuditLogs = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(buildUrl(`/api/admin/audit-logs?${query}`), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
+export const getAuditSettings = async () => {
+  const response = await fetch(buildUrl('/api/admin/audit-logs/settings'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
+export const toggleAudit = async (isPaused) => {
+  const response = await fetch(buildUrl('/api/admin/audit-logs/toggle'), {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isPaused }),
   });
   return parseResponse(response);
 };

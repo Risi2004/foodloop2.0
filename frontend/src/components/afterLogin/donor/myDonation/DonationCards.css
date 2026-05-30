@@ -333,7 +333,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 12px !important;
     flex-shrink: 0;
     position: relative;
     margin-left: auto;
@@ -359,33 +359,64 @@
     cursor: pointer;
 }
 
-.edit-icon,
-.delete-icon {
-    width: 20px;
-    height: 20px;
+.tool .edit-icon,
+.tool .delete-icon {
+    position: static !important;
+    transform: none !important;
+    right: auto !important;
+    top: auto !important;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    border-radius: 50%;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
-.edit-icon:hover {
-    background-color: rgba(59, 130, 246, 0.1);
+.tool .edit-icon {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
 }
 
-.delete-icon:hover {
-    background-color: rgba(239, 68, 68, 0.1);
+.tool .delete-icon {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
 }
 
-.edit-icon svg,
-.delete-icon svg {
-    width: 16px;
-    height: 16px;
+.tool .edit-icon:hover {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.tool .delete-icon:hover {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+}
+
+.tool .edit-icon svg,
+.tool .delete-icon svg {
+    width: 15px;
+    height: 15px;
     display: block;
+    transition: all 0.2s ease;
 }
+
+.tool .edit-icon:hover svg path {
+    fill: #ffffff !important;
+}
+
+.tool .delete-icon:hover svg path {
+    fill: #ffffff !important;
+}
+
+
 
 .supplied,
 .supplied2 {

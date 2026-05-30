@@ -529,13 +529,6 @@ const FindFood = () => {
 
     const handleCardClick = (item) => {
         if (item?.id) setSelectedItemId(item.id);
-        const supplierId = getItemSupplierId(item);
-        if (supplierId) {
-            setLockedSupplier({
-                id: String(supplierId),
-                name: item.donorName || item.donation?.donorName || 'Supplier',
-            });
-        }
     };
 
     const handleClearSupplierLock = () => {
@@ -688,6 +681,7 @@ const FindFood = () => {
                     setPaidOrderId(null);
                     setPendingClaimLocation(null);
                     setClaimIsSellFlow(false);
+                    setLockedSupplier(null);
                 }}
                 onConfirm={handleClaimLocationConfirm}
                 defaultAddress={receiverAddress || profileAddress}

@@ -46,10 +46,17 @@ router.post('/notifications', notificationController.createAdminNotification);
 router.patch('/notifications/:id', notificationController.updateAdminNotification);
 router.delete('/notifications/:id', notificationController.deleteAdminNotification);
 
+const auditController = require('../controllers/audit.controller');
+
 router.get('/reviews/pending', reviewController.listPendingReviews);
 router.get('/reviews/approved', reviewController.listApprovedReviewsForAdmin);
 router.patch('/reviews/:id/approve', reviewController.approveReview);
 router.patch('/reviews/:id/reject', reviewController.rejectReview);
 router.delete('/reviews/:id', reviewController.deleteReview);
+
+// Audit Logs Management
+router.get('/audit-logs', auditController.getAuditLogs);
+router.get('/audit-logs/settings', auditController.getAuditSettings);
+router.post('/audit-logs/toggle', auditController.toggleAudit);
 
 module.exports = router;

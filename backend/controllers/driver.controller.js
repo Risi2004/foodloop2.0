@@ -35,6 +35,7 @@ const {
   emitToDonationRoom,
   emitToCustomer,
 } = require('../socket');
+const { logActivity } = require('../utils/auditLogger');
 
 const TRACKING_POPULATE = [
   { path: 'donorId', select: 'username businessName role email contactNo' },
@@ -826,6 +827,8 @@ exports.acceptPickup = async (req, res) => {
       donation.driverId
     );
 
+    await logActivity(req.user._id, 'DELIVERY_ACCEPT', { id: donationId }, req);
+
     return res.json({
       success: true,
       donation: payload,
@@ -987,6 +990,8 @@ exports.confirmPickup = async (req, res) => {
       donation.driverId
     );
 
+    await logActivity(req.user._id, 'DELIVERY_PICKUP', { id: donationId }, req);
+
     return res.json({
       success: true,
       message: 'Pickup confirmed.',
@@ -1050,6 +1055,8 @@ exports.confirmDelivery = async (req, res) => {
         console.error('creditDeliveryEarnings (customer order) error:', earningsErr);
       }
 
+      await logActivity(req.user._id, 'DELIVERY_CONFIRM', { id: donationId }, req);
+
       return res.json({
         success: true,
         message: 'Delivery confirmed.',
@@ -1099,6 +1106,8 @@ exports.confirmDelivery = async (req, res) => {
     } catch (earningsErr) {
       console.error('creditDeliveryEarnings (donation) error:', earningsErr);
     }
+
+    await logActivity(req.user._id, 'DELIVERY_CONFIRM', { id: donationId }, req);
 
     return res.json({
       success: true,

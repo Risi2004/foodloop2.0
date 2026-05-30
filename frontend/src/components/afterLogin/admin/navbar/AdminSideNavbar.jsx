@@ -65,6 +65,10 @@ function AdminSideNavbar() {
                         <Link to="/admin/user-monitoring">User Monitoring</Link>
                     </div>
                     <div className='sidebar__links'>
+                        <img src={monitoringIcon} alt="" />
+                        <Link to="/admin/audit-logs">Audit Logs</Link>
+                    </div>
+                    <div className='sidebar__links'>
                         <img src={notificationIcon} alt="" />
                         <Link to="/admin/notification">Notification</Link>
                     </div>
@@ -100,6 +104,7 @@ function AdminSideNavbar() {
                     <Link to="/admin/maintenance" onClick={toggleMenu}>Maintenance</Link>
                     <Link to="/admin/orders" onClick={toggleMenu}>All Orders</Link>
                     <Link to="/admin/user-monitoring" onClick={toggleMenu}>User Monitoring</Link>
+                    <Link to="/admin/audit-logs" onClick={toggleMenu}>Audit Logs</Link>
                     <Link to="/admin/notification" onClick={toggleMenu}>Notification</Link>
                     <Link to="/admin/reviews" onClick={toggleMenu}>Reviews</Link>
                     <Link to="/admin/messages" onClick={toggleMenu}>Messages</Link>

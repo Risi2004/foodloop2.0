@@ -36,6 +36,7 @@ const {
 } = require('../utils/sendNotificationEmail');
 const { performDonationClaim, notifyDonationClaimed } = require('../services/donationClaimService');
 const { restoreParentQuantityOnCancel } = require('../utils/donationClaimFork');
+const { logActivity } = require('../utils/auditLogger');
 
 const DONOR_ROLES = [
   'donor',
@@ -272,6 +273,8 @@ exports.createDonation = async (req, res) => {
       });
     }
 
+    await logActivity(req.user._id, 'DONATION_CREATE', { donationId: donation._id, itemName: donation.itemName, quantity: donation.quantity }, req);
+
     return res.status(201).json({
       success: true,
       donation: donation.toPublicJSON(),
@@ -477,6 +480,8 @@ exports.claimDonation = async (req, res) => {
 
     const { claimPayload, parentPayload } = await notifyDonationClaimed({ child, parent });
 
+    await logActivity(req.user._id, 'DONATION_CLAIM', { donationId: id, itemName: listing.itemName, claimQuantity }, req);
+
     return res.json({
       success: true,
       donation: claimPayload,
@@ -581,6 +586,8 @@ exports.cancelClaim = async (req, res) => {
     emitToDrivers('donation:claimCancelled', { donationId });
 
     sendDonationClaimCancelledEmails(donation, donorUser, receiverUser);
+
+    await logActivity(req.user._id, 'DONATION_CLAIM_CANCEL', { donationId: id, itemName: donation.itemName }, req);
 
     return res.json({
       success: true,
@@ -820,6 +827,8 @@ exports.updateDonation = async (req, res) => {
 
     await donation.save();
 
+    await logActivity(req.user._id, 'DONATION_UPDATE', { donationId: id, itemName: donation.itemName, quantity: donation.quantity }, req);
+
     return res.json({
       success: true,
       donation: donation.toPublicJSON(),
@@ -863,6 +872,8 @@ exports.deleteDonation = async (req, res) => {
     const donationId = donation._id.toString();
     emitToReceivers('donation:cancelled', { donationId });
     emitToDrivers('donation:cancelled', { donationId });
+
+    await logActivity(req.user._id, 'DONATION_CANCEL', { donationId: id, itemName: donation.itemName }, req);
 
     return res.json({
       success: true,

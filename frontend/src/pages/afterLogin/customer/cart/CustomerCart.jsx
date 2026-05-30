@@ -102,9 +102,6 @@ const CustomerCart = () => {
               )}
               {cart.map((item) => (
                 <div key={item.id} className="cart-item customer-panel">
-                  <div className="cart-item-img">
-                    <img src={item.image} alt={item.name} />
-                  </div>
                   <div className="cart-item-details">
                     <h3>{item.name}</h3>
                     <p>{item.vendorName}</p>

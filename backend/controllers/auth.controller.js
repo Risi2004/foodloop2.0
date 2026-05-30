@@ -27,6 +27,7 @@ const {
   NIC_INVALID_MSG,
 } = require('../utils/signupValidation');
 const { normalizeVenueType, isValidVenueType } = require('../constants/venueTypes');
+const { logActivity } = require('../utils/auditLogger');
 
 const PASSWORD_RESET_VERIFIED_MS = 15 * 60 * 1000;
 
@@ -290,6 +291,8 @@ exports.signup = async (req, res) => {
 
     await assignOtp(user);
 
+    await logActivity(user._id, 'USER_REGISTER', { email: user.email, role: user.role }, req);
+
     return res.status(201).json({
       success: true,
       message: 'Check your email for the verification code.',
@@ -486,6 +489,8 @@ exports.login = async (req, res) => {
     const token = signToken(user);
     const safeUser = formatUserResponse(req, user);
     safeUser.role = normalizeRoleForResponse(safeUser.role);
+
+    await logActivity(user._id, 'USER_LOGIN', { email: user.email, role: safeUser.role }, req);
 
     // Send login notification for Admin logins
     if (safeUser.role === 'Admin') {
@@ -715,3 +720,92 @@ exports.resetPassword = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to reset password' });
   }
 };
+
+exports.deleteMe = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const role = (req.user.role || '').toLowerCase();
+
+    const Donation = require('../models/Donation');
+    const CustomerOrder = require('../models/CustomerOrder');
+    const UserNotification = require('../models/UserNotification');
+
+    const DONOR_ROLES = ['donor', 'restaurant', 'supermarket', 'business', 'individual'];
+
+    // 1. Supplier / Donor cleanups
+    if (DONOR_ROLES.includes(role)) {
+      // Delete any non-delivered listing they listed
+      await Donation.deleteMany({
+        donorId: userId,
+        status: { $ne: 'delivered' },
+      });
+    }
+    // 2. NGO Receiver cleanups
+    else if (role === 'receiver') {
+      // Release active uncompleted claims back to available pool
+      await Donation.updateMany(
+        {
+          receiverId: userId,
+          status: { $ne: 'delivered' },
+        },
+        {
+          $set: {
+            receiverId: null,
+            claimedAt: null,
+            status: 'available',
+          },
+        }
+      );
+    }
+    // 3. Volunteer Driver cleanups
+    else if (role === 'driver') {
+      // Return accepted uncompleted donation deliveries to claimed status
+      await Donation.updateMany(
+        {
+          driverId: userId,
+          status: { $in: ['driver_assigned', 'picked_up', 'in_transit'] },
+        },
+        {
+          $set: {
+            driverId: null,
+            assignedAt: null,
+            pickedUpAt: null,
+            status: 'claimed',
+          },
+        }
+      );
+      // Return accepted uncompleted customer orders to finding_driver status
+      await CustomerOrder.updateMany(
+        {
+          driverId: userId,
+          status: { $in: ['driver_assigned', 'picked_up', 'in_transit'] },
+        },
+        {
+          $set: {
+            driverId: null,
+            assignedAt: null,
+            pickedUpAt: null,
+            status: 'finding_driver',
+          },
+        }
+      );
+    }
+
+    // 4. Delete user notifications
+    await UserNotification.deleteMany({ userId });
+
+    await logActivity(userId, 'USER_DELETED', { email: req.user.email, role }, req);
+
+    // 5. Delete user profile record
+    await User.findByIdAndDelete(userId);
+
+    return res.json({
+      success: true,
+      message: 'Your account has been deleted successfully.',
+    });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to delete account' });
+  }
+};
+

@@ -58,6 +58,7 @@ import AdminOrdersPage from "./pages/afterLogin/admin/orders/AdminOrdersPage";
 import AdminUserMonitoringPage from "./pages/afterLogin/admin/userMonitoring/AdminUserMonitoringPage";
 import AdminFinancePage from "./pages/afterLogin/admin/finance/AdminFinancePage";
 import AdminMaintenancePage from "./pages/afterLogin/admin/maintenance/AdminMaintenancePage";
+import AdminAuditLogsPage from "./pages/afterLogin/admin/auditLogs/AdminAuditLogsPage";
 
 import CustomerMarketplace from "./pages/afterLogin/customer/marketplace/CustomerMarketplace";
 import CustomerCart from "./pages/afterLogin/customer/cart/CustomerCart";
@@ -142,6 +143,7 @@ const ROUTE_TITLE_MAP = {
   "/admin/user-monitoring": "FoodLoop | User Activity Monitor",
   "/admin/finance": "FoodLoop | Financial Analytics",
   "/admin/maintenance": "FoodLoop | System Maintenance",
+  "/admin/audit-logs": "FoodLoop | Audit Logs",
 
   // Customer Routes
   "/customer/marketplace": "FoodLoop | Customer Marketplace",
@@ -303,6 +305,7 @@ function App() {
           <Route path="user-monitoring" element={<AdminUserMonitoringPage />} />
           <Route path="finance" element={<AdminFinancePage />} />
           <Route path="maintenance" element={<AdminMaintenancePage />} />
+          <Route path="audit-logs" element={<AdminAuditLogsPage />} />
         </Route>
 
         {/* Customer Routes - Accessible by Customer role */}

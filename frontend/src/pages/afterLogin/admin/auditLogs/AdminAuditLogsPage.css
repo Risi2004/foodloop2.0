@@ -1,0 +1,327 @@
+/* Scoped styles unique to Admin Audit Logs Page */
+
+.audit-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Status Indicator & Pause/Resume Toggle Switch */
+.admin-audit-settings-panel {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.65rem 1.2rem;
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #A5D6A7;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.active {
+  background-color: #73A13F;
+  box-shadow: 0 0 10px rgba(115, 161, 99, 0.6);
+  animation: pulse-green-glow 1.8s infinite alternate;
+}
+
+.status-dot.paused {
+  background-color: #ff8a80;
+  box-shadow: 0 0 10px rgba(255, 138, 128, 0.6);
+}
+
+@keyframes pulse-green-glow {
+  from {
+    transform: scale(0.9);
+    box-shadow: 0 0 4px rgba(115, 161, 99, 0.4);
+  }
+  to {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba(115, 161, 99, 0.8);
+  }
+}
+
+.toggle-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  transition: background-color 0.3s;
+}
+
+.toggle-switch.active {
+  background-color: #73A13F;
+}
+
+.toggle-switch-handle {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #fff;
+  transition: transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch.active .toggle-switch-handle {
+  transform: translateX(24px);
+}
+
+.toggle-switch-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Custom Search Filter sizing adjustment to span wider */
+.admin-filters label.search-filter-label input {
+  min-width: 260px;
+}
+
+/* Custom Action & Role Badges in the table */
+.action-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.action-badge.auth {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.action-badge.donation {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.action-badge.delivery {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.action-badge.admin {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.action-badge.other {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.role-badge.admin {
+  background: #fae8ff;
+  color: #86198f;
+}
+
+.role-badge.donor {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.role-badge.receiver {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.role-badge.driver {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.role-badge.system {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* Row elements specific to Audit page */
+.audit-row {
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.audit-row:hover {
+  background-color: rgba(115, 161, 63, 0.05) !important;
+}
+
+.audit-row.expanded {
+  background-color: rgba(115, 161, 63, 0.03) !important;
+}
+
+.date-cell {
+  font-size: 0.85rem;
+  color: #618972;
+}
+
+.ip-cell {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  color: #4b6b5b;
+}
+
+.expand-cell-btn {
+  background: none;
+  border: none;
+  color: #73A13F;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.expand-cell-btn:hover {
+  background-color: rgba(115, 161, 63, 0.1);
+}
+
+.expand-cell-btn.rotated {
+  transform: rotate(180deg);
+}
+
+/* Accordion Drawer Section */
+.audit-details-row td {
+  padding: 0 !important;
+  border-bottom: 1.5px solid #DBE6E0 !important;
+}
+
+.audit-details-container {
+  padding: 1.5rem 2rem;
+  background: #f9fbfa;
+  border-top: 1px dashed #DBE6E0;
+  animation: slide-down-animation 0.25s ease-out;
+}
+
+@keyframes slide-down-animation {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.details-block h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #618972;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.details-block p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #2E4E3F;
+}
+
+.details-payload-box {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 0.9rem 1.2rem;
+  border-radius: 12px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Empty State */
+.audit-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #618972;
+}
+
+.audit-empty__icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.audit-empty h3 {
+  color: #1F4E36;
+  margin: 0 0 0.5rem;
+  font-weight: 800;
+}
+
+.audit-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Custom responsiveness settings for the header container */
+@media screen and (max-width: 960px) {
+  .audit-header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

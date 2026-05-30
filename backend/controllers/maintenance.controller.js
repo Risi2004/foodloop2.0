@@ -5,6 +5,7 @@ const {
   sendSuddenMaintenanceAnnouncementEmails,
   sendMaintenanceCancelledAnnouncementEmails,
 } = require('../utils/sendNotificationEmail');
+const { logActivity } = require('../utils/auditLogger');
 
 function wasScheduledMaintenance(state) {
   if (!state) return false;
@@ -142,6 +143,8 @@ exports.setScheduled = async (req, res) => {
         : 'Scheduled maintenance saved (no changes).'
       : 'Scheduled maintenance saved.';
 
+    await logActivity(req.user._id, 'MAINTENANCE_SCHEDULED', { scheduledStart, scheduledEnd, scheduledMessage }, req);
+
     return res.json({
       success: true,
       message: responseMessage,
@@ -165,6 +168,8 @@ exports.startSudden = async (req, res) => {
   try {
     const state = await maintenanceService.startSuddenDrain(req.user._id);
     notifyMaintenanceEmails(sendSuddenMaintenanceAnnouncementEmails, state);
+    await logActivity(req.user._id, 'MAINTENANCE_SUDDEN_START', {}, req);
+
     return res.json({
       success: true,
       message:
@@ -190,6 +195,8 @@ exports.startSudden = async (req, res) => {
 exports.forceSuddenActive = async (req, res) => {
   try {
     const state = await maintenanceService.forceSuddenActive(req.user._id);
+    await logActivity(req.user._id, 'MAINTENANCE_FORCE_ACTIVE', {}, req);
+
     return res.json({
       success: true,
       message: 'Maintenance mode activated.',
@@ -214,6 +221,8 @@ exports.endMaintenance = async (req, res) => {
     const before = await maintenanceService.getEffectiveState();
     const state = await maintenanceService.endMaintenance(req.user._id);
     notifyMaintenanceCancelledIfNeeded(before, 'end');
+    await logActivity(req.user._id, 'MAINTENANCE_END', {}, req);
+
     return res.json({
       success: true,
       message: 'Maintenance ended.',
@@ -238,6 +247,8 @@ exports.cancelMaintenance = async (req, res) => {
     const before = await maintenanceService.getEffectiveState();
     const state = await maintenanceService.cancelMaintenance(req.user._id);
     notifyMaintenanceCancelledIfNeeded(before, 'cancel');
+    await logActivity(req.user._id, 'MAINTENANCE_CANCEL', {}, req);
+
     return res.json({
       success: true,
       message: 'Maintenance cancelled.',

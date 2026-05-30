@@ -12,19 +12,19 @@ function ProfileStats({ donations = [] }) {
             <div className="stat-card large-stat">
                 <span className="stat-icon"><img src={receiptIcon} alt="" className="stat-icon-img" /></span>
                 <h3>Items Donated</h3>
-                <div style={{color:"white"}} className="stat-value">{donations.length}</div>
+                <div className="stat-value">{donations.length}</div>
             </div>
 
             <div className="stat-card large-stat">
                 <span className="stat-icon"><img src={peopleIcon} alt="" className="stat-icon-img" /></span>
                 <h3>People Fed</h3>
-                <div style={{color:"white"}} className="stat-value">{deliveredCount}</div>
+                <div className="stat-value">{deliveredCount}</div>
             </div>
 
             <div className="stat-card large-stat">
                 <span className="stat-icon"><img src={gasIndustryIcon} alt="" className="stat-icon-img" /></span>
                 <h3>Total Quantity</h3>
-                <div style={{color:"white"}} className="stat-value">
+                <div className="stat-value">
                     {totalItems}
                     <span className="stat-unit">units</span>
                 </div>
@@ -32,5 +32,6 @@ function ProfileStats({ donations = [] }) {
         </div>
     );
 }
+
 
 export default ProfileStats;

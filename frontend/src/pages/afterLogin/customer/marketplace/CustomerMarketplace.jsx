@@ -61,7 +61,6 @@ const CustomerMarketplace = () => {
   });
 
   const handleProductSelect = (product) => {
-    lockSupplier(product);
     setSelectedListing(product);
   };
 
@@ -382,7 +381,7 @@ const CustomerMarketplace = () => {
             {activeSupplier && (
               <div className="marketplace-supplier-lock-banner" role="status">
                 <span>
-                  Ordering from <strong>{activeSupplier.name}</strong>. Other suppliers are disabled.
+                  You have active items from <strong>{activeSupplier.name}</strong> in your cart. To ensure efficient delivery, you can only order or claim from one supplier per checkout. Complete your current order, or click <strong>"Change supplier"</strong> to clear your cart and browse others.
                 </span>
                 <button type="button" className="marketplace-supplier-lock-clear" onClick={handleChangeSupplier}>
                   Change supplier
@@ -410,7 +409,7 @@ const CustomerMarketplace = () => {
                     <div
                       key={product.id}
                       className={`aliexpress-card${supplierDisabled ? ' aliexpress-card--supplier-disabled' : ''}`}
-                      onClick={() => !supplierDisabled && lockSupplier(product)}
+                      onClick={() => !supplierDisabled && setSelectedListing(product)}
                     >
                       <div className="card-image-wrapper">
                         <img src={product.image} alt={product.name} className="product-img" />
@@ -608,6 +607,9 @@ const CustomerMarketplace = () => {
               setClaimLocationModalOpen(false);
               setClaimListing(null);
               setClaimError(null);
+              if (cart.length === 0) {
+                clearSupplierLock();
+              }
             }
           }}
           onConfirm={handleClaimLocationConfirm}
