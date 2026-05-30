@@ -81,7 +81,9 @@ function AdminSideNavbar() {
                         <Link to="/admin/messages">Messages</Link>
                     </div>
                 </div>
-                <button onClick={handleLogout}>Log Out</button>
+                <div className="sidebar__footer">
+                    <button type="button" onClick={handleLogout}>Log Out</button>
+                </div>
             </div>
 
             <div className='responsive__side__navbar'>
@@ -96,21 +98,23 @@ function AdminSideNavbar() {
 
             {isMenuOpen && (
                 <div className="responsive__navbar__popup">
-                    <p onClick={toggleMenu}>X</p>
-                    <Link to="/admin/dashboard" onClick={toggleMenu}>Dashboard Overview</Link>
-                    <Link to="/admin/user-management" onClick={toggleMenu}>User Management</Link>
-                    <Link to="/admin/payout-requests" onClick={toggleMenu}>Payout Requests</Link>
-                    <Link to="/admin/finance" onClick={toggleMenu}>Platform Finance</Link>
-                    <Link to="/admin/maintenance" onClick={toggleMenu}>Maintenance</Link>
-                    <Link to="/admin/orders" onClick={toggleMenu}>All Orders</Link>
-                    <Link to="/admin/user-monitoring" onClick={toggleMenu}>User Monitoring</Link>
-                    <Link to="/admin/audit-logs" onClick={toggleMenu}>Audit Logs</Link>
-                    <Link to="/admin/notification" onClick={toggleMenu}>Notification</Link>
-                    <Link to="/admin/reviews" onClick={toggleMenu}>Reviews</Link>
-                    <Link to="/admin/messages" onClick={toggleMenu}>Messages</Link>
-                    <Link to="" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
-                        <button>Log Out</button>
-                    </Link>
+                    <p className="responsive__navbar__popup-close" onClick={toggleMenu}>X</p>
+                    <div className="responsive__navbar__popup-links">
+                        <Link to="/admin/dashboard" onClick={toggleMenu}>Dashboard Overview</Link>
+                        <Link to="/admin/user-management" onClick={toggleMenu}>User Management</Link>
+                        <Link to="/admin/payout-requests" onClick={toggleMenu}>Payout Requests</Link>
+                        <Link to="/admin/finance" onClick={toggleMenu}>Platform Finance</Link>
+                        <Link to="/admin/maintenance" onClick={toggleMenu}>Maintenance</Link>
+                        <Link to="/admin/orders" onClick={toggleMenu}>All Orders</Link>
+                        <Link to="/admin/user-monitoring" onClick={toggleMenu}>User Monitoring</Link>
+                        <Link to="/admin/audit-logs" onClick={toggleMenu}>Audit Logs</Link>
+                        <Link to="/admin/notification" onClick={toggleMenu}>Notification</Link>
+                        <Link to="/admin/reviews" onClick={toggleMenu}>Reviews</Link>
+                        <Link to="/admin/messages" onClick={toggleMenu}>Messages</Link>
+                    </div>
+                    <div className="responsive__navbar__popup-footer">
+                        <button type="button" onClick={handleLogout}>Log Out</button>
+                    </div>
                 </div>
             )}
 

@@ -4,7 +4,8 @@ html:has(.admin__dashboard__page),
 html:has(.admin__user__management__page),
 html:has(.admin__notification__page),
 html:has(.admin__messages__page),
-html:has(.review__management__page) {
+html:has(.review__management__page),
+html:has(.admin__finance__page) {
   overflow-x: hidden;
 }
 
@@ -14,7 +15,8 @@ html:has(.review__management__page) {
 .admin__user__management__page,
 .admin__notification__page,
 .admin__messages__page,
-.review__management__page {
+.review__management__page,
+.admin__finance__page {
   --admin-sidebar-width: 26%;
   --admin-shell-margin-y: 2.5%;
   --admin-shell-margin-x: 2%;
@@ -48,7 +50,19 @@ html:has(.review__management__page) {
   border-radius: 32px;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.admin-page-content::-webkit-scrollbar,
+.admin-dashboard::-webkit-scrollbar,
+.user-manage-page::-webkit-scrollbar,
+.frame-197::-webkit-scrollbar,
+.review-manage-page::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .admin-page-content img,
@@ -242,12 +256,27 @@ html:has(.review__management__page) {
   .admin__user__management__page,
   .admin__notification__page,
   .admin__messages__page,
-  .review__management__page {
+  .review__management__page,
+  .admin__finance__page {
     display: block;
     height: auto;
     max-height: none;
     overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .admin-page-shell::-webkit-scrollbar,
+  .admin__dashboard__page::-webkit-scrollbar,
+  .admin__user__management__page::-webkit-scrollbar,
+  .admin__notification__page::-webkit-scrollbar,
+  .admin__messages__page::-webkit-scrollbar,
+  .review__management__page::-webkit-scrollbar,
+  .admin__finance__page::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
   }
 
   .admin-page-content,

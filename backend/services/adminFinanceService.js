@@ -5,6 +5,14 @@ const { roundCurrency } = require('../utils/earningsHelpers');
 
 const CARD_PAYMENT_STATUSES = ['paid', 'consumed'];
 
+const SUBSCRIPTION_PAYMENT_CONTEXTS = [
+  'supplier_ai_subscription',
+  'supplier_esg_subscription',
+  'supplier_bundle_subscription',
+];
+
+const MARKETPLACE_PAYMENT_CONTEXTS = ['claim', 'customer_checkout'];
+
 function monthRange(year, monthIndex) {
   const start = new Date(year, monthIndex, 1);
   const end = new Date(year, monthIndex + 1, 1);
@@ -92,6 +100,34 @@ async function sumCardInflows(range) {
   return roundCurrency(rows[0]?.total || 0);
 }
 
+async function sumSubscriptionRevenue(range) {
+  const rows = await Payment.aggregate([
+    {
+      $match: {
+        ...cardPaymentMatch(),
+        paymentContext: { $in: SUBSCRIPTION_PAYMENT_CONTEXTS },
+        ...createdAtMatch(range),
+      },
+    },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
+  ]);
+  return roundCurrency(rows[0]?.total || 0);
+}
+
+async function sumMarketplaceCardInflows(range) {
+  const rows = await Payment.aggregate([
+    {
+      $match: {
+        ...cardPaymentMatch(),
+        paymentContext: { $in: MARKETPLACE_PAYMENT_CONTEXTS },
+        ...createdAtMatch(range),
+      },
+    },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
+  ]);
+  return roundCurrency(rows[0]?.total || 0);
+}
+
 async function sumFreeDonationSubsidies(range) {
   const rows = await EarningsTransaction.aggregate([
     {
@@ -168,6 +204,8 @@ async function getFinanceSummary({ from, to } = {}) {
   const [
     commissionRevenue,
     cardInflows,
+    subscriptionRevenue,
+    marketplaceCardInflows,
     freeDonationSubsidies,
     payoutOutflows,
     pendingLiabilities,
@@ -175,9 +213,12 @@ async function getFinanceSummary({ from, to } = {}) {
     lastMonthCommission,
     thisMonthCard,
     thisMonthSubsidies,
+    thisMonthSubscription,
   ] = await Promise.all([
     sumCommission(range),
     sumCardInflows(range),
+    sumSubscriptionRevenue(range),
+    sumMarketplaceCardInflows(range),
     sumFreeDonationSubsidies(range),
     sumPayoutOutflows(range),
     sumPendingLiabilities(),
@@ -185,15 +226,24 @@ async function getFinanceSummary({ from, to } = {}) {
     sumCommission(lastMonth),
     sumCardInflows(thisMonth),
     sumFreeDonationSubsidies(thisMonth),
+    sumSubscriptionRevenue(thisMonth),
   ]);
 
-  const netPlatformPosition = roundCurrency(commissionRevenue - freeDonationSubsidies);
+  const platformGrossRevenue = roundCurrency(commissionRevenue + subscriptionRevenue);
+  const userShareFromMarketplace = roundCurrency(
+    Math.max(0, marketplaceCardInflows - commissionRevenue)
+  );
+  const netPlatformPosition = roundCurrency(platformGrossRevenue - freeDonationSubsidies);
   const healthStatus = netPlatformPosition >= 0 ? 'healthy' : 'at_loss';
   const totalExpenses = roundCurrency(freeDonationSubsidies + payoutOutflows);
 
   return {
     summary: {
       commissionRevenue,
+      subscriptionRevenue,
+      platformGrossRevenue,
+      marketplaceCardInflows,
+      userShareFromMarketplace,
       cardInflows,
       freeDonationSubsidies,
       payoutOutflows,
@@ -204,6 +254,7 @@ async function getFinanceSummary({ from, to } = {}) {
       thisMonthCommission,
       thisMonthCard,
       thisMonthSubsidies,
+      thisMonthSubscription,
     },
     trend: {
       commissionTrend: computeTrend(thisMonthCommission, lastMonthCommission),

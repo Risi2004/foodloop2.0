@@ -9,7 +9,15 @@ body.admin-mode {
     min-height: calc(100vh - 60px);
     overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     background: transparent;
+}
+
+.dashboard::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 .dashboard-header-row {

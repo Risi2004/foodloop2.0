@@ -53,6 +53,47 @@ function formatDate(value) {
   });
 }
 
+function buildFinanceModel(summary) {
+  const totalCollected = summary.cardInflows || 0;
+  const commissionRevenue = summary.commissionRevenue || 0;
+  const subscriptionRevenue = summary.subscriptionRevenue || 0;
+  const platformGross =
+    summary.platformGrossRevenue ?? roundCurrency(commissionRevenue + subscriptionRevenue);
+  const platformSubsidies = summary.freeDonationSubsidies || 0;
+  const platformNet = summary.netPlatformPosition || 0;
+  const userPaidOut = summary.payoutOutflows || 0;
+  const userPending = summary.pendingLiabilities || 0;
+  const userPassThrough =
+    summary.userShareFromMarketplace ??
+    Math.max(0, (summary.marketplaceCardInflows || 0) - commissionRevenue);
+
+  const splitTotal = Math.max(totalCollected, 1);
+  const userSharePct = (userPassThrough / splitTotal) * 100;
+  const commissionPct = (commissionRevenue / splitTotal) * 100;
+  const subscriptionPct = (subscriptionRevenue / splitTotal) * 100;
+  const platformSharePct = commissionPct + subscriptionPct;
+
+  return {
+    totalCollected,
+    commissionRevenue,
+    subscriptionRevenue,
+    platformGross,
+    platformSubsidies,
+    platformNet,
+    userPaidOut,
+    userPending,
+    userPassThrough,
+    userSharePct,
+    commissionPct,
+    subscriptionPct,
+    platformSharePct,
+  };
+}
+
+function roundCurrency(n) {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+
 function AdminFinancePage() {
   const [period, setPeriod] = useState('all');
   const [ledgerTab, setLedgerTab] = useState('all');
@@ -111,41 +152,34 @@ function AdminFinancePage() {
     setPage(1);
   }, [period, ledgerTab]);
 
-  const plMax = useMemo(() => {
-    if (!summary) return 1;
-    return Math.max(
-      summary.commissionRevenue || 0,
-      summary.totalExpenses || 0,
-      summary.netPlatformPosition || 0,
-      1
-    );
-  }, [summary]);
+  const model = useMemo(
+    () => (summary ? buildFinanceModel(summary) : null),
+    [summary]
+  );
 
-  const commissionPct = summary ? ((summary.commissionRevenue || 0) / plMax) * 100 : 0;
-  const expensePct = summary ? ((summary.totalExpenses || 0) / plMax) * 100 : 0;
+  const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label || 'All time';
 
   return (
     <div className="admin-page-shell admin__finance__page">
       <AdminSideNavbar />
       <div className="admin-page-content">
-        <div className="page-header">
-          <h1>Platform Finance</h1>
-          <p>
-            Track FoodLoop commission, card account inflows, free-donation driver subsidies, and payout outflows.
-          </p>
-        </div>
-
-        <div className="admin-filters admin-finance-filters">
-          <label>
-            Period
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-              {PERIOD_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="admin-finance-header">
+          <div className="page-header">
+            <h1>Platform Finance</h1>
+            <p>How money flows through FoodLoop — collected, shared with users, and retained by the platform.</p>
+          </div>
+          <div className="admin-finance-header__actions">
+            <label className="admin-finance-period">
+              <span>Period</span>
+              <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                {PERIOD_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         {error && <p className="admin-error">{error}</p>}
@@ -154,90 +188,154 @@ function AdminFinancePage() {
           <p className="admin-message">Loading platform finance...</p>
         )}
 
-        {summary && (
+        {summary && model && (
           <>
-            <div
-              className={`admin-finance-health admin-finance-health--${summary.healthStatus}`}
-            >
-              <div>
-                <strong>{financeHealthLabel(summary.healthStatus)}</strong>
+            <div className={`admin-finance-status admin-finance-status--${summary.healthStatus}`}>
+              <div className="admin-finance-status__main">
+                <span className="admin-finance-status__label">{financeHealthLabel(summary.healthStatus)}</span>
                 <p>
-                  Net platform position: {formatLkr(summary.netPlatformPosition)}
-                  {' '}
-                  (commission minus free-donation subsidies)
+                  Platform net earnings for <strong>{periodLabel.toLowerCase()}</strong>:{' '}
+                  <strong>{formatLkr(model.platformNet)}</strong>
+                  {' '}(commission + subscriptions − subsidies)
                 </p>
               </div>
               {trend && (
-                <span className="admin-finance-health__trend">
-                  Commission trend: {trend.commissionTrend >= 0 ? '+' : ''}
-                  {trend.commissionTrend}% vs last month
-                </span>
+                <div className="admin-finance-status__trend">
+                  <span>Commission vs last month</span>
+                  <strong>
+                    {trend.commissionTrend >= 0 ? '+' : ''}
+                    {trend.commissionTrend}%
+                  </strong>
+                </div>
               )}
             </div>
 
-            <section className="admin-finance-kpis" aria-label="Financial overview">
-              <article className="admin-finance-kpi">
-                <span>Platform commission</span>
-                <strong>{formatLkr(summary.commissionRevenue)}</strong>
-                <small>FoodLoop&apos;s 20% cut on sell listings (retained)</small>
+            <section className="admin-finance-overview" aria-label="Money flow overview">
+              <div className="admin-finance-overview__hero">
+                <article className="admin-finance-tile admin-finance-tile--total">
+                  <span className="admin-finance-tile__eyebrow">Total collected</span>
+                  <strong className="admin-finance-tile__value">{formatLkr(model.totalCollected)}</strong>
+                  <p>All card payments received through the platform account</p>
+                </article>
+                <article className="admin-finance-tile admin-finance-tile--users">
+                  <span className="admin-finance-tile__eyebrow">Goes to users</span>
+                  <strong className="admin-finance-tile__value">{formatLkr(model.userPassThrough)}</strong>
+                  <p>Supplier &amp; driver share from marketplace orders only</p>
+                </article>
+                <article className="admin-finance-tile admin-finance-tile--platform">
+                  <span className="admin-finance-tile__eyebrow">Platform keeps (net)</span>
+                  <strong className="admin-finance-tile__value">{formatLkr(model.platformNet)}</strong>
+                  <p>Commission + subscription fees, minus free-donation subsidies</p>
+                </article>
+              </div>
+
+              <div className="admin-finance-split">
+                <div className="admin-finance-split__labels">
+                  <span>Users {model.userSharePct.toFixed(0)}%</span>
+                  <span>Commission {model.commissionPct.toFixed(0)}%</span>
+                  <span>Subscriptions {model.subscriptionPct.toFixed(0)}%</span>
+                </div>
+                <div className="admin-finance-split__track" role="img" aria-label="Split of collected funds">
+                  <div
+                    className="admin-finance-split__segment admin-finance-split__segment--users"
+                    style={{ width: `${model.userSharePct}%` }}
+                  />
+                  <div
+                    className="admin-finance-split__segment admin-finance-split__segment--commission"
+                    style={{ width: `${model.commissionPct}%` }}
+                  />
+                  <div
+                    className="admin-finance-split__segment admin-finance-split__segment--subscription"
+                    style={{ width: `${model.subscriptionPct}%` }}
+                  />
+                </div>
+                <p className="admin-finance-split__hint">
+                  Of {formatLkr(model.totalCollected)} collected:{' '}
+                  {formatLkr(model.userPassThrough)} goes to suppliers &amp; drivers from marketplace sales;{' '}
+                  {formatLkr(model.commissionRevenue)} is marketplace commission;{' '}
+                  {formatLkr(model.subscriptionRevenue)} is subscription revenue (AI, ESG &amp; Premium — 100% platform).
+                </p>
+              </div>
+            </section>
+
+            <section className="admin-finance-details" aria-label="Detailed breakdown">
+              <article className="admin-finance-panel admin-finance-panel--platform">
+                <header>
+                  <h2>Platform (Admin)</h2>
+                  <p>What FoodLoop earns and spends</p>
+                </header>
+                <ul className="admin-finance-panel__list">
+                  <li>
+                    <span>Marketplace commission</span>
+                    <strong>{formatLkr(model.commissionRevenue)}</strong>
+                    <small>20% cut on sell listings &amp; checkout orders</small>
+                  </li>
+                  <li>
+                    <span>Subscription revenue</span>
+                    <strong>{formatLkr(model.subscriptionRevenue)}</strong>
+                    <small>Tomorrow AI, ESG &amp; CSR, and Premium bundle — kept by FoodLoop</small>
+                  </li>
+                  <li>
+                    <span>Gross platform revenue</span>
+                    <strong>{formatLkr(model.platformGross)}</strong>
+                    <small>Commission + subscriptions before expenses</small>
+                  </li>
+                  <li>
+                    <span>Free-donation subsidies</span>
+                    <strong className="is-expense">− {formatLkr(model.platformSubsidies)}</strong>
+                    <small>Delivery fees covered for platform-funded donations</small>
+                  </li>
+                  <li className="admin-finance-panel__total">
+                    <span>Net platform earnings</span>
+                    <strong>{formatLkr(model.platformNet)}</strong>
+                  </li>
+                </ul>
               </article>
-              <article className="admin-finance-kpi">
-                <span>Card account (gross)</span>
-                <strong>{formatLkr(summary.cardInflows)}</strong>
-                <small>All card payments received (includes pass-through to suppliers &amp; drivers)</small>
-              </article>
-              <article className="admin-finance-kpi admin-finance-kpi--expense">
-                <span>Free donation subsidies</span>
-                <strong>{formatLkr(summary.freeDonationSubsidies)}</strong>
-                <small>Delivery fees paid to drivers for platform-funded donations</small>
-              </article>
-              <article className="admin-finance-kpi admin-finance-kpi--expense">
-                <span>Payouts sent</span>
-                <strong>{formatLkr(summary.payoutOutflows)}</strong>
-                <small>Withdrawals marked paid to suppliers and drivers</small>
+
+              <article className="admin-finance-panel admin-finance-panel--users">
+                <header>
+                  <h2>Users (Suppliers &amp; Drivers)</h2>
+                  <p>What participants earn and withdraw</p>
+                </header>
+                <ul className="admin-finance-panel__list">
+                  <li>
+                    <span>Share from marketplace sales</span>
+                    <strong>{formatLkr(model.userPassThrough)}</strong>
+                    <small>Marketplace card payments minus platform commission (excludes subscriptions)</small>
+                  </li>
+                  <li>
+                    <span>Already paid out</span>
+                    <strong>{formatLkr(model.userPaidOut)}</strong>
+                    <small>Withdrawals marked as paid</small>
+                  </li>
+                  <li>
+                    <span>Pending withdrawal</span>
+                    <strong>{formatLkr(model.userPending)}</strong>
+                    <small>Available balance not yet requested</small>
+                  </li>
+                </ul>
               </article>
             </section>
 
-            <section className="admin-finance-secondary" aria-label="Secondary metrics">
-              <div className="admin-finance-chip">
-                <span>Pending liabilities</span>
-                <strong>{formatLkr(summary.pendingLiabilities)}</strong>
-              </div>
-              <div className="admin-finance-chip">
-                <span>Commission this month</span>
-                <strong>{formatLkr(summary.thisMonthCommission)}</strong>
-              </div>
-              <div className="admin-finance-chip">
-                <span>Card received this month</span>
-                <strong>{formatLkr(summary.thisMonthCard)}</strong>
-              </div>
-            </section>
-
-            <section className="admin-finance-pl">
-              <h2>P&amp;L breakdown</h2>
-              <div className="admin-finance-pl-row">
-                <span>Revenue (commission)</span>
-                <div className="admin-finance-pl-bar-track">
-                  <div
-                    className="admin-finance-pl-bar admin-finance-pl-bar--revenue"
-                    style={{ width: `${commissionPct}%` }}
-                  />
+            <section className="admin-finance-month" aria-label="This month snapshot">
+              <h2>This month</h2>
+              <div className="admin-finance-month__grid">
+                <div className="admin-finance-month__item">
+                  <span>Card received</span>
+                  <strong>{formatLkr(summary.thisMonthCard)}</strong>
                 </div>
-                <strong>{formatLkr(summary.commissionRevenue)}</strong>
-              </div>
-              <div className="admin-finance-pl-row">
-                <span>Expenses (subsidies + payouts)</span>
-                <div className="admin-finance-pl-bar-track">
-                  <div
-                    className="admin-finance-pl-bar admin-finance-pl-bar--expense"
-                    style={{ width: `${expensePct}%` }}
-                  />
+                <div className="admin-finance-month__item">
+                  <span>Commission</span>
+                  <strong>{formatLkr(summary.thisMonthCommission)}</strong>
                 </div>
-                <strong>{formatLkr(summary.totalExpenses)}</strong>
-              </div>
-              <div className="admin-finance-pl-net">
-                Net position (commission − subsidies):{' '}
-                <strong>{formatLkr(summary.netPlatformPosition)}</strong>
+                <div className="admin-finance-month__item">
+                  <span>Subscriptions</span>
+                  <strong>{formatLkr(summary.thisMonthSubscription ?? 0)}</strong>
+                </div>
+                <div className="admin-finance-month__item">
+                  <span>Subsidies</span>
+                  <strong>{formatLkr(summary.thisMonthSubsidies)}</strong>
+                </div>
               </div>
             </section>
           </>
@@ -245,7 +343,10 @@ function AdminFinancePage() {
 
         <section className="admin-finance-ledger">
           <div className="admin-finance-ledger__head">
-            <h2>Financial ledger</h2>
+            <div>
+              <h2>Transaction ledger</h2>
+              <p className="admin-finance-ledger__sub">Detailed record of every inflow and outflow</p>
+            </div>
             <div className="admin-finance-tabs">
               {LEDGER_TABS.map((tab) => (
                 <button
