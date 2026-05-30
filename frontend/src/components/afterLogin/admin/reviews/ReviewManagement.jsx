@@ -1,4 +1,5 @@
 import ReviewRequestsTable from './ReviewRequestsTable';
+import PostedReviewsTable from './PostedReviewsTable';
 import './ReviewManagement.css';
 
 const ReviewManagement = () => {
@@ -10,6 +11,7 @@ const ReviewManagement = () => {
             </div>
 
             <ReviewRequestsTable />
+            <PostedReviewsTable />
         </div>
     );
 };

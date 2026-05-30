@@ -90,7 +90,7 @@ function Feedback() {
                         marginTop: '10px', 
                         fontSize: '14px' 
                     }}>
-                        ✓ Review submitted successfully! It's under admin review.
+                        ✓ Review submitted! You'll receive an email once it's reviewed by our team.
                     </div>
                 )}
                 <br />

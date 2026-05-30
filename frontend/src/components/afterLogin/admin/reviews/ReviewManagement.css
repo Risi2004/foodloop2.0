@@ -110,6 +110,92 @@
     background-color: #bbdefb;
 }
 
+.review-delete-btn {
+    background: #FFEBEE;
+    color: #C62828;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.review-delete-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background-color: #ffcdd2;
+}
+
+.review-delete-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.review-delete-btn--large {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.review-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.review-modal {
+    background: #52615D;
+    padding: 30px;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: auto;
+    color: #e0e0e0;
+}
+
+.review-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.review-modal-header h2 {
+    color: #fff;
+    margin: 0;
+}
+
+.review-modal-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.review-modal-body {
+    margin-top: 10px;
+    padding: 15px;
+    background: #3d4a46;
+    border-radius: 10px;
+    font-style: italic;
+    line-height: 1.6;
+}
+
+.review-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
 @media screen and (max-width:1300px) {
     .review-manage-page {
         width: 100%;

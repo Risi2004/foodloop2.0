@@ -77,11 +77,11 @@
 }
 
 .track-up {
-    animation: scrollUp 90s linear infinite;
+    animation: scrollUp 170s linear infinite;
 }
 
 .track-down {
-    animation: scrollDown 90s linear infinite;
+    animation: scrollDown 170s linear infinite;
 }
 
 .review__column:hover .track-up,

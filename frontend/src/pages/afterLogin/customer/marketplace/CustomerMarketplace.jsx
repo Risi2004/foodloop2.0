@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import Contact from '../../../../components/beforeLogin/Contact/Contact';
+import Feedback from '../../../../components/afterLogin/dashboard/common/feedback/Feedback';
 import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
 import { getCustomerMarketplaceListings, claimDonation } from '../../../../services/donationApi';
@@ -512,6 +513,10 @@ const CustomerMarketplace = () => {
             )}
           </div>
         </main>
+
+        <div id="feedback" className="customer-feedback-wrap">
+          <Feedback />
+        </div>
 
         <div id="contact" className="customer-contact-wrap">
           <Contact />

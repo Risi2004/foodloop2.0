@@ -47,6 +47,9 @@ const {
   contactFormConfirmationEmail,
   contactAdminReplyEmail,
   adminBroadcastNotificationEmail,
+  reviewSubmittedPendingEmail,
+  reviewApprovedEmail,
+  reviewRejectedEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -1096,6 +1099,59 @@ async function sendAdminBroadcastNotificationEmails({ title, message, users }) {
   console.log(`[email] Admin broadcast sent=${sent} failed=${failed}`);
 }
 
+function getLandingUrl() {
+  return getFrontendBase();
+}
+
+async function sendReviewSubmittedPendingEmail(user, { text }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text: plain } = reviewSubmittedPendingEmail({
+      name,
+      text,
+      loginUrl: getLoginUrl(),
+    });
+    await sendMail({ to: user.email, subject, text: plain, html });
+  } catch (err) {
+    console.error(`[email] Failed to send review pending email to ${user.email}:`, err.message);
+    throw err;
+  }
+}
+
+async function sendReviewApprovedEmail(user, { text }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text: plain } = reviewApprovedEmail({
+      name,
+      text,
+      landingUrl: getLandingUrl(),
+    });
+    await sendMail({ to: user.email, subject, text: plain, html });
+  } catch (err) {
+    console.error(`[email] Failed to send review approved email to ${user.email}:`, err.message);
+    throw err;
+  }
+}
+
+async function sendReviewRejectedEmail(user, { text, reason }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text: plain } = reviewRejectedEmail({
+      name,
+      text,
+      reason,
+      loginUrl: getLoginUrl(),
+    });
+    await sendMail({ to: user.email, subject, text: plain, html });
+  } catch (err) {
+    console.error(`[email] Failed to send review rejected email to ${user.email}:`, err.message);
+    throw err;
+  }
+}
+
 module.exports = {
   getLoginUrl,
   getSupplierMyDonationsUrl,
@@ -1151,4 +1207,7 @@ module.exports = {
   sendContactConfirmationEmail,
   sendContactReplyEmail,
   sendAdminBroadcastNotificationEmails,
+  sendReviewSubmittedPendingEmail,
+  sendReviewApprovedEmail,
+  sendReviewRejectedEmail,
 };

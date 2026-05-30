@@ -1784,6 +1784,113 @@ function contactAdminReplyEmail({ name, subject, originalMessage, adminReply }) 
   };
 }
 
+function reviewSubmittedPendingEmail({ name, text, loginUrl }) {
+  const html = layoutHtml(
+    'Review received',
+    [
+      `Hello ${name},`,
+      'Thank you for sharing your feedback about FoodLoop.',
+      'Your review has been submitted and is waiting for admin approval. We will email you once it has been reviewed.',
+      `<div style="background: #f3f4f6; padding: 12px 16px; border-radius: 8px; margin: 12px 0; white-space: pre-wrap;">${text}</div>`,
+      `You can sign in here: <a href="${loginUrl}" style="color: #4CAF50;">${loginUrl}</a>`,
+    ],
+    'Thank you for being part of the FoodLoop community.'
+  );
+
+  const plain = [
+    `Hello ${name},`,
+    '',
+    'Thank you for sharing your feedback about FoodLoop.',
+    'Your review has been submitted and is waiting for admin approval. We will email you once it has been reviewed.',
+    '',
+    text,
+    '',
+    `Sign in: ${loginUrl}`,
+    '',
+    'Thank you for being part of the FoodLoop community.',
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — Your review is pending approval',
+    html,
+    text: plain,
+  };
+}
+
+function reviewApprovedEmail({ name, text, landingUrl }) {
+  const html = layoutHtml(
+    'Review approved',
+    [
+      `Hello ${name},`,
+      'Good news — your FoodLoop review has been approved by our team.',
+      'It may now appear on our landing page for others in the community to read.',
+      `<div style="background: #f3f4f6; padding: 12px 16px; border-radius: 8px; margin: 12px 0; white-space: pre-wrap;">${text}</div>`,
+      `Visit FoodLoop: <a href="${landingUrl}" style="color: #4CAF50;">${landingUrl}</a>`,
+    ],
+    'Thank you for helping us grow the circular food economy.'
+  );
+
+  const plain = [
+    `Hello ${name},`,
+    '',
+    'Good news — your FoodLoop review has been approved by our team.',
+    'It may now appear on our landing page for others in the community to read.',
+    '',
+    text,
+    '',
+    `Visit FoodLoop: ${landingUrl}`,
+    '',
+    'Thank you for helping us grow the circular food economy.',
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — Your review was approved',
+    html,
+    text: plain,
+  };
+}
+
+function reviewRejectedEmail({ name, text, reason, loginUrl }) {
+  const reasonBlock = reason
+    ? `Reason: ${reason}`
+    : 'If you have questions, please contact our support team.';
+
+  const html = layoutHtml(
+    'Review not approved',
+    [
+      `Hello ${name},`,
+      'Thank you for submitting feedback. After review, we were unable to approve your review for publication at this time.',
+      reasonBlock,
+      `<div style="background: #fafafa; padding: 12px 16px; border-radius: 8px; margin: 12px 0; color: #555; white-space: pre-wrap;">${text}</div>`,
+      'You may submit a new review from your dashboard when you are ready.',
+      `Sign in: <a href="${loginUrl}" style="color: #4CAF50;">${loginUrl}</a>`,
+    ],
+    'Thank you for your interest in FoodLoop.'
+  );
+
+  const plain = [
+    `Hello ${name},`,
+    '',
+    'Thank you for submitting feedback. After review, we were unable to approve your review for publication at this time.',
+    '',
+    reasonBlock,
+    '',
+    text,
+    '',
+    'You may submit a new review from your dashboard when you are ready.',
+    '',
+    `Sign in: ${loginUrl}`,
+    '',
+    'Thank you for your interest in FoodLoop.',
+  ].join('\n');
+
+  return {
+    subject: 'FoodLoop — Your review was not approved',
+    html,
+    text: plain,
+  };
+}
+
 function adminBroadcastNotificationEmail({ name, title, message, loginUrl }) {
   const subjectLine = title || 'Update';
 
@@ -1906,4 +2013,7 @@ module.exports = {
   contactFormConfirmationEmail,
   contactAdminReplyEmail,
   adminBroadcastNotificationEmail,
+  reviewSubmittedPendingEmail,
+  reviewApprovedEmail,
+  reviewRejectedEmail,
 };
