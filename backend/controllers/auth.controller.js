@@ -12,6 +12,7 @@ const {
   sendPendingApprovalEmail,
   sendPasswordResetOtpEmail,
   sendPasswordChangedEmail,
+  sendAdminLoginNotificationEmail,
 } = require('../utils/sendNotificationEmail');
 const { uploadSignupFilesToR2 } = require('../utils/r2Storage');
 const {
@@ -485,6 +486,45 @@ exports.login = async (req, res) => {
     const token = signToken(user);
     const safeUser = formatUserResponse(req, user);
     safeUser.role = normalizeRoleForResponse(safeUser.role);
+
+    // Send login notification for Admin logins
+    if (safeUser.role === 'Admin') {
+      const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }) + ' (Colombo Time)';
+      const rawUserAgent = req.headers['user-agent'] || 'Unknown Device';
+      
+      // Parse User-Agent into a friendly device/browser format
+      let deviceOS = 'Unknown Device';
+      if (rawUserAgent.includes('Windows')) deviceOS = 'Windows PC';
+      else if (rawUserAgent.includes('Macintosh')) deviceOS = 'macOS Device';
+      else if (rawUserAgent.includes('iPhone')) deviceOS = 'iPhone';
+      else if (rawUserAgent.includes('iPad')) deviceOS = 'iPad';
+      else if (rawUserAgent.includes('Android')) deviceOS = 'Android Mobile';
+      else if (rawUserAgent.includes('Linux')) deviceOS = 'Linux Device';
+      
+      let browser = 'Browser';
+      if (rawUserAgent.includes('Chrome')) browser = 'Google Chrome';
+      else if (rawUserAgent.includes('Safari') && !rawUserAgent.includes('Chrome')) browser = 'Apple Safari';
+      else if (rawUserAgent.includes('Firefox')) browser = 'Mozilla Firefox';
+      else if (rawUserAgent.includes('Edg')) browser = 'Microsoft Edge';
+
+      const deviceDetails = `${deviceOS} via ${browser}`;
+      
+      const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'Unknown IP';
+      let locationDetails = 'Colombo, Sri Lanka';
+      
+      if (clientIp === '::1' || clientIp === '127.0.0.1' || clientIp.startsWith('::ffff:127.0.0.1')) {
+        locationDetails = `Localhost Development Server (${clientIp}) — Colombo, Sri Lanka (Mocked)`;
+      } else {
+        locationDetails = `IP: ${clientIp} (Colombo, Sri Lanka)`;
+      }
+
+      // Fire email in background (does not block API response)
+      sendAdminLoginNotificationEmail(user, {
+        timestamp,
+        device: deviceDetails,
+        location: locationDetails,
+      }).catch((e) => console.error('[email] Error sending admin login notification:', e.message));
+    }
 
     return res.json({
       success: true,

@@ -1684,6 +1684,45 @@ function maintenanceCancelledEmail({
   return { subject, html, text: textLines.join('\n') };
 }
 
+function adminLoginNotificationEmail({ name, email, timestamp, device, location }) {
+  const html = layoutHtml(
+    'Admin Login Alert',
+    [
+      `Hello ${name},`,
+      `We detected a new login to your FoodLoop 2.0 Administrator account (<strong>${email}</strong>).`,
+      'If this was you, no action is required. If you do not recognize this login, please change your password immediately inside the account settings or contact system security.',
+      `<strong>Security Details:</strong>`,
+      `<ul style="color: #444; line-height: 1.5; padding-left: 20px;">
+        <li><strong>Time:</strong> ${timestamp}</li>
+        <li><strong>Device / Browser:</strong> ${device}</li>
+        <li><strong>Estimated Location:</strong> ${location}</li>
+      </ul>`
+    ],
+    'Security Notification — FoodLoop'
+  );
+
+  const textLines = [
+    `Hello ${name},`,
+    '',
+    `We detected a new login to your FoodLoop 2.0 Administrator account (${email}).`,
+    '',
+    'If this was you, no action is required. If you do not recognize this login, please change your password immediately.',
+    '',
+    'Security Details:',
+    `- Time: ${timestamp}`,
+    `- Device / Browser: ${device}`,
+    `- Estimated Location: ${location}`,
+    '',
+    'Security Notification — FoodLoop',
+  ];
+
+  return {
+    subject: '⚠️ FoodLoop — Admin Login Alert',
+    html,
+    text: textLines.join('\n'),
+  };
+}
+
 module.exports = {
   otpEmailHtml,
   otpEmailText,
@@ -1728,4 +1767,5 @@ module.exports = {
   supplierEsgAutoRenewCancelledEmail,
   supplierBundleSubscriptionPaymentEmail,
   supplierBundleAutoRenewCancelledEmail,
+  adminLoginNotificationEmail,
 };

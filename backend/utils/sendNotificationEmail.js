@@ -42,6 +42,7 @@ const {
   supplierEsgAutoRenewCancelledEmail,
   supplierBundleSubscriptionPaymentEmail,
   supplierBundleAutoRenewCancelledEmail,
+  adminLoginNotificationEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
@@ -946,6 +947,23 @@ async function sendMaintenanceCancelledAnnouncementEmails(payload) {
   }
 }
 
+async function sendAdminLoginNotificationEmail(user, { timestamp, device, location }) {
+  if (!user?.email) return;
+  try {
+    const name = getUserDisplayName(user);
+    const { subject, html, text } = adminLoginNotificationEmail({
+      name,
+      email: user.email,
+      timestamp,
+      device,
+      location,
+    });
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (err) {
+    console.error(`[email] Failed to send Admin login notification to ${user.email}:`, err.message);
+  }
+}
+
 module.exports = {
   getLoginUrl,
   getSupplierMyDonationsUrl,
@@ -992,4 +1010,5 @@ module.exports = {
   sendScheduledMaintenanceUpdatedEmails,
   sendSuddenMaintenanceAnnouncementEmails,
   sendMaintenanceCancelledAnnouncementEmails,
+  sendAdminLoginNotificationEmail,
 };
