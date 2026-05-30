@@ -232,7 +232,7 @@ async function consumeDiscountUnits(customerId, yearMonth, units) {
   await CustomerDiscountUsage.updateOne(
     { customerId, yearMonth },
     {
-      $setOnInsert: { customerId, yearMonth, discountedUnitsUsed: 0 },
+      $setOnInsert: { customerId, yearMonth },
       $inc: { discountedUnitsUsed: consume },
     },
     { upsert: true }
