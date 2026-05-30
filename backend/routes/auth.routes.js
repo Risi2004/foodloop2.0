@@ -1,6 +1,6 @@
 const express = require('express');
 const authController = require('../controllers/auth.controller');
-const { signupUpload } = require('../middleware/upload');
+const { signupUpload, profileImageUpload } = require('../middleware/upload');
 const { verifyJwt } = require('../middleware/auth');
 
 const router = express.Router();
@@ -33,5 +33,25 @@ router.post('/reset-password', authController.resetPassword);
 router.get('/me', verifyJwt, authController.me);
 router.delete('/me', verifyJwt, authController.deleteMe);
 
+// Profile update routes (protected)
+router.patch('/profile', verifyJwt, authController.updateProfile);
+router.post(
+  '/profile/image',
+  verifyJwt,
+  (req, res, next) => {
+    profileImageUpload(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'Image upload failed',
+        });
+      }
+      next();
+    });
+  },
+  authController.uploadProfileImage
+);
+
 module.exports = router;
+
 

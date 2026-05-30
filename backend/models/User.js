@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema(
 
     username: { type: String, trim: true },
     businessName: { type: String, trim: true },
+    businessType: { type: String, trim: true },
+    aboutUs: { type: String, trim: true },
     receiverName: { type: String, trim: true },
     receiverType: { type: String, trim: true },
     receiverIncomeLevel: { type: String, enum: ['normal', 'low'], default: null },

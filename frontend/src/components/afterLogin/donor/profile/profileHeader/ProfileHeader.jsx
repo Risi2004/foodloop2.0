@@ -23,11 +23,13 @@ function formatPremiumUntil(iso) {
 }
 
 function ProfileHeader({ user, isPremium, premiumExpiresAt }) {
-    const displayName = user?.donorType === 'Business'
+    const role = (user?.role || '').toLowerCase();
+    const isBusinessRole = ['restaurant', 'supermarket', 'business', 'donor'].includes(role);
+    const displayName = isBusinessRole
         ? (user?.businessName || 'Business Donor')
         : (user?.username || user?.email || 'Supplier');
-    const displayType = user?.donorType === 'Business'
-        ? (user?.businessType || 'business')
+    const displayType = isBusinessRole
+        ? (user?.businessType || user?.role || 'Business')
         : 'Individual';
     const memberSince = formatMemberSince(user?.createdAt);
     const avatarUrl = user?.profileImageUrl || DEFAULT_AVATAR;

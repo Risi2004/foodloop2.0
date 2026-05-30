@@ -34,4 +34,6 @@ const signupUpload = upload.fields(signupFields);
 
 const donationImageUpload = upload.single('image');
 
-module.exports = { signupUpload, donationImageUpload };
+const profileImageUpload = upload.single('profileImage');
+
+module.exports = { signupUpload, donationImageUpload, profileImageUpload };

@@ -102,11 +102,12 @@ app.use(
 );
 app.use(express.json());
 
-// Legacy local uploads (accounts created before R2 migration)
+// Serve local uploads (profile images saved locally when R2 is not configured)
 const legacyUploadsRoot = path.join(__dirname, 'uploads');
-if (fs.existsSync(legacyUploadsRoot)) {
-  app.use('/uploads', express.static(legacyUploadsRoot));
+if (!fs.existsSync(legacyUploadsRoot)) {
+  fs.mkdirSync(legacyUploadsRoot, { recursive: true });
 }
+app.use('/uploads', express.static(legacyUploadsRoot));
 
 if (!isR2Configured()) {
   console.warn(

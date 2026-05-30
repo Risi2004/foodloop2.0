@@ -100,10 +100,56 @@ async function uploadDonationImage({ userId, file }) {
   return buildPublicUrl(key);
 }
 
+async function uploadProfileImageFile({ userId, file }) {
+  if (!file?.buffer) {
+    throw new Error('Missing file buffer for profile image');
+  }
+
+  const ext = extensionFromFile(file) || '.jpg';
+
+  // Try R2 first
+  if (isR2Available()) {
+    const key = `users/${userId}/profileImage-${Date.now()}${ext}`;
+    const { bucketName } = getR2Config();
+    const client = getR2Client();
+    await client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype || 'image/jpeg',
+      })
+    );
+    return buildPublicUrl(key);
+  }
+
+  // Fallback: save to local /uploads directory
+  const fs = require('fs');
+  const path = require('path');
+  const uploadsDir = path.join(__dirname, '..', 'uploads', 'profiles');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  const filename = `profile-${userId}-${Date.now()}${ext}`;
+  const filepath = path.join(uploadsDir, filename);
+  fs.writeFileSync(filepath, file.buffer);
+  return `/uploads/profiles/${filename}`;
+}
+
+function isR2Available() {
+  try {
+    const { accountId, accessKeyId, secretAccessKey, bucketName, publicBaseUrl } = getR2Config();
+    return !!(accountId && accessKeyId && secretAccessKey && bucketName && publicBaseUrl);
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   SIGNUP_FILE_FIELDS,
   uploadSignupFile,
   uploadSignupFilesToR2,
   uploadDonationImage,
+  uploadProfileImageFile,
   buildPublicUrl,
 };

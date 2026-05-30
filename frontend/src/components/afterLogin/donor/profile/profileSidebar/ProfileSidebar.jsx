@@ -3,7 +3,9 @@ import briefcaseIcon from '../../../../../assets/donor profile/Briefcase.svg';
 import './ProfileSidebar.css';
 
 function ProfileSidebar({ user, badgeProgress }) {
-    const contactName = user?.donorType === 'Business'
+    const role = (user?.role || '').toLowerCase();
+    const isBusinessRole = ['restaurant', 'supermarket', 'business', 'donor'].includes(role);
+    const contactName = isBusinessRole
         ? (user?.businessName || 'Contact')
         : (user?.username || user?.email || 'Contact');
 
@@ -12,7 +14,7 @@ function ProfileSidebar({ user, badgeProgress }) {
             <div className="sidebar-card">
                 <div className="card-header">
                     <img src={briefcaseIcon} alt="" className="section-icon-img" />
-                    <h3>{user?.donorType === 'Business' ? 'Business Information' : 'Contact Information'}</h3>
+                    <h3>{isBusinessRole ? 'Business Information' : 'Contact Information'}</h3>
                 </div>
                 <div className="info-group">
                     <label>Contact</label>

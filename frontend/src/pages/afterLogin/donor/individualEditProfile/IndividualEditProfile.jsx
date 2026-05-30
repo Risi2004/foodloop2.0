@@ -38,7 +38,8 @@ function IndividualEditProfile() {
 
     useEffect(() => {
         if (!user) return;
-        if (user.donorType === 'Business') {
+        const role = (user.role || '').toLowerCase();
+        if (role !== 'individual') {
             navigate('/supplier/edit-profile', { replace: true });
         }
     }, [user, navigate]);
@@ -122,7 +123,7 @@ function IndividualEditProfile() {
         );
     }
 
-    if (!user || user.donorType === 'Business') {
+    if (!user || (user.role || '').toLowerCase() !== 'individual') {
         return null;
     }
 

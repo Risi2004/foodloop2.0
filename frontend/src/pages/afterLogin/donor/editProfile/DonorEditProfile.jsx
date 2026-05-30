@@ -39,7 +39,8 @@ function DonorEditProfile() {
 
     useEffect(() => {
         if (!user) return;
-        if (user.donorType === 'Individual') {
+        const role = (user.role || '').toLowerCase();
+        if (role === 'individual') {
             navigate('/supplier/individual-edit-profile', { replace: true });
         }
     }, [user, navigate]);
@@ -123,7 +124,7 @@ function DonorEditProfile() {
         );
     }
 
-    if (!user || user.donorType === 'Individual') {
+    if (!user || (user.role || '').toLowerCase() === 'individual') {
         return null;
     }
 

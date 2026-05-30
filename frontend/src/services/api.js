@@ -170,24 +170,45 @@ export const deleteAccount = async () => {
 };
 
 
-export const uploadProfileImage = async () => {
-  const me = await getCurrentUser();
-  return { success: true, user: me.user };
+export const uploadProfileImage = async (file) => {
+  const formData = new FormData();
+  formData.append('profileImage', file);
+  const headers = getAuthHeaders();
+  // Remove Content-Type so browser sets multipart/form-data with boundary
+  delete headers['Content-Type'];
+  const response = await fetch(buildUrl('/api/auth/profile/image'), {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  return parseResponse(response);
 };
 
 export const updateDonorProfile = async (profile) => {
-  const me = await getCurrentUser();
-  return { success: true, user: { ...me.user, ...profile } };
+  const response = await fetch(buildUrl('/api/auth/profile'), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(profile),
+  });
+  return parseResponse(response);
 };
 
 export const updateReceiverProfile = async (profile) => {
-  const me = await getCurrentUser();
-  return { success: true, user: { ...me.user, ...profile } };
+  const response = await fetch(buildUrl('/api/auth/profile'), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(profile),
+  });
+  return parseResponse(response);
 };
 
 export const updateDriverProfile = async (profile) => {
-  const me = await getCurrentUser();
-  return { success: true, user: { ...me.user, ...profile } };
+  const response = await fetch(buildUrl('/api/auth/profile'), {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(profile),
+  });
+  return parseResponse(response);
 };
 
 export const updateDriverLocation = async (latitude, longitude) => {

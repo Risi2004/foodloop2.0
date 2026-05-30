@@ -14,7 +14,7 @@ const {
   sendPasswordChangedEmail,
   sendAdminLoginNotificationEmail,
 } = require('../utils/sendNotificationEmail');
-const { uploadSignupFilesToR2 } = require('../utils/r2Storage');
+const { uploadSignupFilesToR2, uploadProfileImageFile } = require('../utils/r2Storage');
 const {
   isValidEmail,
   isValidContactNo,
@@ -496,7 +496,7 @@ exports.login = async (req, res) => {
     if (safeUser.role === 'Admin') {
       const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }) + ' (Colombo Time)';
       const rawUserAgent = req.headers['user-agent'] || 'Unknown Device';
-      
+
       // Parse User-Agent into a friendly device/browser format
       let deviceOS = 'Unknown Device';
       if (rawUserAgent.includes('Windows')) deviceOS = 'Windows PC';
@@ -505,7 +505,7 @@ exports.login = async (req, res) => {
       else if (rawUserAgent.includes('iPad')) deviceOS = 'iPad';
       else if (rawUserAgent.includes('Android')) deviceOS = 'Android Mobile';
       else if (rawUserAgent.includes('Linux')) deviceOS = 'Linux Device';
-      
+
       let browser = 'Browser';
       if (rawUserAgent.includes('Chrome')) browser = 'Google Chrome';
       else if (rawUserAgent.includes('Safari') && !rawUserAgent.includes('Chrome')) browser = 'Apple Safari';
@@ -513,10 +513,10 @@ exports.login = async (req, res) => {
       else if (rawUserAgent.includes('Edg')) browser = 'Microsoft Edge';
 
       const deviceDetails = `${deviceOS} via ${browser}`;
-      
+
       const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'Unknown IP';
       let locationDetails = 'Colombo, Sri Lanka';
-      
+
       if (clientIp === '::1' || clientIp === '127.0.0.1' || clientIp.startsWith('::ffff:127.0.0.1')) {
         locationDetails = `Localhost Development Server (${clientIp}) — Colombo, Sri Lanka (Mocked)`;
       } else {
@@ -809,3 +809,130 @@ exports.deleteMe = async (req, res) => {
   }
 };
 
+// Allowed fields per role for updateProfile
+const PROFILE_ALLOWED_FIELDS_COMMON = ['contactNo', 'address', 'email'];
+const PROFILE_ALLOWED_FIELDS = {
+  restaurant: [...PROFILE_ALLOWED_FIELDS_COMMON, 'businessName', 'businessType'],
+  supermarket: [...PROFILE_ALLOWED_FIELDS_COMMON, 'businessName', 'businessType'],
+  business: [...PROFILE_ALLOWED_FIELDS_COMMON, 'businessName', 'businessType'],
+  individual: [...PROFILE_ALLOWED_FIELDS_COMMON, 'username', 'nicNumber', 'businessName', 'startupDetails'],
+  customer: [...PROFILE_ALLOWED_FIELDS_COMMON, 'username'],
+  receiver: [...PROFILE_ALLOWED_FIELDS_COMMON, 'receiverName', 'receiverType', 'aboutUs'],
+  driver: [...PROFILE_ALLOWED_FIELDS_COMMON, 'driverName', 'vehicleType', 'vehicleNumber'],
+  donor: [...PROFILE_ALLOWED_FIELDS_COMMON, 'businessName', 'businessType', 'username', 'nicNumber', 'startupDetails'],
+  admin: [...PROFILE_ALLOWED_FIELDS_COMMON],
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = req.user;
+    const role = (user.role || '').toLowerCase();
+    const allowedFields = PROFILE_ALLOWED_FIELDS[role] || PROFILE_ALLOWED_FIELDS_COMMON;
+
+    const updates = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        const val = typeof req.body[field] === 'string' ? req.body[field].trim() : req.body[field];
+        if (val !== '') updates[field] = val;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid fields provided for update' });
+    }
+
+    // Special handling: contactNo normalization
+    if (updates.contactNo) {
+      updates.contactNo = normalizeContactNo(updates.contactNo);
+      if (!isValidContactNo(updates.contactNo)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid contact number',
+          errors: [{ field: 'contactNo', message: 'Enter 9 digits after +94' }],
+        });
+      }
+      // Check uniqueness (exclude self)
+      const existing = await User.findOne({
+        _id: { $ne: user._id },
+        contactNo: { $in: contactLookupVariants(updates.contactNo) },
+      });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: 'Contact number already in use',
+          errors: [{ field: 'contactNo', message: 'This contact number is already registered.' }],
+        });
+      }
+    }
+
+    // Email change: validate and check uniqueness
+    if (updates.email) {
+      updates.email = updates.email.toLowerCase();
+      if (!isValidEmail(updates.email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid email address',
+          errors: [{ field: 'email', message: 'Please enter a valid email.' }],
+        });
+      }
+      const existing = await User.findOne({ _id: { $ne: user._id }, email: updates.email });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already in use',
+          errors: [{ field: 'email', message: 'This email is already registered.' }],
+        });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    await logActivity(user._id, 'PROFILE_UPDATED', { fields: Object.keys(updates) }, req);
+
+    const safeUser = formatUserResponse(req, updatedUser);
+    safeUser.role = normalizeRoleForResponse(safeUser.role);
+    return res.json({ success: true, user: safeUser });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to update profile' });
+  }
+};
+
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'No image file provided' });
+    }
+
+    const user = req.user;
+    const imageUrl = await uploadProfileImageFile({ userId: user._id.toString(), file });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { $set: { profileImage: imageUrl } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    await logActivity(user._id, 'PROFILE_IMAGE_UPDATED', {}, req);
+
+    const safeUser = formatUserResponse(req, updatedUser);
+    safeUser.role = normalizeRoleForResponse(safeUser.role);
+    return res.json({ success: true, user: safeUser });
+  } catch (err) {
+    console.error('Upload profile image error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to upload profile image' });
+  }
+};

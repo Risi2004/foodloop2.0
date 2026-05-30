@@ -25,9 +25,11 @@ function EditSidebar({
     const [passwordError, setPasswordError] = useState('');
     const [changingPassword, setChangingPassword] = useState(false);
 
-    const displayName = user?.role === 'Receiver'
+    const role = (user?.role || '').toLowerCase();
+    const isBusinessRole = ['restaurant', 'supermarket', 'business', 'donor'].includes(role);
+    const displayName = role === 'receiver'
         ? (user?.receiverName || user?.email || 'Receiver')
-        : user?.donorType === 'Business'
+        : isBusinessRole
             ? (user?.businessName || user?.email || 'Supplier')
             : (user?.username || user?.email || 'Supplier');
     const memberSince = formatMemberSince(user?.createdAt);
