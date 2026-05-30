@@ -73,7 +73,7 @@ function normalizeDonationRow(donation) {
 function normalizeClaimPaymentRow(payment) {
   const p = payment.toObject ? payment.toObject() : payment;
   const receiver = payment.receiverId;
-  const donation = payment.donationId;
+  const donation = payment.claimedDonationId || payment.donationId;
   const summary = p.orderSummary || {};
 
   return {
@@ -165,6 +165,14 @@ async function fetchClaimPaymentOrders({ status, search, dateFrom, dateTo, userI
       path: 'donationId',
       select: 'itemName trackingId donorId listingType',
       populate: { path: 'donorId', select: USER_FIELDS },
+    })
+    .populate({
+      path: 'claimedDonationId',
+      select: 'itemName trackingId donorId receiverId status',
+      populate: [
+        { path: 'donorId', select: USER_FIELDS },
+        { path: 'receiverId', select: USER_FIELDS },
+      ],
     })
     .sort({ createdAt: -1 })
     .limit(500)

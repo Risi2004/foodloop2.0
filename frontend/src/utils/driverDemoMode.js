@@ -2,6 +2,10 @@
  * Shared helpers for driver pickup / delivery demo simulation.
  */
 
+import { getRoute, getDemoSimulationDurationMs } from '../services/routingService';
+import { startDemo, stopDemo } from '../services/api';
+import { simulateMovement, stopSimulation } from '../services/demoModeService';
+
 export function isValidCoord(lat, lng) {
   const la = Number(lat);
   const ln = Number(lng);
@@ -41,6 +45,45 @@ function extractReceiverCoord(tracking) {
   return null;
 }
 
+/** Lat/lng pair for map markers, or null if missing. */
+export function getSupplierCoordFromTracking(tracking) {
+  return extractDonorCoord(tracking);
+}
+
+export function getReceiverCoordFromTracking(tracking) {
+  return extractReceiverCoord(tracking);
+}
+
+export function getSupplierAddressFromTracking(tracking) {
+  return (
+    tracking?.donor?.address?.trim() ||
+    tracking?.donation?.pickupAddress?.trim() ||
+    tracking?.donation?.donorAddress?.trim() ||
+    ''
+  );
+}
+
+export function getReceiverAddressFromTracking(tracking) {
+  return (
+    tracking?.receiver?.address?.trim() ||
+    tracking?.donation?.receiverAddress?.trim() ||
+    ''
+  );
+}
+
+function extractDriverCoord(tracking, driverLocationState) {
+  if (driverLocationState?.length === 2 && isValidCoord(driverLocationState[0], driverLocationState[1])) {
+    return { lat: Number(driverLocationState[0]), lng: Number(driverLocationState[1]) };
+  }
+
+  const driver = tracking?.driver?.location;
+  if (driver && isValidCoord(driver.latitude, driver.longitude)) {
+    return { lat: Number(driver.latitude), lng: Number(driver.longitude) };
+  }
+
+  return null;
+}
+
 /** ~1.5 km south of a point (demo start when driver GPS is unset). */
 export function offsetStartSouth(lat, lng, km = 1.5) {
   const la = Number(lat);
@@ -49,38 +92,26 @@ export function offsetStartSouth(lat, lng, km = 1.5) {
   return { lat: la - km / 111, lng: ln };
 }
 
-/**
- * @param {'pickup' | 'delivery'} leg
- * @param {object} tracking
- * @param {[number, number] | null} driverLocationState [lat, lng]
- */
-export async function resolveDemoEndpoints(leg, tracking, driverLocationState) {
-  const donorCoord = extractDonorCoord(tracking);
-  const receiverCoord = extractReceiverCoord(tracking);
-  const driver = tracking?.driver?.location;
-  const syntheticReceiver = donorCoord ? offsetStartSouth(donorCoord.lat, donorCoord.lng, 2) : null;
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
 
-  const end =
-    leg === 'pickup'
-      ? donorCoord || receiverCoord
-      : receiverCoord || syntheticReceiver || donorCoord;
-
-  if (!end) {
-    return { start: null, end: null, error: leg === 'pickup' ? 'Donor location is missing.' : 'Receiver location is missing.' };
+async function resolveDriverStart(leg, tracking, driverLocationState, end) {
+  if (leg === 'delivery') {
+    const donorCoord = extractDonorCoord(tracking);
+    if (donorCoord) return donorCoord;
+    return extractDriverCoord(tracking, driverLocationState);
   }
 
-  let start = null;
-
-  // After pickup: driver is at the donor, then heads to the receiver.
-  if (leg === 'delivery' && donorCoord) {
-    start = donorCoord;
-  } else if (driverLocationState?.length === 2 && isValidCoord(driverLocationState[0], driverLocationState[1])) {
-    start = { lat: Number(driverLocationState[0]), lng: Number(driverLocationState[1]) };
-  } else if (driver && isValidCoord(driver.latitude, driver.longitude)) {
-    start = { lat: Number(driver.latitude), lng: Number(driver.longitude) };
-  } else if (leg === 'pickup' && end) {
-    start = offsetStartSouth(end.lat, end.lng);
-  }
+  let start = extractDriverCoord(tracking, driverLocationState);
 
   if (!start) {
     try {
@@ -107,16 +138,142 @@ export async function resolveDemoEndpoints(leg, tracking, driverLocationState) {
     }
   }
 
+  if (!start && end) {
+    start = offsetStartSouth(end.lat, end.lng, 2);
+  }
+
+  if (start && end && haversineKm(start, end) < 0.2) {
+    start = offsetStartSouth(end.lat, end.lng, 2) || start;
+  }
+
+  return start;
+}
+
+/**
+ * @param {'pickup' | 'delivery'} leg
+ * @param {object} tracking
+ * @param {[number, number] | null} driverLocationState [lat, lng]
+ */
+export async function resolveDemoEndpoints(leg, tracking, driverLocationState) {
+  const donorCoord = extractDonorCoord(tracking);
+  const receiverCoord = extractReceiverCoord(tracking);
+
+  if (leg === 'pickup') {
+    if (!donorCoord) {
+      return { start: null, end: null, error: 'Supplier pickup location is missing.' };
+    }
+
+    const start = await resolveDriverStart('pickup', tracking, driverLocationState, donorCoord);
+    if (!start) {
+      return {
+        start: null,
+        end: donorCoord,
+        error: 'Set your location on the Delivery page, or allow browser location access.',
+      };
+    }
+
+    return { start, end: donorCoord, error: null };
+  }
+
+  if (!donorCoord) {
+    return { start: null, end: null, error: 'Supplier location is missing.' };
+  }
+  if (!receiverCoord) {
+    return { start: null, end: null, error: 'Receiver delivery location is missing.' };
+  }
+
+  const start = await resolveDriverStart('delivery', tracking, driverLocationState, receiverCoord);
   if (!start) {
     return {
       start: null,
-      end,
-      error:
-        leg === 'pickup'
-          ? 'Set your location on the Delivery page, or allow browser location access.'
-          : 'Set your location or confirm pickup first.',
+      end: receiverCoord,
+      error: 'Confirm pickup first so the route starts from the supplier.',
     };
   }
 
-  return { start, end, error: null };
+  return { start, end: receiverCoord, error: null };
+}
+
+/**
+ * Run one demo leg: fetch route, draw path, simulate movement.
+ */
+export async function runDriverDemoLeg({
+  leg,
+  tracking,
+  driverLocationState,
+  onLocationUpdate,
+  onRouteInsight,
+}) {
+  const { start, end, error: endpointError } = await resolveDemoEndpoints(
+    leg,
+    tracking,
+    driverLocationState
+  );
+
+  if (endpointError || !start || !end) {
+    return { ok: false, error: endpointError || 'Cannot start demo: missing location data.' };
+  }
+
+  const routeResult = await getRoute(
+    { latitude: start.lat, longitude: start.lng },
+    { latitude: end.lat, longitude: end.lng },
+    { alternatives: 2 }
+  );
+
+  const waypoints = routeResult.suggested?.waypoints || routeResult.route?.waypoints || [];
+  if (waypoints.length === 0) {
+    return { ok: false, error: 'Failed to generate path waypoints. Check location coordinates.' };
+  }
+
+  const routeInsight = {
+    eta: routeResult.eta,
+    traffic: routeResult.traffic,
+    suggested: routeResult.suggested,
+    shorterDistanceRoute: routeResult.shorterDistanceRoute,
+    distanceKm: (routeResult.suggested?.distanceM || 0) / 1000,
+    approximate: routeResult.approximate,
+  };
+
+  if (typeof onRouteInsight === 'function') {
+    onRouteInsight(routeInsight);
+  }
+
+  try {
+    await startDemo(waypoints);
+  } catch (err) {
+    console.warn('[DemoMode] Server demo unavailable, using client simulation only:', err.message);
+  }
+
+  const simMs = Math.min(
+    60000,
+    Math.max(20000, (routeResult.traffic?.adjustedSec || 60) * 40)
+  );
+
+  const success = simulateMovement(
+    waypoints,
+    onLocationUpdate,
+    { totalDurationMs: simMs || getDemoSimulationDurationMs() }
+  );
+
+  if (!success) {
+    await stopDemo().catch(() => {});
+    return { ok: false, error: 'Failed to start demo mode' };
+  }
+
+  return {
+    ok: true,
+    start,
+    end,
+    waypoints,
+    routeInsight,
+  };
+}
+
+export async function stopDriverDemo() {
+  stopSimulation();
+  try {
+    await stopDemo();
+  } catch (err) {
+    console.warn('[DemoMode] Error stopping server demo:', err.message);
+  }
 }

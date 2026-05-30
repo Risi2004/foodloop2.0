@@ -341,8 +341,6 @@ const CustomerMarketplace = () => {
                 <p><strong>Supplier:</strong> {selectedListing.donorName} ({selectedListing.donorType})</p>
                 <p><strong>Available Qty:</strong> {selectedListing.quantity}</p>
                 <p><strong>Expiry:</strong> {selectedListing.expiryText}</p>
-                <p><strong>Pickup Date:</strong> {selectedListing.pickupDate}</p>
-                <p><strong>Pickup Window:</strong> {selectedListing.pickupWindow}</p>
                 <p><strong>Pickup Address:</strong> {selectedListing.pickupAddress}</p>
                 <p><strong>Distance:</strong> {selectedListing.distanceLabel}</p>
               </div>

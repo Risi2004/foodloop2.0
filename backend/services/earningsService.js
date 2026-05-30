@@ -82,7 +82,7 @@ async function creditSupplierFromDonationDelivery(donation) {
   if (!donorId) return null;
 
   const payment = await Payment.findOne({
-    donationId: donation._id,
+    $or: [{ donationId: donation._id }, { claimedDonationId: donation._id }],
     status: { $in: ['paid', 'consumed'] },
   }).sort({ consumedAt: -1, updatedAt: -1 });
 

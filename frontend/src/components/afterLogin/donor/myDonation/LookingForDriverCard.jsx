@@ -90,7 +90,7 @@ const LookingForDriverCard = ({ donation, onCancelClaim, onAiSuggestDiscount, ai
                             <div className="_5-kg-available">
                                 <span>
                                     <span className="_5-kg-available-span">{quantity}</span>
-                                    <span className="_5-kg-available-span2">Available</span>
+                                    <span className="_5-kg-available-span2"> Claimed</span>
                                 </span>
                             </div>
                         </div>

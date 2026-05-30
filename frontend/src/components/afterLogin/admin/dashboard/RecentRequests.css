@@ -166,6 +166,15 @@
     background: #ffcdd2;
 }
 
+.action-btn.view {
+    background: #E3F2FD;
+    color: #1565C0;
+}
+
+.action-btn.view:hover {
+    background: #BBDEFB;
+}
+
 @media (max-width: 600px) {
     .requests-table th,
     .requests-table td {

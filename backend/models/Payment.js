@@ -27,6 +27,12 @@ const paymentSchema = new mongoose.Schema(
       required: false,
       index: true,
     },
+    claimedDonationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Donation',
+      required: false,
+      index: true,
+    },
     receiverId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -41,23 +47,10 @@ const paymentSchema = new mongoose.Schema(
     },
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, default: 'LKR', trim: true },
+    // Mixed shape: claim checkout, customer checkout, supplier subscriptions, etc.
     orderSummary: {
-      items: [
-        {
-          id: { type: String, default: null },
-          name: { type: String, default: '' },
-          quantity: { type: Number, min: 1, default: 1 },
-          unitPrice: { type: Number, min: 0, default: 0 },
-          lineTotal: { type: Number, min: 0, default: 0 },
-        },
-      ],
-      subtotal: { type: Number, min: 0, default: 0 },
-      deliveryFee: { type: Number, min: 0, default: 0 },
-      total: { type: Number, min: 0, default: 0 },
-      address: { type: String, default: '' },
-      customerLatitude: { type: Number, default: null },
-      customerLongitude: { type: Number, default: null },
-      paymentMethod: { type: String, default: 'card' },
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     status: {
       type: String,
@@ -73,6 +66,7 @@ const paymentSchema = new mongoose.Schema(
 );
 
 paymentSchema.index({ donationId: 1, status: 1 });
+paymentSchema.index({ claimedDonationId: 1, status: 1 });
 paymentSchema.index({ customerId: 1, status: 1 });
 paymentSchema.index({ supplierId: 1, status: 1 });
 

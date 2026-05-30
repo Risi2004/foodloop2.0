@@ -119,7 +119,10 @@ function paymentMatchesDeliveryQuote(payment, lat, lng) {
   const summary = payment?.orderSummary || {};
   const payLat = summary.receiverLatitude;
   const payLng = summary.receiverLongitude;
-  if (payLat == null || payLng == null) return false;
+  if (payLat == null || payLng == null) {
+    // Older payments may not have stored checkout coordinates.
+    return true;
+  }
   return coordsMatch(payLat, payLng, lat, lng);
 }
 

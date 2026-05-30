@@ -64,26 +64,12 @@ function buildCreatedQuery(range) {
   return { createdAt: { $gte: range.start, $lte: range.end } };
 }
 
-function pickupWindowEnd(d) {
-  if (!d.preferredPickupDate || !d.preferredPickupTimeTo) return null;
-  const iso = `${d.preferredPickupDate}T${d.preferredPickupTimeTo}:00`;
-  const parsed = new Date(iso);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function isOnTimeDelivery(d) {
-  if (!d.deliveredAt) return null;
-  const end = pickupWindowEnd(d);
-  if (!end) return null;
-  return new Date(d.deliveredAt) <= end;
-}
-
 async function loadDeliveredDonations(supplierId, range) {
   const base = { donorId: supplierId, status: 'delivered' };
   const dateFilter = buildDateQuery(range);
   return Donation.find({ ...base, ...dateFilter })
     .select(
-      'quantity listingType foodCategory itemName receiverId deliveredAt preferredPickupDate preferredPickupTimeTo createdAt'
+      'quantity listingType foodCategory itemName receiverId deliveredAt createdAt'
     )
     .lean();
 }
@@ -95,9 +81,7 @@ async function loadAllListingsInPeriod(supplierId, range) {
     ...buildCreatedQuery(range),
   };
   return Donation.find(base)
-    .select(
-      'status quantity listingType foodCategory deliveredAt preferredPickupDate preferredPickupTimeTo'
-    )
+    .select('status quantity listingType foodCategory deliveredAt')
     .lean();
 }
 
@@ -154,22 +138,10 @@ function aggregateGovernance(delivered, allListings) {
   const fulfillmentRate =
     totalListed > 0 ? Math.round((completed / totalListed) * 100) : null;
 
-  let onTimeCount = 0;
-  let onTimeKnown = 0;
-  for (const d of delivered) {
-    const onTime = isOnTimeDelivery(d);
-    if (onTime === null) continue;
-    onTimeKnown += 1;
-    if (onTime) onTimeCount += 1;
-  }
-  const onTimePickupRate =
-    onTimeKnown > 0 ? Math.round((onTimeCount / onTimeKnown) * 100) : null;
-
   return {
     listingsPublished: totalListed,
     deliveriesCompleted: deliveredCount,
     fulfillmentRate,
-    onTimePickupRate,
     foodLoopCompliance: totalListed > 0 ? 'Active FoodLoop supplier' : 'No listings in period',
     cancelledListings: cancelled,
   };
@@ -181,7 +153,7 @@ function buildFallbackSummary(report) {
   return {
     executiveSummary: `During ${report.periodLabel}, ${report.company} shared ${e.mealsShared} meals through FoodLoop, diverting approximately ${e.foodSavedKg} kg of food from waste and offsetting an estimated ${e.co2OffsetKg} kg CO₂.`,
     recommendations: [
-      'Publish surplus earlier in the day when pickup windows are wider.',
+      'Publish surplus listings early in the day to maximize receiver visibility.',
       'Balance donate and sell listings based on your top categories this period.',
       'Share your FoodLoop impact report with stakeholders and CSR committees.',
     ],

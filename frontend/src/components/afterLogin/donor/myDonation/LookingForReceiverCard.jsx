@@ -29,7 +29,10 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete, onAiSuggestDiscoun
     };
 
     const itemName = donation.itemName || 'Food Item';
-    const quantity = donation.quantity || 0;
+    const quantity = donation.remainingQuantity ?? donation.quantity ?? 0;
+    const initialQuantity = donation.initialQuantity ?? quantity;
+    const claimedServings = donation.claimedServings ?? 0;
+    const isPartiallyClaimed = donation.listingAvailability === 'partially_claimed' || claimedServings > 0;
     const listedTime = getTimeAgo(donation.createdAt);
     const expiryDate = getDonationExpiryDisplay(donation);
     const imageUrl = donation.imageUrl || foodImage;
@@ -105,7 +108,11 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete, onAiSuggestDiscoun
                             <div className="_5-kg-available">
                                 <span>
                                     <span className="_5-kg-available-span">{quantity}</span>
-                                    <span className="_5-kg-available-span2">Available</span>
+                                    <span className="_5-kg-available-span2">
+                                        {isPartiallyClaimed
+                                            ? ` of ${initialQuantity} remaining`
+                                            : ' Available'}
+                                    </span>
                                 </span>
                             </div>
                         </div>

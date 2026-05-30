@@ -193,7 +193,6 @@ function buildDonationDetailRows(donation, extraRows = [], options = {}) {
     Array.isArray(d.aiDetectedItems) && d.aiDetectedItems.length > 0
       ? d.aiDetectedItems.join(', ')
       : '—';
-  const pickupWindow = `${d.preferredPickupDate || '—'}, ${d.preferredPickupTimeFrom || '—'} – ${d.preferredPickupTimeTo || '—'}`;
   const expiry = d.userProvidedExpiryDate || d.expiryDate || '—';
 
   const trackingRow = includeTrackingId ? [['Tracking ID', d.trackingId || '—']] : [];
@@ -209,7 +208,6 @@ function buildDonationDetailRows(donation, extraRows = [], options = {}) {
     ['Expiry date', expiry],
     ['Storage', d.storageRecommendation || '—'],
     ['Pickup address', d.pickupAddress || '—'],
-    ['Pickup window', pickupWindow],
     ['Status', d.status || 'available'],
     ['AI freshness', d.aiFreshness || '—'],
     ['AI quality score', formatDonationQualityScore(d.aiQualityScore)],

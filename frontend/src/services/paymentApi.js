@@ -1,11 +1,23 @@
 import { buildUrl, parseResponse } from './api';
 import { getAuthHeaders } from '../utils/auth';
 
-export const createClaimCheckout = async (donationId, receiverLatitude, receiverLongitude, claimQuantity = 1) => {
+export const createClaimCheckout = async (
+  donationId,
+  receiverLatitude,
+  receiverLongitude,
+  claimQuantity = 1,
+  receiverAddress = ''
+) => {
   const response = await fetch(buildUrl('/api/payments/claim/checkout'), {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ donationId, receiverLatitude, receiverLongitude, claimQuantity }),
+    body: JSON.stringify({
+      donationId,
+      receiverLatitude,
+      receiverLongitude,
+      receiverAddress,
+      claimQuantity,
+    }),
   });
   return parseResponse(response);
 };
@@ -15,6 +27,15 @@ export const confirmClaimPayment = async ({ orderId, cardNumber, expiry, cvv, ca
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({ orderId, cardNumber, expiry, cvv, cardLast4 }),
+  });
+  return parseResponse(response);
+};
+
+export const retryClaimPayment = async (orderId) => {
+  const response = await fetch(buildUrl('/api/payments/claim/retry'), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ orderId }),
   });
   return parseResponse(response);
 };

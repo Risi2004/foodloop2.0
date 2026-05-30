@@ -10,6 +10,7 @@ router.use(verifyJwt);
 
 router.post('/claim/checkout', maintenanceBlock, paymentController.createClaimCheckout);
 router.post('/claim/confirm', maintenanceBlock, paymentController.confirmClaimPayment);
+router.post('/claim/retry', maintenanceBlock, paymentController.retryClaimPayment);
 router.post('/customer/checkout', maintenanceBlock, paymentController.createCustomerCheckout);
 router.post('/customer/cod', maintenanceBlock, paymentController.placeCustomerCodOrder);
 router.post('/customer/confirm', maintenanceBlock, paymentController.confirmCustomerCheckout);

@@ -16,9 +16,6 @@ const donationSchema = new mongoose.Schema(
     },
     storageRecommendation: { type: String, required: true, trim: true },
     imageUrl: { type: String, required: true, trim: true },
-    preferredPickupDate: { type: String, required: true, trim: true },
-    preferredPickupTimeFrom: { type: String, required: true, trim: true },
-    preferredPickupTimeTo: { type: String, required: true, trim: true },
     userProvidedExpiryDate: { type: String, default: null, trim: true },
     aiConfidence: { type: Number, default: null },
     aiQualityScore: { type: Number, default: null },
@@ -99,6 +96,8 @@ donationSchema.pre('save', function generateTrackingId() {
   }
 });
 
+const { getReceiverDisplayName, getDriverDisplayName } = require('../utils/donationHelpers');
+
 donationSchema.methods.toPublicJSON = function toPublicJSON() {
   const obj = this.toObject();
   const id = obj._id.toString();
@@ -115,19 +114,32 @@ donationSchema.methods.toPublicJSON = function toPublicJSON() {
   return {
     id,
     _id: id,
-    donorId: obj.donorId?.toString?.() || obj.donorId?._id?.toString?.() || obj.donorId,
-    receiverId: obj.receiverId?.toString?.() || obj.receiverId || null,
+    donorId:
+      obj.donorId?._id?.toString?.() ||
+      obj.donorId?.toString?.() ||
+      obj.donorId ||
+      null,
+    receiverId:
+      obj.receiverId?._id?.toString?.() ||
+      obj.receiverId?.toString?.() ||
+      obj.receiverId ||
+      null,
+    receiverName:
+      obj.receiverId && typeof obj.receiverId === 'object'
+        ? getReceiverDisplayName(obj.receiverId)
+        : null,
     foodCategory: obj.foodCategory,
     itemName: obj.itemName,
     quantity: obj.quantity,
     initialQuantity,
-    parentListingId: obj.parentListingId?.toString?.() || obj.parentListingId || null,
+    parentListingId:
+      obj.parentListingId?._id?.toString?.() ||
+      obj.parentListingId?.toString?.() ||
+      obj.parentListingId ||
+      null,
     unitPriceAmount,
     storageRecommendation: obj.storageRecommendation,
     imageUrl: obj.imageUrl,
-    preferredPickupDate: obj.preferredPickupDate,
-    preferredPickupTimeFrom: obj.preferredPickupTimeFrom,
-    preferredPickupTimeTo: obj.preferredPickupTimeTo,
     userProvidedExpiryDate: obj.userProvidedExpiryDate,
     expiryDate: obj.userProvidedExpiryDate || null,
     aiConfidence: obj.aiConfidence,
@@ -160,7 +172,15 @@ donationSchema.methods.toPublicJSON = function toPublicJSON() {
     receiverLongitude: obj.receiverLongitude ?? null,
     receiverAddress: obj.receiverAddress || null,
     claimedAt: obj.claimedAt || null,
-    driverId: obj.driverId?.toString?.() || obj.driverId || null,
+    driverId:
+      obj.driverId?._id?.toString?.() ||
+      obj.driverId?.toString?.() ||
+      obj.driverId ||
+      null,
+    driverName:
+      obj.driverId && typeof obj.driverId === 'object'
+        ? getDriverDisplayName(obj.driverId)
+        : null,
     assignedAt: obj.assignedAt || null,
     pickedUpAt: obj.pickedUpAt || null,
     deliveredAt: obj.deliveredAt || null,

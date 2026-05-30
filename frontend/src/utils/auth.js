@@ -126,6 +126,25 @@ export const clearAuth = () => {
   removeUser();
 };
 
+/** Refresh local user from the server so route guards match the JWT account. */
+export async function syncSessionFromServer(getCurrentUser) {
+  try {
+    const response = await getCurrentUser();
+    if (response?.user) {
+      setUser(response.user);
+      return { ok: true, user: response.user };
+    }
+    clearAuth();
+    return { ok: false };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      clearAuth();
+    }
+    return { ok: false, error };
+  }
+}
+
 export const getAuthHeaders = () => {
   const token = getToken();
   return {

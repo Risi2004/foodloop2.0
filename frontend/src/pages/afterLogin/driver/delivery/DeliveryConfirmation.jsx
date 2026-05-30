@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import DriverNavbar from "../../../../components/afterLogin/dashboard/driverSection/navbar/DriverNavbar";
 import DriverFooter from "../../../../components/afterLogin/dashboard/driverSection/footer/DriverFooter";
 import './DeliveryConfirmation.css';
@@ -15,10 +15,9 @@ import { getUser } from '../../../../utils/auth';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
 import MapTileLayer from '../../../../components/shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../components/shared/map/MapInvalidateSize';
-import { updateDriverLocation, startDemo, stopDemo } from '../../../../services/api';
-import { simulateMovement, stopSimulation } from '../../../../services/demoModeService';
-import { resolveDemoEndpoints } from '../../../../utils/driverDemoMode';
-import { getRoute, getDemoSimulationDurationMs } from '../../../../services/routingService';
+import { updateDriverLocation } from '../../../../services/api';
+import { runDriverDemoLeg, stopDriverDemo, getSupplierCoordFromTracking, getReceiverCoordFromTracking, getSupplierAddressFromTracking, getReceiverAddressFromTracking } from '../../../../utils/driverDemoMode';
+import { getRoute } from '../../../../services/routingService';
 import RouteInsightPanel from '../../../../components/afterLogin/driver/RouteInsightPanel';
 
 let DefaultIcon = L.icon({
@@ -56,6 +55,7 @@ function MapCenterUpdater({ center }) {
 function DeliveryConfirmation() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const donationId = searchParams.get('donationId');
     const [isConfirming, setIsConfirming] = useState(false);
     const [isConfirmed, setIsConfirmed] = useState(false);
@@ -69,6 +69,44 @@ function DeliveryConfirmation() {
     const [routeLoading, setRouteLoading] = useState(false);
     const [routeInsight, setRouteInsight] = useState(null);
     const [routeInsightLoading, setRouteInsightLoading] = useState(false);
+    const autoStartDemoRef = useRef(Boolean(location.state?.autoStartDemo));
+    const autoDemoStartedRef = useRef(false);
+
+    const startDeliveryDemo = useCallback(async () => {
+        if (!donationData || routeLoading || isDemoMode) return;
+
+        stopLocationTracking();
+        setRouteLoading(true);
+
+        try {
+            const result = await runDriverDemoLeg({
+                leg: 'delivery',
+                tracking: donationData,
+                driverLocationState: driverLocation,
+                onRouteInsight: setRouteInsight,
+                onLocationUpdate: async (waypoint) => {
+                    setDriverLocation([waypoint.latitude, waypoint.longitude]);
+                    setDemoProgress({ currentIndex: waypoint.index + 1, total: waypoint.total });
+                    try {
+                        await updateDriverLocation(waypoint.latitude, waypoint.longitude);
+                    } catch (err) {
+                        console.error('[DeliveryConfirmation] Error updating driver location in demo mode:', err);
+                    }
+                },
+            });
+
+            if (!result.ok) {
+                alert(result.error || 'Cannot start demo: missing location data.');
+                return;
+            }
+
+            setIsDemoMode(true);
+            setDriverLocation([result.start.lat, result.start.lng]);
+            setDemoRouteWaypoints(result.waypoints.map((w) => [w.latitude, w.longitude]));
+        } finally {
+            setRouteLoading(false);
+        }
+    }, [donationData, driverLocation, isDemoMode, routeLoading]);
 
     const fetchDonationData = async () => {
         if (!donationId) {
@@ -206,20 +244,19 @@ function DeliveryConfirmation() {
         };
     }, [donationId, isDemoMode]);
 
+    useEffect(() => {
+        if (!donationData || !autoStartDemoRef.current || autoDemoStartedRef.current) return;
+        autoDemoStartedRef.current = true;
+        startDeliveryDemo();
+    }, [donationData, startDeliveryDemo]);
+
     // Demo mode handler
     const handleDemoModeToggle = async () => {
         if (isDemoMode) {
-            // Disable demo mode
-            stopSimulation();
-            try {
-                await stopDemo();
-            } catch (err) {
-                console.error('[DeliveryConfirmation] Error stopping server demo:', err);
-            }
+            await stopDriverDemo();
             setIsDemoMode(false);
             setDemoProgress({ currentIndex: 0, total: 0 });
             setDemoRouteWaypoints([]);
-            // Resume real location tracking if available
             if (donationId) {
                 startLocationTracking(async (location, error) => {
                     if (!error && location) {
@@ -233,97 +270,14 @@ function DeliveryConfirmation() {
                 });
             }
         } else {
-            if (!donationData) {
-                alert('Please wait for donation data to load');
-                return;
-            }
-
-            stopLocationTracking();
-            setRouteLoading(true);
-
-            const { start, end, error: endpointError } = await resolveDemoEndpoints(
-                'delivery',
-                donationData,
-                driverLocation
-            );
-
-            if (endpointError || !start || !end) {
-                setRouteLoading(false);
-                alert(endpointError || 'Cannot start demo: missing location data.');
-                return;
-            }
-
-            setIsDemoMode(true);
-            setDriverLocation([start.lat, start.lng]);
-
-            try {
-                const routeResult = await getRoute(
-                    { latitude: start.lat, longitude: start.lng },
-                    { latitude: end.lat, longitude: end.lng },
-                    { alternatives: 2 }
-                );
-
-                const waypoints = routeResult.suggested?.waypoints || routeResult.route?.waypoints || [];
-
-                if (waypoints.length === 0) {
-                    setIsDemoMode(false);
-                    alert('Failed to generate path waypoints. Check receiver and driver coordinates.');
-                    return;
-                }
-
-                setRouteInsight({
-                    eta: routeResult.eta,
-                    traffic: routeResult.traffic,
-                    suggested: routeResult.suggested,
-                    shorterDistanceRoute: routeResult.shorterDistanceRoute,
-                    distanceKm: (routeResult.suggested?.distanceM || 0) / 1000,
-                    approximate: routeResult.approximate,
-                });
-
-                setDemoRouteWaypoints(waypoints.map((w) => [w.latitude, w.longitude]));
-
-                try {
-                    await startDemo(waypoints);
-                } catch (err) {
-                    console.warn('[DeliveryConfirmation] Server demo unavailable, using client simulation only:', err.message);
-                }
-
-                const simMs = Math.min(
-                    60000,
-                    Math.max(20000, (routeResult.traffic?.adjustedSec || 60) * 40)
-                );
-
-                const success = simulateMovement(
-                    waypoints,
-                    async (waypoint) => {
-                        setDriverLocation([waypoint.latitude, waypoint.longitude]);
-                        setDemoProgress({ currentIndex: waypoint.index + 1, total: waypoint.total });
-                        try {
-                            await updateDriverLocation(waypoint.latitude, waypoint.longitude);
-                        } catch (err) {
-                            console.error('[DeliveryConfirmation] Error updating driver location in demo mode:', err);
-                        }
-                    },
-                    { totalDurationMs: simMs || getDemoSimulationDurationMs() }
-                );
-
-                if (!success) {
-                    setIsDemoMode(false);
-                    setDemoRouteWaypoints([]);
-                    await stopDemo().catch(() => {});
-                    alert('Failed to start demo mode');
-                }
-            } finally {
-                setRouteLoading(false);
-            }
+            await startDeliveryDemo();
         }
     };
 
-    // Cleanup demo mode on unmount
     useEffect(() => {
         return () => {
             if (isDemoMode) {
-                stopSimulation();
+                stopDriverDemo();
             }
         };
     }, [isDemoMode]);
@@ -406,18 +360,28 @@ function DeliveryConfirmation() {
         );
     }
 
-    // Get coordinates from donation data
-    const receiverLocation = donationData?.receiver?.location
-        ? [donationData.receiver.location.latitude, donationData.receiver.location.longitude]
-        : [6.850, 79.930]; // Default fallback
+    const supplierCoord = getSupplierCoordFromTracking(donationData);
+    const receiverCoord = getReceiverCoordFromTracking(donationData);
+    const supplierAddress = getSupplierAddressFromTracking(donationData);
+    const receiverAddress = getReceiverAddressFromTracking(donationData);
+
+    const receiverLocation = receiverCoord
+        ? [receiverCoord.lat, receiverCoord.lng]
+        : null;
+
+    const supplierLocation = supplierCoord
+        ? [supplierCoord.lat, supplierCoord.lng]
+        : null;
 
     const currentLocation = driverLocation || (donationData?.driver?.location
         ? [donationData.driver.location.latitude, donationData.driver.location.longitude]
-        : [6.860, 79.925]); // Default fallback
+        : supplierLocation || [6.9271, 79.8612]);
 
     let routePath = [];
     if (demoRouteWaypoints.length > 0) {
         routePath = demoRouteWaypoints;
+    } else if (supplierLocation && receiverLocation) {
+        routePath = [supplierLocation, receiverLocation];
     } else if (donationStatus === 'picked_up' || receiverLocation) {
         routePath = [currentLocation, receiverLocation];
     }
@@ -426,6 +390,13 @@ function DeliveryConfirmation() {
     const receiverIcon = new L.DivIcon({
         className: 'custom-icon',
         html: `<div style="background-color: #F44336; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    const supplierIcon = new L.DivIcon({
+        className: 'custom-icon',
+        html: `<div style="background-color: #4CAF50; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></div>`,
         iconSize: [20, 20],
         iconAnchor: [10, 10]
     });
@@ -463,9 +434,9 @@ function DeliveryConfirmation() {
                     )}
 
                     {/* Google Maps link - open in new tab, no API key */}
-                    {donationData?.receiver?.location && (
+                    {receiverLocation && (
                         <a
-                            href={`https://www.google.com/maps?q=${donationData.receiver.location.latitude},${donationData.receiver.location.longitude}`}
+                            href={`https://www.google.com/maps?q=${receiverLocation[0]},${receiverLocation[1]}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="delivery-confirmation__google-maps-link"
@@ -484,12 +455,21 @@ function DeliveryConfirmation() {
                     >
                         <MapTileLayer />
                         <MapInvalidateSize />
-                        {donationData?.receiver && (
+                        {supplierLocation && (
+                            <Marker position={supplierLocation} icon={supplierIcon}>
+                                <Popup>
+                                    <strong>Pickup Location (Supplier)</strong><br/>
+                                    {donationData?.donor?.name || 'Supplier'}<br/>
+                                    {supplierAddress || donationData?.donor?.address || 'Address not available'}
+                                </Popup>
+                            </Marker>
+                        )}
+                        {receiverLocation && (
                             <Marker position={receiverLocation} icon={receiverIcon}>
                                 <Popup>
                                     <strong>Delivery Location</strong><br/>
-                                    {donationData.receiver.name || 'Receiver'}<br/>
-                                    {donationData.receiver.address || ''}
+                                    {donationData?.receiver?.name || 'Receiver'}<br/>
+                                    {receiverAddress || donationData?.receiver?.address || 'Address not available'}
                                 </Popup>
                             </Marker>
                         )}
@@ -520,13 +500,19 @@ function DeliveryConfirmation() {
                                 <p><strong>Item:</strong> {donationData.donation.itemName}</p>
                                 <p><strong>Quantity:</strong> {donationData.donation.quantity} servings</p>
                                 <p><strong>Tracking ID:</strong> {donationData.donation.trackingId}</p>
+                                {donationData.donor && (
+                                    <>
+                                        <p><strong>Supplier:</strong> {donationData.donor.name}</p>
+                                        <p><strong>Pickup address:</strong> {supplierAddress || donationData.donor.address || '—'}</p>
+                                    </>
+                                )}
                                 {donationData.receiver && (
                                     <>
                                         <p><strong>Receiver:</strong> {donationData.receiver.name}</p>
                                         {donationData.receiver.contactNo && (
                                             <p><strong>Contact:</strong> {donationData.receiver.contactNo}</p>
                                         )}
-                                        <p><strong>Address:</strong> {donationData.receiver.address}</p>
+                                        <p><strong>Delivery address:</strong> {receiverAddress || donationData.receiver.address || '—'}</p>
                                     </>
                                 )}
                                 {isCodOrder && (

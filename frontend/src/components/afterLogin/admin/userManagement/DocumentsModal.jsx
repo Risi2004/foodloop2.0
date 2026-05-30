@@ -1,221 +1,162 @@
 import './AdminUserManagement.css';
-import { getAdminRoleLabel } from '../../../../utils/adminUserDisplay';
+import {
+  getAdminRoleLabel,
+  getAdminUserName,
+  getAdminUserProfileDetails,
+} from '../../../../utils/adminUserDisplay';
 
 const DocumentsModal = ({ user, isOpen, onClose }) => {
-    if (!isOpen || !user) return null;
+  if (!isOpen || !user) return null;
 
-    // Helper function to check if URL is valid
-    const isValidUrl = (url) => {
-        // Handle null, undefined, empty string
-        if (url === null || url === undefined || url === '') {
-            return false;
-        }
-        
-        // Convert to string and trim
-        const urlString = String(url).trim();
-        
-        // Check for invalid string representations
-        if (urlString === '' || 
-            urlString === 'null' || 
-            urlString === 'undefined' || 
-            urlString === 'None' ||
-            urlString === 'NaN') {
-            return false;
-        }
-        
-        // Check if it looks like a valid URL or file path
-        // Accept URLs starting with http:// or https://
-        if (urlString.startsWith('http://') || urlString.startsWith('https://')) {
-            return true;
-        }
-        
-        // Accept S3 / Cloudflare R2 URLs
-        if (
-            urlString.includes('s3') ||
-            urlString.includes('amazonaws.com') ||
-            urlString.includes('r2.dev') ||
-            urlString.includes('r2.cloudflarestorage.com') ||
-            urlString.includes('cloudflare')
-        ) {
-            return true;
-        }
-        
-        // Accept any string that looks like a file path (has extension or is reasonably long)
-        if (urlString.length > 5 && (urlString.includes('.') || urlString.includes('/'))) {
-            return true;
-        }
-        
-        return false;
-    };
+  const isValidUrl = (url) => {
+    if (url === null || url === undefined || url === '') return false;
 
-    // Helper function to determine file type
-    const getFileType = (url) => {
-        if (!url) return 'image';
-        const lowerUrl = url.toLowerCase();
-        if (lowerUrl.includes('.pdf') || lowerUrl.includes('application/pdf')) {
-            return 'pdf';
-        }
-        return 'image';
-    };
+    const urlString = String(url).trim();
+    if (
+      urlString === '' ||
+      urlString === 'null' ||
+      urlString === 'undefined' ||
+      urlString === 'None' ||
+      urlString === 'NaN'
+    ) {
+      return false;
+    }
 
-    // Get documents - check ALL possible document fields regardless of role
-    // This ensures we show all documents that were uploaded during signup
-    const getDocuments = () => {
-        const documents = [];
-        
-        // Define all possible document fields with their labels
-        const allDocumentFields = [
-            { field: 'profileImageUrl', label: 'Profile Image' },
-            { field: 'businessRegFileUrl', label: 'Business Registration Document' },
-            { field: 'addressProofFileUrl', label: 'Address Proof Document' },
-            { field: 'nicFileUrl', label: 'NIC Document' },
-            { field: 'licenseFileUrl', label: 'License Document' },
-            { field: 'gramaNiladhariLetterUrl', label: 'Grama Niladhari Letter' },
-            { field: 'gramaNiladhariLetter', label: 'Grama Niladhari Letter' },
-        ];
+    if (urlString.startsWith('http://') || urlString.startsWith('https://')) return true;
+    if (
+      urlString.includes('s3') ||
+      urlString.includes('amazonaws.com') ||
+      urlString.includes('r2.dev') ||
+      urlString.includes('r2.cloudflarestorage.com') ||
+      urlString.includes('cloudflare')
+    ) {
+      return true;
+    }
 
-        // Check ALL document fields and add any that exist
-        allDocumentFields.forEach(({ field, label }) => {
-            const fieldValue = user[field];
-            console.log(`Checking ${field}:`, fieldValue, 'Type:', typeof fieldValue, 'IsValid:', isValidUrl(fieldValue));
-            
-            // More lenient check - if field exists and is not explicitly null/undefined/empty, include it
-            if (fieldValue !== null && 
-                fieldValue !== undefined && 
-                fieldValue !== '' && 
-                String(fieldValue).trim() !== '' &&
-                String(fieldValue).trim() !== 'null' &&
-                String(fieldValue).trim() !== 'undefined') {
-                
-                const urlString = String(fieldValue).trim();
-                console.log(`✓ Document found: ${label} - ${urlString}`);
-                documents.push({
-                    label: label,
-                    url: urlString,
-                    type: getFileType(urlString)
-                });
-            } else {
-                console.log(`✗ Missing or invalid: ${field} =`, fieldValue);
-            }
+    if (urlString.length > 5 && (urlString.includes('.') || urlString.includes('/'))) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const getFileType = (url) => {
+    if (!url) return 'image';
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes('.pdf') || lowerUrl.includes('application/pdf')) return 'pdf';
+    return 'image';
+  };
+
+  const getDocuments = () => {
+    const documents = [];
+    const allDocumentFields = [
+      { field: 'profileImageUrl', label: 'Profile Image' },
+      { field: 'businessRegFileUrl', label: 'Business Registration Document' },
+      { field: 'addressProofFileUrl', label: 'Address Proof Document' },
+      { field: 'nicFileUrl', label: 'NIC Document' },
+      { field: 'licenseFileUrl', label: 'License Document' },
+      { field: 'gramaNiladhariLetterUrl', label: 'Grama Niladhari Letter' },
+      { field: 'gramaNiladhariLetter', label: 'Grama Niladhari Letter' },
+    ];
+
+    allDocumentFields.forEach(({ field, label }) => {
+      const fieldValue = user[field];
+      if (
+        fieldValue !== null &&
+        fieldValue !== undefined &&
+        fieldValue !== '' &&
+        String(fieldValue).trim() !== '' &&
+        String(fieldValue).trim() !== 'null' &&
+        String(fieldValue).trim() !== 'undefined' &&
+        isValidUrl(fieldValue)
+      ) {
+        const urlString = String(fieldValue).trim();
+        documents.push({
+          label,
+          url: urlString,
+          type: getFileType(urlString),
         });
+      }
+    });
 
-        return documents;
-    };
+    return documents;
+  };
 
-    const documents = getDocuments();
-    
-    // Debug: Log user data to console to help identify missing documents
-    console.log('=== Documents Modal Debug ===');
-    console.log('User role:', user.role);
-    console.log('User donorType:', user.donorType);
-    console.log('All user fields:', Object.keys(user));
-    console.log('Document URLs in user object:');
-    console.log('  - profileImageUrl:', user.profileImageUrl);
-    console.log('  - businessRegFileUrl:', user.businessRegFileUrl);
-    console.log('  - addressProofFileUrl:', user.addressProofFileUrl);
-    console.log('  - nicFileUrl:', user.nicFileUrl);
-    console.log('  - licenseFileUrl:', user.licenseFileUrl);
-    console.log('Documents found:', documents);
-    console.log('===========================');
-    
-    const userName = user.role === 'Donor' 
-        ? (user.donorType === 'Business' ? user.businessName : user.username) || user.email
-        : user.role === 'Receiver' 
-        ? user.receiverName || user.email
-        : user.role === 'Driver'
-        ? user.driverName || user.email
-        : user.email;
+  const profileDetails = getAdminUserProfileDetails(user);
+  const documents = getDocuments();
+  const userName = getAdminUserName(user);
 
-    return (
-        <div className="documents-modal-overlay" onClick={onClose}>
-            <div className="documents-modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="documents-modal-header">
-                    <h2>Documents - {userName}</h2>
-                    <button className="documents-modal-close" onClick={onClose}>×</button>
-                </div>
-                <div className="documents-modal-body">
-                    {documents.length === 0 ? (
-                        <div className="no-documents">
-                            <p>No documents submitted</p>
-                            <div style={{ fontSize: '12px', color: '#a0a0a0', marginTop: '15px', textAlign: 'left', maxWidth: '500px', margin: '15px auto 0' }}>
-                                <p style={{ marginBottom: '10px' }}>
-                                    <strong>Expected documents for {getAdminRoleLabel(user.role)}:</strong>
-                                </p>
-                                {user.role === 'Donor' && user.donorType === 'Business' && (
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                        <li>• Profile Image</li>
-                                        <li>• Business Registration Document</li>
-                                        <li>• Address Proof Document</li>
-                                    </ul>
-                                )}
-                                {(user.role === 'Donor' && user.donorType === 'Individual') ||
-                                (user.role || '').toLowerCase() === 'individual' ? (
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                        <li>• Profile Image (optional)</li>
-                                        <li>• NIC Document (PDF)</li>
-                                        <li>• Startup / business details on file</li>
-                                    </ul>
-                                ) : null}
-                                {user.role === 'Receiver' && (
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                        <li>• Profile Image (optional)</li>
-                                    </ul>
-                                )}
-                                {user.role === 'Driver' && (
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                        <li>• Profile Image</li>
-                                        <li>• NIC Document</li>
-                                        <li>• License Document</li>
-                                    </ul>
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="documents-grid">
-                            {documents.map((doc, index) => (
-                                <div key={index} className="document-item">
-                                    <div className="document-label">{doc.label}</div>
-                                    {doc.type === 'pdf' ? (
-                                        <div className="document-pdf-viewer">
-                                            <iframe 
-                                                src={doc.url} 
-                                                title={doc.label}
-                                                className="pdf-iframe"
-                                            />
-                                            <a 
-                                                href={doc.url} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="document-download-link"
-                                            >
-                                                Open in New Tab
-                                            </a>
-                                        </div>
-                                    ) : (
-                                        <div className="document-image-viewer">
-                                            <img 
-                                                src={doc.url} 
-                                                alt={doc.label}
-                                                className="document-image"
-                                            />
-                                            <a 
-                                                href={doc.url} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="document-download-link"
-                                            >
-                                                Open in New Tab
-                                            </a>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="documents-modal-overlay" onClick={onClose}>
+      <div className="documents-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="documents-modal-header">
+          <h2>User Details — {userName}</h2>
+          <button type="button" className="documents-modal-close" onClick={onClose} aria-label="Close">
+            ×
+          </button>
         </div>
-    );
+        <div className="documents-modal-body">
+          <section className="user-profile-section">
+            <h3 className="user-details-section-title">Profile Information</h3>
+            <div className="user-profile-grid">
+              {profileDetails.map(({ label, value }) => (
+                <div key={label} className="user-profile-field">
+                  <span className="user-profile-label">{label}</span>
+                  <span className="user-profile-value">{value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="user-documents-section">
+            <h3 className="user-details-section-title">Submitted Documents</h3>
+            {documents.length === 0 ? (
+              <div className="no-documents">
+                <p>No documents submitted</p>
+                <p className="no-documents-hint">
+                  Expected documents for {getAdminRoleLabel(user.role)} may include profile image, NIC,
+                  business registration, or license files depending on account type.
+                </p>
+              </div>
+            ) : (
+              <div className="documents-grid">
+                {documents.map((doc) => (
+                  <div key={`${doc.label}-${doc.url}`} className="document-item">
+                    <div className="document-label">{doc.label}</div>
+                    {doc.type === 'pdf' ? (
+                      <div className="document-pdf-viewer">
+                        <iframe src={doc.url} title={doc.label} className="pdf-iframe" />
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="document-download-link"
+                        >
+                          Open in New Tab
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="document-image-viewer">
+                        <img src={doc.url} alt={doc.label} className="document-image" />
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="document-download-link"
+                        >
+                          Open in New Tab
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default DocumentsModal;

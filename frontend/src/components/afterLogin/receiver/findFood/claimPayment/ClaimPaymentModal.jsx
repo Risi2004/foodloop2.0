@@ -125,12 +125,13 @@ const ClaimPaymentModal = ({
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
+      let confirmResult = null;
       if (confirmPayment) {
-        await confirmPayment(cardPayload);
+        confirmResult = await confirmPayment(cardPayload);
       } else {
-        await confirmClaimPayment(cardPayload);
+        confirmResult = await confirmClaimPayment(cardPayload);
       }
-      onSuccess(orderId);
+      onSuccess(orderId, confirmResult);
     } catch (err) {
       setError(err.message || 'Payment failed. Please try again.');
     } finally {

@@ -23,23 +23,18 @@ const {
   isWithinSriLanka,
   toAvailableDonationJSON,
   toClaimJSON,
+  enrichClaimFromParent,
+  indexChildClaimsByParent,
+  enrichParentListingForDonor,
 } = require('../utils/donationHelpers');
+const { buildReceiverDeliveryQuoteForDonation } = require('../utils/receiverDeliveryQuote');
 const { emitToReceivers, emitToDonor, emitToDrivers } = require('../socket');
 const {
   sendDonationClaimedEmails,
   sendDonationClaimCancelledEmails,
 } = require('../utils/sendNotificationEmail');
-const { verifyPaidPaymentForClaim } = require('./payment.controller');
-const {
-  buildReceiverDeliveryQuoteForDonation,
-  paymentMatchesDeliveryQuote,
-  DELIVERY_QUOTE_RATE_LKR,
-} = require('../utils/receiverDeliveryQuote');
-const {
-  computeClaimFoodSubtotal,
-  forkClaimFromListing,
-  restoreParentQuantityOnCancel,
-} = require('../utils/donationClaimFork');
+const { performDonationClaim, notifyDonationClaimed } = require('../services/donationClaimService');
+const { restoreParentQuantityOnCancel } = require('../utils/donationClaimFork');
 
 const DONOR_ROLES = [
   'donor',
@@ -171,9 +166,6 @@ exports.createDonation = async (req, res) => {
       quantity,
       storageRecommendation,
       imageUrl,
-      preferredPickupDate,
-      preferredPickupTimeFrom,
-      preferredPickupTimeTo,
       userProvidedExpiryDate,
       aiConfidence,
       aiQualityScore,
@@ -202,12 +194,6 @@ exports.createDonation = async (req, res) => {
     }
     if (!storageRecommendation?.trim()) {
       return res.status(400).json({ success: false, message: 'Storage instructions are required.' });
-    }
-    if (!preferredPickupDate || !preferredPickupTimeFrom || !preferredPickupTimeTo) {
-      return res.status(400).json({ success: false, message: 'Pickup window is required.' });
-    }
-    if (preferredPickupTimeFrom >= preferredPickupTimeTo) {
-      return res.status(400).json({ success: false, message: 'Pickup end time must be after start time.' });
     }
     if (!userProvidedExpiryDate) {
       return res.status(400).json({ success: false, message: 'Expiry date is required.' });
@@ -252,9 +238,6 @@ exports.createDonation = async (req, res) => {
       initialQuantity: qty,
       storageRecommendation: storageRecommendation.trim(),
       imageUrl: imageUrl.trim(),
-      preferredPickupDate,
-      preferredPickupTimeFrom,
-      preferredPickupTimeTo,
       userProvidedExpiryDate,
       aiConfidence: aiConfidence != null ? Number(aiConfidence) : null,
       aiQualityScore: quality,
@@ -441,183 +424,37 @@ exports.claimDonation = async (req, res) => {
     }
 
     const body = req.body || {};
-    const { receiverLatitude, receiverLongitude, receiverAddress } = body;
     const claimQuantity = Math.max(1, Math.round(Number(body.claimQuantity) || 1));
-    const lat = Number(receiverLatitude);
-    const lng = Number(receiverLongitude);
-
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Delivery location (latitude and longitude) is required.',
-      });
-    }
-    if (!isWithinSriLanka(lat, lng)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Delivery location must be within Sri Lanka.',
-      });
-    }
-    if (!receiverAddress?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Delivery address is required.',
-      });
-    }
-
-    const parentListing = await Donation.findById(id);
-    if (!parentListing) {
-      return res.status(404).json({ success: false, message: 'Donation not found.' });
-    }
-    if (parentListing.status !== 'available' || parentListing.parentListingId) {
-      return res.status(400).json({
-        success: false,
-        message: 'This donation is no longer available.',
-      });
-    }
-    if (isDonationExpired(parentListing.userProvidedExpiryDate)) {
-      return res.status(400).json({
-        success: false,
-        message: 'This donation has expired.',
-      });
-    }
-    if (claimQuantity > parentListing.quantity) {
-      return res.status(400).json({
-        success: false,
-        message: `Only ${parentListing.quantity} serving(s) available.`,
-      });
-    }
-
-    let payment = null;
-    if (parentListing.listingType === 'sell' && parentListing.priceAmount > 0) {
-      const paymentOrderId = body.paymentOrderId?.trim();
-      if (!paymentOrderId) {
-        return res.status(402).json({
-          success: false,
-          message: 'Complete payment before claiming this listing.',
-        });
-      }
-      const paymentCheck = await verifyPaidPaymentForClaim({
-        paymentOrderId,
-        donationId: parentListing._id,
-        receiverId: req.user._id,
-      });
-      if (!paymentCheck.ok) {
-        return res.status(402).json({
-          success: false,
-          message: paymentCheck.message,
-        });
-      }
-      payment = paymentCheck.payment;
-      if (!paymentMatchesDeliveryQuote(payment, lat, lng)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Delivery location does not match your paid checkout. Please pay again with the correct location.',
-        });
-      }
-      const summary = payment.orderSummary || {};
-      const expectedFood = computeClaimFoodSubtotal(parentListing, claimQuantity);
-      const paidQty = Math.max(1, Math.round(Number(summary.claimQuantity) || 1));
-      if (paidQty !== claimQuantity) {
-        return res.status(400).json({
-          success: false,
-          message: 'Claim quantity does not match your paid checkout.',
-        });
-      }
-      const paidFood = Number(summary.foodSubtotal ?? 0);
-      if (Math.abs(paidFood - expectedFood) > 0.01) {
-        return res.status(400).json({
-          success: false,
-          message: 'Payment amount does not match the selected quantity.',
-        });
-      }
-    }
 
     let parent;
     let child;
+    let claimQuantityResult;
+
     try {
-      ({ parent, child } = await forkClaimFromListing({
-        parentId: parentListing._id,
+      ({ parent, child, claimQuantity: claimQuantityResult } = await performDonationClaim({
+        donationId: id,
+        receiverUser: req.user,
+        receiverLatitude: body.receiverLatitude,
+        receiverLongitude: body.receiverLongitude,
+        receiverAddress: body.receiverAddress,
         claimQuantity,
-        receiverId: req.user._id,
-        receiverLatitude: lat,
-        receiverLongitude: lng,
-        receiverAddress: receiverAddress.trim(),
+        paymentOrderId: body.paymentOrderId,
       }));
-    } catch (forkErr) {
-      if (forkErr.statusCode === 409) {
-        return res.status(409).json({ success: false, message: forkErr.message });
+    } catch (claimErr) {
+      const status = claimErr.statusCode || 500;
+      if (status >= 400 && status < 500) {
+        return res.status(status).json({ success: false, message: claimErr.message });
       }
-      throw forkErr;
+      throw claimErr;
     }
 
-    if (parentListing.listingType === 'sell' && parentListing.priceAmount > 0 && payment) {
-      const summary = payment.orderSummary || {};
-      child.deliveryDistanceKm = summary.deliveryDistanceKm ?? null;
-      child.deliveryFeeQuoted = summary.deliveryFeeAfterDiscount ?? summary.deliveryFee ?? 0;
-      child.deliveryFeeDiscount = summary.deliveryDiscount ?? 0;
-      child.deliveryQuotedRatePerKm = summary.deliveryQuotedRatePerKm ?? DELIVERY_QUOTE_RATE_LKR;
-      child.deliveryPayer = 'receiver';
-    } else {
-      const quoteResult = await buildReceiverDeliveryQuoteForDonation(
-        parentListing,
-        req.user,
-        lat,
-        lng,
-        claimQuantity
-      );
-      if (quoteResult.error) {
-        await restoreParentQuantityOnCancel(child);
-        child.status = 'cancelled';
-        await child.save();
-        return res.status(400).json({ success: false, message: quoteResult.error });
-      }
-      child.deliveryDistanceKm = quoteResult.distanceKm;
-      child.deliveryFeeQuoted = 0;
-      child.deliveryFeeDiscount = 0;
-      child.deliveryQuotedRatePerKm = DELIVERY_QUOTE_RATE_LKR;
-      child.deliveryPayer = 'platform';
-    }
-
-    await child.save();
-
-    await child.populate([
-      { path: 'donorId', select: 'username businessName role email' },
-      { path: 'receiverId', select: 'username receiverName email' },
-    ]);
-
-    const childId = child._id.toString();
-    const parentId = parent._id.toString();
-    const donorId = child.donorId._id?.toString?.() || child.donorId.toString();
-    const claimPayload = toClaimJSON(child);
-    const parentPayload = toAvailableDonationJSON(parent, null);
-
-    if (parent.quantity > 0) {
-      emitToReceivers('donation:stockUpdated', {
-        donationId: parentId,
-        donation: parentPayload,
-        claimedChildId: childId,
-      });
-    } else {
-      emitToReceivers('donation:claimed', { donationId: parentId });
-    }
-
-    emitToDonor(donorId, 'donation:claimedForDonor', {
-      donationId: childId,
-      parentListingId: parentId,
-      donorId,
-      donation: claimPayload,
-      parentListing: parentPayload,
-    });
-    emitToDrivers('donation:newPickup', { donationId: childId, donation: claimPayload });
-
-    sendDonationClaimedEmails(child, child.donorId, child.receiverId);
+    const { claimPayload, parentPayload } = notifyDonationClaimed({ child, parent });
 
     return res.json({
       success: true,
       donation: claimPayload,
       parentListing: parentPayload,
-      claimQuantity,
+      claimQuantity: claimQuantityResult,
     });
   } catch (err) {
     console.error('claimDonation error:', err);
@@ -747,11 +584,12 @@ exports.getMyClaims = async (req, res) => {
     })
       .populate('donorId', 'username businessName role')
       .populate('receiverId', 'username receiverName')
+      .populate('parentListingId')
       .sort({ claimedAt: -1, createdAt: -1 });
 
     return res.json({
       success: true,
-      donations: donations.map((d) => toClaimJSON(d)),
+      donations: donations.map((d) => enrichClaimFromParent(d)),
     });
   } catch (err) {
     console.error('getMyClaims error:', err);
@@ -772,12 +610,21 @@ exports.getMyDonations = async (req, res) => {
     }
 
     const donations = await Donation.find({ donorId: req.user._id })
+      .populate('receiverId', 'receiverName username email')
+      .populate('driverId', 'driverName username email')
+      .populate('parentListingId')
       .sort({ createdAt: -1 })
       .lean(false);
 
+    const childrenByParent = indexChildClaimsByParent(donations);
+
     return res.json({
       success: true,
-      donations: donations.map((d) => d.toPublicJSON()),
+      donations: donations.map((d) =>
+        d.parentListingId
+          ? enrichClaimFromParent(d)
+          : enrichParentListingForDonor(d, childrenByParent)
+      ),
     });
   } catch (err) {
     console.error('getMyDonations error:', err);
@@ -844,9 +691,6 @@ exports.updateDonation = async (req, res) => {
       quantity,
       storageRecommendation,
       imageUrl,
-      preferredPickupDate,
-      preferredPickupTimeFrom,
-      preferredPickupTimeTo,
       userProvidedExpiryDate,
       listingType,
       priceAmount,
@@ -894,16 +738,6 @@ exports.updateDonation = async (req, res) => {
     }
     if (imageUrl !== undefined && imageUrl?.trim()) {
       donation.imageUrl = imageUrl.trim();
-    }
-    if (preferredPickupDate !== undefined) donation.preferredPickupDate = preferredPickupDate;
-    if (preferredPickupTimeFrom !== undefined) donation.preferredPickupTimeFrom = preferredPickupTimeFrom;
-    if (preferredPickupTimeTo !== undefined) donation.preferredPickupTimeTo = preferredPickupTimeTo;
-    if (
-      donation.preferredPickupTimeFrom &&
-      donation.preferredPickupTimeTo &&
-      donation.preferredPickupTimeFrom >= donation.preferredPickupTimeTo
-    ) {
-      return res.status(400).json({ success: false, message: 'Pickup end time must be after start time.' });
     }
     if (userProvidedExpiryDate !== undefined) {
       if (!userProvidedExpiryDate) {

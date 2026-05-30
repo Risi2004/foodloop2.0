@@ -23,39 +23,130 @@ function computeClaimFoodSubtotal(donation, claimQuantity) {
   return roundCurrency(unitPrice * claimQuantity);
 }
 
+function toParentSnapshot(parent) {
+  if (!parent) return null;
+  if (typeof parent.toObject === 'function') {
+    return parent.toObject();
+  }
+  return { ...parent };
+}
+
 function copyParentFieldsForChild(parent, claimQuantity, claimPrice) {
-  return {
-    donorId: parent.donorId,
-    foodCategory: parent.foodCategory,
-    itemName: parent.itemName,
+  const source = toParentSnapshot(parent);
+  if (!source?._id) {
+    const err = new Error('Parent listing data is missing. Cannot create claim.');
+    err.statusCode = 500;
+    throw err;
+  }
+
+  const childData = {
+    donorId: source.donorId,
+    foodCategory: source.foodCategory,
+    itemName: source.itemName,
     quantity: claimQuantity,
     initialQuantity: claimQuantity,
-    parentListingId: parent._id,
-    storageRecommendation: parent.storageRecommendation,
-    imageUrl: parent.imageUrl,
-    preferredPickupDate: parent.preferredPickupDate,
-    preferredPickupTimeFrom: parent.preferredPickupTimeFrom,
-    preferredPickupTimeTo: parent.preferredPickupTimeTo,
-    userProvidedExpiryDate: parent.userProvidedExpiryDate,
-    aiConfidence: parent.aiConfidence,
-    aiQualityScore: parent.aiQualityScore,
-    aiFreshness: parent.aiFreshness,
-    aiDetectedItems: parent.aiDetectedItems || [],
-    productType: parent.productType,
-    expiryDateFromPackage: parent.expiryDateFromPackage,
-    listingType: parent.listingType,
-    priceAmount: parent.listingType === 'sell' ? claimPrice : null,
-    priceCurrency: parent.priceCurrency || 'LKR',
+    parentListingId: source._id,
+    storageRecommendation: source.storageRecommendation,
+    imageUrl: source.imageUrl,
+    userProvidedExpiryDate: source.userProvidedExpiryDate,
+    aiConfidence: source.aiConfidence,
+    aiQualityScore: source.aiQualityScore,
+    aiFreshness: source.aiFreshness,
+    aiDetectedItems: source.aiDetectedItems || [],
+    productType: source.productType,
+    expiryDateFromPackage: source.expiryDateFromPackage,
+    listingType: source.listingType,
+    priceAmount: source.listingType === 'sell' ? claimPrice : null,
+    priceCurrency: source.priceCurrency || 'LKR',
     aiSuggestedPrice: null,
-    pickupAddress: parent.pickupAddress,
-    donorLatitude: parent.donorLatitude,
-    donorLongitude: parent.donorLongitude,
+    pickupAddress: source.pickupAddress,
+    donorLatitude: source.donorLatitude,
+    donorLongitude: source.donorLongitude,
     status: 'claimed',
   };
+
+  const requiredFields = [
+    'donorId',
+    'foodCategory',
+    'itemName',
+    'storageRecommendation',
+    'imageUrl',
+    'pickupAddress',
+    'donorLatitude',
+    'donorLongitude',
+  ];
+  for (const field of requiredFields) {
+    const value = childData[field];
+    if (value == null || value === '') {
+      const err = new Error(`Parent listing is missing required field "${field}".`);
+      err.statusCode = 500;
+      throw err;
+    }
+  }
+
+  return childData;
+}
+
+async function claimListingInPlace({
+  listingId,
+  claimQuantity,
+  receiverId,
+  receiverLatitude,
+  receiverLongitude,
+  receiverAddress,
+}) {
+  const qty = Math.max(1, Math.round(Number(claimQuantity) || 1));
+  const session = await mongoose.startSession();
+
+  try {
+    let child;
+
+    await session.withTransaction(async () => {
+      const listing = await Donation.findOneAndUpdate(
+        {
+          _id: listingId,
+          status: 'available',
+          parentListingId: null,
+          quantity: { $gte: qty },
+        },
+        {
+          $set: {
+            receiverId,
+            receiverLatitude,
+            receiverLongitude,
+            receiverAddress,
+            claimedAt: new Date(),
+            status: 'claimed',
+            quantity: qty,
+          },
+        },
+        { returnDocument: 'after', session, runValidators: true }
+      );
+
+      if (!listing) {
+        const err = new Error('This donation is no longer available.');
+        err.statusCode = 409;
+        throw err;
+      }
+
+      child = listing;
+    });
+
+    if (!child) {
+      const err = new Error('Failed to claim donation.');
+      err.statusCode = 500;
+      throw err;
+    }
+
+    return { parent: null, child };
+  } finally {
+    session.endSession();
+  }
 }
 
 async function forkClaimFromListing({
   parentId,
+  parentSnapshot,
   claimQuantity,
   receiverId,
   receiverLatitude,
@@ -70,36 +161,73 @@ async function forkClaimFromListing({
     let child;
 
     await session.withTransaction(async () => {
-      parent = await Donation.findOneAndUpdate(
+      const snapshot =
+        toParentSnapshot(parentSnapshot) ||
+        toParentSnapshot(await Donation.findById(parentId).session(session));
+
+      if (!snapshot?._id) {
+        const err = new Error('Parent listing not found.');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      if (snapshot.status !== 'available' || snapshot.parentListingId) {
+        const err = new Error('This donation is no longer available.');
+        err.statusCode = 409;
+        throw err;
+      }
+      if ((snapshot.quantity || 0) < qty) {
+        const err = new Error('Not enough quantity available for this claim.');
+        err.statusCode = 409;
+        throw err;
+      }
+
+      const updateResult = await Donation.updateOne(
         {
           _id: parentId,
           status: 'available',
           parentListingId: null,
           quantity: { $gte: qty },
         },
-        { $inc: { quantity: -qty } },
-        { new: true, session }
+        {
+          $inc: { quantity: -qty },
+          ...(snapshot.quantity - qty <= 0 ? { $set: { status: 'cancelled' } } : {}),
+        },
+        { session }
       );
 
-      if (!parent) {
+      if (updateResult.modifiedCount !== 1) {
         const err = new Error('Not enough quantity available for this claim.');
         err.statusCode = 409;
         throw err;
       }
 
       const claimPrice =
-        parent.listingType === 'sell' ? computeClaimFoodSubtotal(parent, qty) : null;
+        snapshot.listingType === 'sell' ? computeClaimFoodSubtotal(snapshot, qty) : null;
 
-      const childData = copyParentFieldsForChild(parent, qty, claimPrice);
+      const childData = copyParentFieldsForChild(snapshot, qty, claimPrice);
       childData.receiverId = receiverId;
       childData.receiverLatitude = receiverLatitude;
       childData.receiverLongitude = receiverLongitude;
       childData.receiverAddress = receiverAddress;
       childData.claimedAt = new Date();
 
-      const created = await Donation.create([childData], { session });
-      child = created[0];
+      child = new Donation(childData);
+      await child.save({ session });
+
+      parent = await Donation.findById(parentId).session(session);
+      if (!parent) {
+        const err = new Error('Parent listing not found after claim.');
+        err.statusCode = 500;
+        throw err;
+      }
     });
+
+    if (!parent || !child) {
+      const err = new Error('Failed to create claim record.');
+      err.statusCode = 500;
+      throw err;
+    }
 
     return { parent, child };
   } finally {
@@ -121,11 +249,29 @@ async function restoreParentQuantityOnCancel(childDonation) {
   return parent;
 }
 
+async function rollbackInPlaceClaim(listing) {
+  if (!listing || listing.parentListingId) return listing;
+
+  listing.receiverId = null;
+  listing.receiverLatitude = null;
+  listing.receiverLongitude = null;
+  listing.receiverAddress = null;
+  listing.claimedAt = null;
+  listing.driverId = null;
+  listing.assignedAt = null;
+  listing.status = 'available';
+  await listing.save();
+  return listing;
+}
+
 module.exports = {
   roundCurrency,
   getInitialQuantity,
   getUnitPriceAmount,
   computeClaimFoodSubtotal,
+  claimListingInPlace,
   forkClaimFromListing,
   restoreParentQuantityOnCancel,
+  rollbackInPlaceClaim,
+  copyParentFieldsForChild,
 };

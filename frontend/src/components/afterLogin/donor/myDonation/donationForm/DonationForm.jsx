@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { submitDonation, updateDonation, getDonorStatistics } from '../../../../../services/donationApi';
 import { clearAuth } from '../../../../../utils/auth';
@@ -9,19 +9,13 @@ import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../../services/maintenanceAp
 import autoFixHighIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/auto_fix_high.svg';
 import editIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Edit.svg';
 import lightningBoltIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Lightning Bolt.svg';
-import localShippingIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/local_shipping.svg';
 import plusMathIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Plus Math.svg';
 import subtractIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Subtract.svg';
 import protectIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Protect.svg';
 import sunIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Sun.svg';
 import winterIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Winter.svg';
 import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Blur.svg';
-import calendarIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Tear-Off Calendar.svg';
-import clockIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Clock.svg';
 import './DonationForm.css';
-
-const getTimeString = (d) =>
-    `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
 function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialData, isAnalyzing = false, manualEntryMode = false }) {
     const navigate = useNavigate();
@@ -37,16 +31,6 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     const [listingType, setListingType] = useState('donate'); // donate | sell
     const [priceAmount, setPriceAmount] = useState('');
     const [aiSuggestedPrice, setAiSuggestedPrice] = useState(null);
-    const [pickupDate, setPickupDate] = useState(() => {
-        const today = new Date();
-        return today.toISOString().split('T')[0];
-    });
-    const [pickupTimeFrom, setPickupTimeFrom] = useState(() => getTimeString(new Date()));
-    const [pickupTimeTo, setPickupTimeTo] = useState(() => {
-        const now = new Date();
-        const to = new Date(now.getTime() + 90 * 60 * 1000);
-        return getTimeString(to);
-    });
     const [aiConfidence, setAiConfidence] = useState(null);
     const [aiQualityScore, setAiQualityScore] = useState(null);
     const [isAiFilled, setIsAiFilled] = useState(false);
@@ -61,6 +45,20 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
     const [selectedLongitude, setSelectedLongitude] = useState(null);
     const [pickupAddress, setPickupAddress] = useState('');
     const [donorStats, setDonorStats] = useState(null);
+    const [userHasEdited, setUserHasEdited] = useState(false);
+    const aiAutoFilledRef = useRef(false);
+
+    const markUserEdited = () => {
+        setUserHasEdited(true);
+        setIsEditing(true);
+    };
+
+    // Reset AI auto-fill tracking when a new image/analysis session starts
+    useEffect(() => {
+        if (isEditMode) return;
+        aiAutoFilledRef.current = false;
+        setUserHasEdited(false);
+    }, [imageUrl, isEditMode]);
 
     // Initialize form from initialData when in edit mode
     useEffect(() => {
@@ -71,9 +69,6 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         setQuantity(d.quantity ?? 1);
         const storageVal = (d.storageRecommendation || '').toLowerCase();
         setStorage(storageVal === 'hot' || storageVal === 'cold' || storageVal === 'dry' ? storageVal : 'hot');
-        setPickupDate(d.preferredPickupDate || new Date().toISOString().split('T')[0]);
-        setPickupTimeFrom(d.preferredPickupTimeFrom || getTimeString(new Date()));
-        setPickupTimeTo(d.preferredPickupTimeTo || getTimeString(new Date(Date.now() + 90 * 60 * 1000)));
         setUserProvidedExpiryDate(d.expiryDate || d.userProvidedExpiryDate || '');
         setListingType(d.listingType === 'sell' ? 'sell' : 'donate');
         setPriceAmount(d.priceAmount != null ? String(d.priceAmount) : '');
@@ -87,6 +82,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         }
         setIsEditing(true);
         setIsAiFilled(false);
+        setUserHasEdited(true);
     }, [initialData]);
 
     useEffect(() => {
@@ -111,15 +107,9 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         const hasItemName = !!itemName && itemName.trim() !== '';
         const hasQuantity = quantity > 0;
         const hasStorage = !!storage;
-        const hasPickupDate = !!pickupDate;
-        const hasPickupTimeFrom = !!pickupTimeFrom;
-        const hasPickupTimeTo = !!pickupTimeTo;
         const hasSafetyConfirm = safetyConfirmed;
         
         // Validate time range (From should be before To)
-        const isTimeRangeValid = hasPickupTimeFrom && hasPickupTimeTo && pickupTimeFrom < pickupTimeTo;
-        
-        // Check quality score (must be >= 80% or 0.8)
         const qualityScore = manualEntryMode ? null : (aiQualityScore || aiPredictions?.qualityScore);
         const hasValidQuality = qualityScore === null || qualityScore === undefined || qualityScore >= 0.8;
         
@@ -129,8 +119,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
             listingType !== 'sell' || (Number(priceAmount) > 0 && !Number.isNaN(Number(priceAmount)));
         
         return hasImage && hasFoodCategory && hasItemName && hasQuantity && 
-               hasStorage && hasPickupDate && hasPickupTimeFrom && hasPickupTimeTo && 
-               isTimeRangeValid && hasSafetyConfirm && hasValidQuality && hasExpiryDate &&
+               hasStorage && hasSafetyConfirm && hasValidQuality && hasExpiryDate &&
                sellPriceValid;
     };
     
@@ -143,12 +132,6 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
         if (!itemName || itemName.trim() === '') reasons.push('Item name is required');
         if (quantity <= 0) reasons.push('Quantity must be greater than 0');
         if (!storage) reasons.push('Storage instruction is required');
-        if (!pickupDate) reasons.push('Pickup date is required');
-        if (!pickupTimeFrom) reasons.push('Pickup start time is required');
-        if (!pickupTimeTo) reasons.push('Pickup end time is required');
-        if (pickupTimeFrom && pickupTimeTo && pickupTimeFrom >= pickupTimeTo) {
-            reasons.push('End time must be after start time');
-        }
         if (!userProvidedExpiryDate) reasons.push('Expiry date is required');
         if (!safetyConfirmed) reasons.push('Please confirm safety standards');
         if (listingType === 'sell') {
@@ -168,123 +151,102 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
 
     const formCanSubmit = !isFormLocked && isFormValid();
     const disabledReasons = getDisabledReasons();
-    const fieldReadOnly = isFormLocked || (!manualEntryMode && !isEditing && isAiFilled);
-    const fieldDisabled = isFormLocked || (!manualEntryMode && !isEditing && isAiFilled);
+    const fieldsEditable = manualEntryMode || isEditing || userHasEdited || !isAiFilled || isEditMode;
+    const fieldReadOnly = isFormLocked || (!manualEntryMode && isAiFilled && !fieldsEditable);
+    const fieldDisabled = isFormLocked || (!manualEntryMode && isAiFilled && !fieldsEditable);
 
     useEffect(() => {
         if (manualEntryMode && !isEditMode) {
             setIsEditing(true);
             setIsAiFilled(false);
+            setUserHasEdited(true);
         }
     }, [manualEntryMode, isEditMode]);
 
-    // Auto-fill form when AI predictions are received
+    // Auto-fill form once when AI predictions are first received (never overwrite user edits)
     useEffect(() => {
-        console.log('[DonationForm] aiPredictions changed:', aiPredictions);
-        console.log('[DonationForm] isEditing:', isEditing);
-        
-        if (aiPredictions && !isEditing) {
-            console.log('[DonationForm] Filling form with AI predictions:', aiPredictions);
-            
-            // Update form fields with AI predictions
-            if (aiPredictions.foodCategory) {
-                console.log('[DonationForm] Setting foodCategory:', aiPredictions.foodCategory);
-                setFoodCategory(aiPredictions.foodCategory);
-            }
-            if (aiPredictions.itemName) {
-                console.log('[DonationForm] Setting itemName:', aiPredictions.itemName);
-                setItemName(aiPredictions.itemName);
-            }
-            if (aiPredictions.quantity) {
-                console.log('[DonationForm] Setting quantity:', aiPredictions.quantity);
-                setQuantity(aiPredictions.quantity);
-            }
-            if (aiPredictions.storageRecommendation) {
-                const storageLower = aiPredictions.storageRecommendation.toLowerCase();
-                console.log('[DonationForm] Setting storage:', storageLower);
-                if (storageLower === 'hot' || storageLower === 'cold' || storageLower === 'dry') {
-                    setStorage(storageLower);
-                } else {
-                    console.warn('[DonationForm] Invalid storage recommendation:', aiPredictions.storageRecommendation);
-                }
-            }
-            if (aiPredictions.confidence) {
-                console.log('[DonationForm] Setting confidence:', aiPredictions.confidence);
-                setAiConfidence(aiPredictions.confidence);
-            }
-            if (aiPredictions.qualityScore) {
-                console.log('[DonationForm] Setting qualityScore:', aiPredictions.qualityScore);
-                setAiQualityScore(aiPredictions.qualityScore);
-            }
-            if (aiPredictions.suggestedPrice != null && !Number.isNaN(Number(aiPredictions.suggestedPrice))) {
-                setAiSuggestedPrice(Math.round(Number(aiPredictions.suggestedPrice)));
-            }
-            
-            // Auto-calculate and set expiry date based on product type
-            if (!userProvidedExpiryDate) {
-                const productType = aiPredictions.productType || 'cooked';
-                
-                if (productType === 'packed' && aiPredictions.expiryDateFromPackage) {
-                    // For packed products: use AI-detected expiry date from package
-                    try {
-                        const expiryDate = new Date(aiPredictions.expiryDateFromPackage);
-                        const formattedDate = expiryDate.toISOString().split('T')[0];
-                        setUserProvidedExpiryDate(formattedDate);
-                        console.log('[DonationForm] Auto-filled expiry date from AI (packed product):', formattedDate);
-                    } catch (error) {
-                        console.error('[DonationForm] Error formatting expiry date from package:', error);
-                    }
-                } else if (productType === 'cooked') {
-                    // For cooked products: calculate 2 days from today
-                    const today = new Date();
-                    const expiryDate = new Date(today);
-                    expiryDate.setDate(expiryDate.getDate() + 2); // Add 2 days
-                    const formattedDate = expiryDate.toISOString().split('T')[0];
-                    setUserProvidedExpiryDate(formattedDate);
-                    console.log('[DonationForm] Auto-calculated expiry date for cooked product (2 days):', formattedDate);
-                } else {
-                    // For other product types or if no product type detected: default to 3 days
-                    const today = new Date();
-                    const expiryDate = new Date(today);
-                    expiryDate.setDate(expiryDate.getDate() + 3); // Add 3 days as default
-                    const formattedDate = expiryDate.toISOString().split('T')[0];
-                    setUserProvidedExpiryDate(formattedDate);
-                    console.log('[DonationForm] Auto-calculated expiry date (default 3 days):', formattedDate);
-                }
-            }
-            
-            setIsAiFilled(true);
-            console.log('[DonationForm] Form filled successfully with AI predictions');
-        } else if (aiPredictions && isEditing) {
-            console.log('[DonationForm] Predictions received but form is in editing mode, skipping auto-fill');
-        } else if (!aiPredictions) {
-            console.log('[DonationForm] No predictions available yet');
+        if (isEditMode || !aiPredictions || aiAutoFilledRef.current || userHasEdited) {
+            return;
         }
-    }, [aiPredictions, isEditing]);
+
+        aiAutoFilledRef.current = true;
+
+        if (aiPredictions.foodCategory) {
+            setFoodCategory(aiPredictions.foodCategory);
+        }
+        if (aiPredictions.itemName) {
+            setItemName(aiPredictions.itemName);
+        }
+        if (aiPredictions.quantity) {
+            setQuantity(aiPredictions.quantity);
+        }
+        if (aiPredictions.storageRecommendation) {
+            const storageLower = aiPredictions.storageRecommendation.toLowerCase();
+            if (storageLower === 'hot' || storageLower === 'cold' || storageLower === 'dry') {
+                setStorage(storageLower);
+            }
+        }
+        if (aiPredictions.confidence) {
+            setAiConfidence(aiPredictions.confidence);
+        }
+        if (aiPredictions.qualityScore) {
+            setAiQualityScore(aiPredictions.qualityScore);
+        }
+        if (aiPredictions.suggestedPrice != null && !Number.isNaN(Number(aiPredictions.suggestedPrice))) {
+            setAiSuggestedPrice(Math.round(Number(aiPredictions.suggestedPrice)));
+        }
+
+        if (!userProvidedExpiryDate) {
+            const productType = aiPredictions.productType || 'cooked';
+
+            if (productType === 'packed' && aiPredictions.expiryDateFromPackage) {
+                try {
+                    const expiryDate = new Date(aiPredictions.expiryDateFromPackage);
+                    const formattedDate = expiryDate.toISOString().split('T')[0];
+                    setUserProvidedExpiryDate(formattedDate);
+                } catch (error) {
+                    console.error('[DonationForm] Error formatting expiry date from package:', error);
+                }
+            } else if (productType === 'cooked') {
+                const today = new Date();
+                const expiryDate = new Date(today);
+                expiryDate.setDate(expiryDate.getDate() + 2);
+                setUserProvidedExpiryDate(expiryDate.toISOString().split('T')[0]);
+            } else {
+                const today = new Date();
+                const expiryDate = new Date(today);
+                expiryDate.setDate(expiryDate.getDate() + 3);
+                setUserProvidedExpiryDate(expiryDate.toISOString().split('T')[0]);
+            }
+        }
+
+        setIsAiFilled(true);
+    }, [aiPredictions, isEditMode, userHasEdited]);
 
     // Handle quantity increment/decrement
     const handleQuantityChange = (delta) => {
+        markUserEdited();
         setQuantity(prev => Math.max(1, prev + delta));
     };
 
     const handleApplyAiPrice = () => {
         if (aiSuggestedPrice != null && aiSuggestedPrice > 0) {
             setPriceAmount(String(aiSuggestedPrice));
-            setIsEditing(true);
+            markUserEdited();
         }
     };
 
     const handleListingTypeChange = (type) => {
         setListingType(type);
-        setIsEditing(true);
+        markUserEdited();
         if (type === 'donate') {
             setPriceAmount('');
         }
     };
 
-    // Handle edit all fields
+    // Toggle edit UI only — does not commit or discard changes
     const handleEditAll = () => {
-        setIsEditing(!isEditing);
+        setIsEditing(prev => !prev);
     };
 
     const handlePostDonation = async () => {
@@ -296,6 +258,9 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
             setSubmitError(MAINTENANCE_BLOCK_MESSAGE);
             return;
         }
+
+        // Preserve any in-progress edits through submit (no "Done Editing" required)
+        setUserHasEdited(true);
 
         // Validate required fields
         if (!imageUrl) {
@@ -323,9 +288,6 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
             quantity: Number(quantity),
             storageRecommendation: storageCapitalized,
             imageUrl,
-            preferredPickupDate: pickupDate,
-            preferredPickupTimeFrom: pickupTimeFrom,
-            preferredPickupTimeTo: pickupTimeTo,
             aiConfidence: aiConfidence ?? aiPredictions?.confidence ?? null,
             aiQualityScore: aiQualityScore ?? aiPredictions?.qualityScore ?? null,
             aiFreshness: aiPredictions?.freshness || null,
@@ -351,9 +313,6 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
             quantity: Number(quantity),
             storageRecommendation: storageCapitalized,
             imageUrl: imageUrl || undefined,
-            preferredPickupDate: pickupDate,
-            preferredPickupTimeFrom: pickupTimeFrom,
-            preferredPickupTimeTo: pickupTimeTo,
             userProvidedExpiryDate: getResolvedExpiryDate(),
             listingType,
             priceAmount: listingType === 'sell' ? Number(priceAmount) : null,
@@ -531,7 +490,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                             value={foodCategory}
                             onChange={(e) => {
                                 setFoodCategory(e.target.value);
-                                setIsEditing(true);
+                                markUserEdited();
                             }}
                             readOnly={fieldReadOnly}
                             required
@@ -548,7 +507,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                             value={itemName}
                             onChange={(e) => {
                                 setItemName(e.target.value);
-                                setIsEditing(true);
+                                markUserEdited();
                             }}
                             readOnly={fieldReadOnly}
                             required
@@ -570,14 +529,14 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         </button>
                         <input 
                             type="text" 
-                            value={isEditing ? quantity : `${quantity} Plates`}
+                            value={fieldsEditable ? quantity : `${quantity} Plates`}
                             className="qty-input"
                             readOnly={fieldReadOnly}
                             onChange={(e) => {
                                 const text = e.target.value.replace(/\D/g, ''); // Remove non-digits
                                 const value = parseInt(text) || 1;
                                 setQuantity(value);
-                                setIsEditing(true);
+                                markUserEdited();
                             }}
                             onFocus={(e) => {
                                 if (fieldReadOnly) {
@@ -604,7 +563,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         <button
                             type="button"
                             className={`toggle-btn hot ${storage === 'hot' ? 'active' : ''}`}
-                            onClick={() => setStorage('hot')}
+                            onClick={() => {
+                                setStorage('hot');
+                                markUserEdited();
+                            }}
                             disabled={isFormLocked}
                         >
                             <img src={sunIcon} alt="" className="form-icon storage-icon" />
@@ -613,7 +575,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         <button
                             type="button"
                             className={`toggle-btn cold ${storage === 'cold' ? 'active' : ''}`}
-                            onClick={() => setStorage('cold')}
+                            onClick={() => {
+                                setStorage('cold');
+                                markUserEdited();
+                            }}
                             disabled={isFormLocked}
                         >
                             <img src={winterIcon} alt="" className="form-icon storage-icon" />
@@ -622,7 +587,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         <button
                             type="button"
                             className={`toggle-btn dry ${storage === 'dry' ? 'active' : ''}`}
-                            onClick={() => setStorage('dry')}
+                            onClick={() => {
+                                setStorage('dry');
+                                markUserEdited();
+                            }}
                             disabled={isFormLocked}
                         >
                             <img src={blurIcon} alt="" className="form-icon storage-icon" />
@@ -664,7 +632,7 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                                 value={priceAmount}
                                 onChange={(e) => {
                                     setPriceAmount(e.target.value);
-                                    setIsEditing(true);
+                                    markUserEdited();
                                 }}
                                 required
                             />
@@ -693,60 +661,6 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                 )}
             </div>
 
-            {/* Logistics Header */}
-            <div className="form-section-header logistics-header">
-                <div className="section-title">
-                    <img src={localShippingIcon} alt="" className="form-icon truck-icon" />
-                    <h2>Logistics & Impact</h2>
-                </div>
-            </div>
-
-            {/* Logistics Content – Pickup Window (full width, centered) */}
-            <div className="logistics-grid">
-                <div className="pickup-column">
-                    <label>Pickup Window <span className="required-asterisk">*</span></label>
-                    <div className="pickup-datetime-container">
-                        <div className="pickup-date-wrapper">
-                            <div className="pickup-input-group">
-                                <img src={calendarIcon} alt="" className="form-icon pickup-icon-img" />
-                                <input
-                                    type="date"
-                                    className="pickup-date-input"
-                                    value={pickupDate}
-                                    onChange={(e) => setPickupDate(e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <div className="pickup-time-wrapper">
-                            <div className="pickup-input-group">
-                                <img src={clockIcon} alt="" className="form-icon pickup-icon-img pickup-time-icon" />
-                                <label className="pickup-time-label">From</label>
-                                <input
-                                    type="time"
-                                    className="pickup-time-input"
-                                    value={pickupTimeFrom}
-                                    onChange={(e) => setPickupTimeFrom(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="pickup-input-group">
-                                <img src={clockIcon} alt="" className="form-icon pickup-icon-img pickup-time-icon" />
-                                <label className="pickup-time-label">To</label>
-                                <input
-                                    type="time"
-                                    className="pickup-time-input"
-                                    value={pickupTimeTo}
-                                    onChange={(e) => setPickupTimeTo(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Expiry Date Input (always visible) */}
             <div className="form-section-header" style={{ marginTop: '20px' }}>
                 <div className="section-title">
@@ -761,7 +675,10 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         <input
                             type="date"
                             value={userProvidedExpiryDate}
-                            onChange={(e) => setUserProvidedExpiryDate(e.target.value)}
+                            onChange={(e) => {
+                                setUserProvidedExpiryDate(e.target.value);
+                                markUserEdited();
+                            }}
                             min={new Date().toISOString().split('T')[0]}
                             required
                         />

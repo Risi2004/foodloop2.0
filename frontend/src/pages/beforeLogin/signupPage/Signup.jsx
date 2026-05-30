@@ -27,6 +27,7 @@ import bikeIcon from '../../../assets/icons/signup/motorcycle.svg';
 import carIcon from '../../../assets/icons/signup/car.svg';
 import truckIcon from '../../../assets/icons/signup/truck.svg';
 import defaultProfileIcon from '../../../assets/icons/afterLogin/navbar/profile.svg';
+import eye from '../../../assets/icons/login/eye-icon.svg';
 
 const ALLOWED_ROLE_TYPES = ['receiver', 'driver', 'restaurant', 'supermarket', 'individual', 'customer'];
 
@@ -40,6 +41,8 @@ function SignupPage() {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showRetypePassword, setShowRetypePassword] = useState(false);
 
     const [customerIncomeLevel, setCustomerIncomeLevel] = useState('');
     const [receiverIncomeLevel, setReceiverIncomeLevel] = useState('');
@@ -904,12 +907,70 @@ function SignupPage() {
                         <div className="row">
                             <div className="input__group half">
                                 <label htmlFor="password">Password</label>
-                                <input type="password" id="password" placeholder="Letters, numbers & symbols (8+)" value={formData.password} onChange={handleInputChange} onBlur={handleBlur} />
+                                <div className="password__input__wrapper">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        id="password"
+                                        placeholder="Letters, numbers & symbols (8+)"
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                        onBlur={handleBlur}
+                                    />
+                                    <span
+                                        className="toggle__password"
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setShowPassword(!showPassword);
+                                            }
+                                        }}
+                                        style={{ zIndex: 10 }}
+                                    >
+                                        {showPassword ? (
+                                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#555' }}>Hide</span>
+                                        ) : (
+                                            <img src={eye} alt="Show Password" />
+                                        )}
+                                    </span>
+                                </div>
                                 {errors.password && <span className="error-message">{errors.password}</span>}
                             </div>
                             <div className="input__group half">
                                 <label htmlFor="retypePassword">Retype Password</label>
-                                <input type="password" id="retypePassword" placeholder="******" value={formData.retypePassword} onChange={handleInputChange} onBlur={handleBlur} />
+                                <div className="password__input__wrapper">
+                                    <input
+                                        type={showRetypePassword ? 'text' : 'password'}
+                                        id="retypePassword"
+                                        placeholder="******"
+                                        value={formData.retypePassword}
+                                        onChange={handleInputChange}
+                                        onBlur={handleBlur}
+                                    />
+                                    <span
+                                        className="toggle__password"
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={showRetypePassword ? 'Hide password' : 'Show password'}
+                                        onClick={() => setShowRetypePassword(!showRetypePassword)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setShowRetypePassword(!showRetypePassword);
+                                            }
+                                        }}
+                                        style={{ zIndex: 10 }}
+                                    >
+                                        {showRetypePassword ? (
+                                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#555' }}>Hide</span>
+                                        ) : (
+                                            <img src={eye} alt="Show Password" />
+                                        )}
+                                    </span>
+                                </div>
                                 {errors.retypePassword && <span className="error-message">{errors.retypePassword}</span>}
                             </div>
                         </div>

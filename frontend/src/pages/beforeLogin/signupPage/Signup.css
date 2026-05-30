@@ -458,6 +458,32 @@
     border-color: #1F4E36;
 }
 
+.password__input__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password__input__wrapper input {
+    width: 100%;
+    padding-right: 40px;
+}
+
+.toggle__password {
+    position: absolute;
+    right: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle__password img {
+    width: 20px;
+    height: 20px;
+}
+
 .contact-input-row {
     display: flex;
     align-items: stretch;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import "./DonorMyDonationDashboard.css";
 import DonorNavbar from "../../../../components/afterLogin/dashboard/donorSection/navbar/DonorNavbar";
 import DonorFooter from "../../../../components/afterLogin/dashboard/donorSection/footer/DonorFooter";
@@ -16,21 +16,125 @@ import {
     applyDiscountSuggestion,
 } from '../../../../services/donationApi';
 import { getDiscountedPriceDetails } from '../../../../utils/donationDisplay';
-import { getUser } from '../../../../utils/auth';
 import {
     getSocket,
     onDonationInTransit,
+    onDonationPickedUp,
     onDeliveryConfirmed,
     onDonationClaimedForDonor,
     onDonationClaimCancelledForDonor,
 } from '../../../../services/socket';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
 import SupplierAiInsightsPanel from '../../../../components/afterLogin/donor/myDonation/supplierAiInsights/SupplierAiInsightsPanel';
+import { getDashboardPath, clearAuth, getUser } from '../../../../utils/auth';
+
+function normalizeDonationStatus(status) {
+    const value = String(status || '').trim().toLowerCase();
+    if (value === 'assigned') return 'driver_assigned';
+    return value || status;
+}
+
+function normalizeRefId(value) {
+    if (value == null) return null;
+    if (typeof value === 'object') {
+        return value.id || value._id?.toString?.() || value._id || null;
+    }
+    return String(value);
+}
+
+function extractDonationFromPayload(payload) {
+    const raw = payload?.donation;
+    if (!raw) return null;
+    if (raw.donation && typeof raw.donation === 'object') {
+        return raw.donation;
+    }
+    return raw;
+}
+
+function normalizeDonationRecord(donation) {
+    if (!donation) return donation;
+    return {
+        ...donation,
+        id: donation.id || donation._id,
+        status: normalizeDonationStatus(donation.status),
+        parentListingId: normalizeRefId(donation.parentListingId),
+        receiverId: normalizeRefId(donation.receiverId),
+        driverId: normalizeRefId(donation.driverId || donation.assignedDriverId),
+        quantity: Number(donation.quantity ?? 0),
+    };
+}
+
+function mergeDonationLists(prev, payload) {
+    const extractedDonation = extractDonationFromPayload(payload);
+    const { parentListing, parentListingId, donationId } = payload || {};
+    let next = [...prev];
+
+    if (parentListing) {
+        const parentId = parentListing.id || parentListing._id || parentListingId;
+        if (parentId) {
+            const normalizedParent = normalizeDonationRecord(parentListing);
+            const parentKey = normalizeRefId(parentId);
+            if (normalizedParent.quantity <= 0 || normalizedParent.status === 'cancelled') {
+                next = next.filter((d) => normalizeRefId(d.id) !== parentKey);
+            } else {
+                const idx = next.findIndex((d) => normalizeRefId(d.id) === parentKey);
+                if (idx >= 0) {
+                    next[idx] = { ...next[idx], ...normalizedParent, id: parentKey };
+                } else {
+                    next.push({ ...normalizedParent, id: parentKey });
+                }
+            }
+        }
+    }
+
+    if (extractedDonation) {
+        const normalized = normalizeDonationRecord(extractedDonation);
+        const id = normalizeRefId(normalized.id || donationId);
+        if (!id) return next;
+
+        if (normalized.status === 'cancelled' && normalized.parentListingId) {
+            return next.filter((d) => normalizeRefId(d.id) !== id);
+        }
+
+        const idx = next.findIndex((d) => normalizeRefId(d.id) === id);
+        if (idx >= 0) {
+            next[idx] = { ...next[idx], ...normalized, id };
+        } else {
+            next.unshift({ ...normalized, id });
+        }
+    } else if (donationId) {
+        const removeId = normalizeRefId(donationId);
+        next = next.filter((d) => normalizeRefId(d.id) !== removeId);
+    }
+
+    return next;
+}
+
+function categorizeDonations(donations) {
+    const normalized = donations.map(normalizeDonationRecord).filter(Boolean);
+
+    const lookingForDriver = normalized.filter(
+        (d) => d.status === 'claimed' && d.receiverId && !d.driverId
+    );
+    const inTransit = normalized.filter((d) =>
+        ['driver_assigned', 'picked_up', 'in_transit'].includes(d.status)
+    );
+    const completed = normalized.filter((d) => d.status === 'delivered');
+
+    const lookingForReceiver = normalized.filter((d) => {
+        if (d.parentListingId) return false;
+        if (d.quantity <= 0) return false;
+        if (!['available', 'draft'].includes(d.status)) return false;
+        return true;
+    });
+
+    return { lookingForReceiver, lookingForDriver, inTransit, completed };
+}
 
 const DonorMyDonationDashboard = () => {
     const navigate = useNavigate();
     const [donations, setDonations] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState(null);
     const [impactStats, setImpactStats] = useState({
         mealsShared: 0,
@@ -41,91 +145,109 @@ const DonorMyDonationDashboard = () => {
     const [suggestionData, setSuggestionData] = useState(null);
     const [aiLoadingId, setAiLoadingId] = useState('');
     const [applyingDiscount, setApplyingDiscount] = useState(false);
+    const accessDeniedRef = useRef(false);
 
-    const fetchDonations = async () => {
+    const fetchDonations = useCallback(async ({ silent = false } = {}) => {
+        if (accessDeniedRef.current) return;
+
         try {
-            setLoading(true);
+            if (!silent) setInitialLoading(true);
             setError(null);
             const response = await getMyDonations();
             if (response.success && response.donations) {
-                setDonations(response.donations);
-                const completedDonations = response.donations.filter(d => d.status === 'delivered');
+                const normalized = response.donations.map(normalizeDonationRecord);
+                setDonations(normalized);
+                const completedDonations = normalized.filter((d) => d.status === 'delivered');
                 const totalMeals = completedDonations.reduce((sum, d) => sum + (d.quantity || 0), 0);
                 const totalFoodSaved = totalMeals * 0.6;
                 const totalCo2Offset = totalFoodSaved * 2.5;
                 setImpactStats({
                     mealsShared: totalMeals,
                     foodSaved: Math.round(totalFoodSaved),
-                    co2Offset: Math.round(totalCo2Offset)
+                    co2Offset: Math.round(totalCo2Offset),
                 });
             } else {
                 setDonations([]);
             }
         } catch (err) {
-            console.error('[DonorMyDonationDashboard] Error fetching donations:', err);
-            setError(err.message || 'Failed to load your donations');
-            setDonations([]);
+            const status = err.response?.status;
+            const message = err.response?.data?.message || err.message || 'Failed to load your donations';
+
+            if (status === 401 || status === 403) {
+                accessDeniedRef.current = true;
+                if (status === 401) clearAuth();
+                if (!silent) {
+                    setError(
+                        status === 403
+                            ? 'This account cannot view supplier listings. Redirecting to your dashboard...'
+                            : 'Your session expired. Please sign in again.'
+                    );
+                    setDonations([]);
+                }
+                if (status === 401) {
+                    navigate('/login', { replace: true });
+                } else {
+                    navigate(getDashboardPath(getUser()?.role), { replace: true });
+                }
+                return;
+            }
+
+            if (!silent) {
+                console.error('[DonorMyDonationDashboard] Error fetching donations:', err);
+                setError(message);
+                setDonations([]);
+            }
         } finally {
-            setLoading(false);
+            if (!silent) setInitialLoading(false);
         }
-    };
+    }, [navigate]);
 
     useEffect(() => {
         fetchDonations();
         getSocket();
 
-        const handleInTransit = (payload) => {
-            fetchDonations();
-            const donationId = payload?.donationId;
-            if (donationId) {
-                // Driver accepted the order: go to live tracking for this donation
-                navigate(`/supplier/track-order?donationId=${donationId}`);
-            }
+        let refreshTimer = null;
+        const refreshSilently = () => {
+            if (refreshTimer) clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(() => fetchDonations({ silent: true }), 400);
         };
 
-        const handleDeliveryConfirmed = () => {
-            // Delivery finished: just refresh lists; tracking page will handle redirect back
-            fetchDonations();
+        const applySocketUpdate = (payload) => {
+            setDonations((prev) => mergeDonationLists(prev, payload));
+            refreshSilently();
         };
 
-        const handleClaimedForDonor = (payload) => {
-            const user = getUser();
-            const myId = user?.id || user?._id;
-            const donorId = payload?.donorId;
-            if (myId && donorId && String(myId) === String(donorId)) {
-                fetchDonations();
-            }
-        };
+        const unsubInTransit = onDonationInTransit(applySocketUpdate);
+        const unsubPickedUp = onDonationPickedUp(applySocketUpdate);
+        const unsubDeliveryConfirmed = onDeliveryConfirmed(applySocketUpdate);
+        const unsubClaimedForDonor = onDonationClaimedForDonor(applySocketUpdate);
+        const unsubClaimCancelledForDonor = onDonationClaimCancelledForDonor(applySocketUpdate);
 
-        const unsubInTransit = onDonationInTransit(handleInTransit);
-        const unsubDeliveryConfirmed = onDeliveryConfirmed(handleDeliveryConfirmed);
-        const unsubClaimedForDonor = onDonationClaimedForDonor(handleClaimedForDonor);
-        const unsubClaimCancelledForDonor = onDonationClaimCancelledForDonor(handleClaimedForDonor);
+        const pollId = setInterval(() => {
+            if (!accessDeniedRef.current) fetchDonations({ silent: true });
+        }, 8000);
+        const onFocus = () => {
+            if (!accessDeniedRef.current) fetchDonations({ silent: true });
+        };
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') onFocus();
+        });
 
         return () => {
+            if (refreshTimer) clearTimeout(refreshTimer);
+            clearInterval(pollId);
+            window.removeEventListener('focus', onFocus);
             unsubInTransit();
+            unsubPickedUp();
             unsubDeliveryConfirmed();
             unsubClaimedForDonor();
             unsubClaimCancelledForDonor();
         };
-    }, [navigate]);
+    }, [fetchDonations]);
 
     // Flow: Looking for Receiver (unclaimed) → Looking for Driver (claimed, no driver) → In Transit → Completed
-    const lookingForReceiver = donations.filter(d =>
-        (d.status === 'available' ||
-            d.status === 'draft' ||
-            d.status === 'pending' ||
-            d.status === 'approved') &&
-        !d.assignedReceiverId &&
-        d.status !== 'cancelled'
-    );
-    const lookingForDriver = donations.filter(
-        (d) => d.status === 'claimed' && d.receiverId
-    );
-    const inTransit = donations.filter(
-        (d) => d.status === 'driver_assigned' || d.status === 'in_transit'
-    );
-    const completed = donations.filter(d => d.status === 'delivered');
+    const { lookingForReceiver, lookingForDriver, inTransit, completed } = categorizeDonations(donations);
 
     const handleEdit = (donation) => {
         navigate(`/supplier/edit-donation/${donation.id}`);
@@ -199,7 +321,7 @@ const DonorMyDonationDashboard = () => {
         }
     };
 
-    if (loading) {
+    if (initialLoading) {
         return <PageLoader message="Loading your donations..." />;
     }
 

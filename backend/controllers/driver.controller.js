@@ -38,6 +38,7 @@ const TRACKING_POPULATE = [
     path: 'driverId',
     select: 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude',
   },
+  { path: 'parentListingId' },
 ];
 
 const ACTIVE_DRIVER_STATUSES = ['driver_assigned', 'picked_up'];
@@ -45,6 +46,89 @@ const ACTIVE_CUSTOMER_ORDER_STATUSES = ['driver_assigned', 'picked_up', 'in_tran
 
 /** @type {Map<string, { intervalId: NodeJS.Timeout, timeoutId: NodeJS.Timeout | null }>} */
 const demoSessions = new Map();
+
+async function syncCustomerOrderToDonationClaims(customerOrder, nextStatus, driverUser) {
+  try {
+    const itemIds = (customerOrder.orderSummary?.items || []).map((item) => item.id).filter(Boolean);
+    if (!itemIds.length) return;
+
+    // Find all matching child/claimed donations
+    const donations = await Donation.find({
+      receiverId: customerOrder.customerId,
+      status: { $in: ['claimed', 'driver_assigned', 'picked_up', 'in_transit'] },
+      $or: [
+        { parentListingId: { $in: itemIds } },
+        { _id: { $in: itemIds } }
+      ]
+    });
+
+    const driverId = driverUser._id;
+    const now = new Date();
+
+    for (const donation of donations) {
+      donation.status = nextStatus;
+      donation.driverId = driverId;
+
+      if (nextStatus === 'driver_assigned') {
+        donation.assignedAt = now;
+      } else if (nextStatus === 'picked_up') {
+        donation.pickedUpAt = now;
+      } else if (nextStatus === 'delivered') {
+        donation.deliveredAt = now;
+      }
+
+      await donation.save();
+
+      // Emit sockets to donor and receivers so supplier dashboard updates in real-time
+      const donationIdStr = donation._id.toString();
+      const donorId = donation.donorId._id?.toString?.() || donation.donorId.toString();
+
+      await donation.populate(TRACKING_POPULATE);
+      const tracking = toTrackingJSON(donation);
+      const activeDeliveryPayload = toDriverActiveDeliveryJSON(donation, driverUser.driverLatitude, driverUser.driverLongitude);
+
+      if (nextStatus === 'driver_assigned') {
+        emitToDonor(donorId, 'donation:in_transit', {
+          donationId: donationIdStr,
+          donorId,
+          donation: activeDeliveryPayload,
+        });
+        emitToReceivers('donation:in_transit', {
+          donationId: donationIdStr,
+          donation: activeDeliveryPayload,
+        });
+      } else if (nextStatus === 'picked_up') {
+        emitToDonationRoom(donationIdStr, 'donation:picked_up', {
+          donationId: donationIdStr,
+          donation: tracking.donation,
+        });
+        emitToDonor(donorId, 'donation:picked_up', {
+          donationId: donationIdStr,
+          donation: tracking,
+        });
+        emitToReceivers('donation:picked_up', {
+          donationId: donationIdStr,
+          donation: tracking,
+        });
+      } else if (nextStatus === 'delivered') {
+        emitToDonationRoom(donationIdStr, 'donation:delivered', {
+          donationId: donationIdStr,
+          donation: tracking.donation,
+        });
+        emitToDonor(donorId, 'donation:delivered', {
+          donationId: donationIdStr,
+          donation: tracking,
+        });
+        emitToReceivers('donation:delivered', {
+          donationId: donationIdStr,
+          donation: tracking,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Error syncing customer order to donation claims:', err);
+  }
+}
 
 function requireDriver(req, res) {
   if (!isDriverRole(req.user.role)) {
@@ -345,6 +429,7 @@ exports.getAvailablePickups = async (req, res) => {
     })
       .populate('donorId', 'username businessName role')
       .populate('receiverId', 'username receiverName')
+      .populate('parentListingId')
       .sort({ claimedAt: -1, createdAt: -1 });
 
     const pickups = [];
@@ -429,6 +514,7 @@ exports.getActiveDeliveries = async (req, res) => {
       .populate('donorId', 'username businessName role')
       .populate('receiverId', 'username receiverName')
       .populate('driverId', 'username driverName')
+      .populate('parentListingId')
       .sort({ assignedAt: -1, updatedAt: -1 });
 
     const donationDeliveries = donations.map((d) =>
@@ -520,6 +606,10 @@ exports.acceptPickup = async (req, res) => {
         'driverId',
         'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
       );
+
+      // Sync status to child donations so supplier's dashboard updates in real-time
+      await syncCustomerOrderToDonationClaims(customerOrder, 'driver_assigned', req.user);
+
       return res.json({
         success: true,
         donation: toDriverCustomerOrderJSON(customerOrder),
@@ -702,6 +792,10 @@ exports.confirmPickup = async (req, res) => {
         'driverId',
         'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
       );
+
+      // Sync status to child donations so supplier's dashboard updates in real-time
+      await syncCustomerOrderToDonationClaims(customerOrder, 'picked_up', req.user);
+
       return res.json({
         success: true,
         message: 'Pickup confirmed.',
@@ -790,6 +884,9 @@ exports.confirmDelivery = async (req, res) => {
         'driverId',
         'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
       );
+
+      // Sync status to child donations so supplier's dashboard updates in real-time
+      await syncCustomerOrderToDonationClaims(customerOrder, 'delivered', req.user);
 
       try {
         await creditDeliveryEarnings({

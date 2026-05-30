@@ -6,7 +6,7 @@ import InTransitCard from "../../../../components/afterLogin/receiver/myClaims/I
 import LookingForDriverCard from "../../../../components/afterLogin/receiver/myClaims/LookingForDriverCard";
 import CompletedHistoryCard from "../../../../components/afterLogin/receiver/myClaims/CompletedHistoryCard";
 import { getMyClaims, cancelClaim } from '../../../../services/donationApi';
-import { getSocket, onDonationInTransit, onDeliveryConfirmed } from '../../../../services/socket';
+import { getSocket, onDonationInTransit, onDonationPickedUp, onDeliveryConfirmed } from '../../../../services/socket';
 import { useNavigate } from 'react-router-dom';
 import PageLoader from '../../../../components/common/PageLoader/PageLoader';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
@@ -68,13 +68,26 @@ const Myclaims = () => {
             fetchClaims();
         };
 
+        const handlePickedUp = () => {
+            fetchClaims();
+        };
+
         const unsubInTransit = onDonationInTransit(handleInTransit);
+        const unsubPickedUp = onDonationPickedUp(handlePickedUp);
         const unsubDeliveryConfirmed = onDeliveryConfirmed(handleDeliveryConfirmed);
+
+        const onFocus = () => fetchClaims();
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') fetchClaims();
+        });
 
         return () => {
             isMounted = false;
             unsubInTransit();
+            unsubPickedUp();
             unsubDeliveryConfirmed();
+            window.removeEventListener('focus', onFocus);
         };
     }, [navigate]);
 

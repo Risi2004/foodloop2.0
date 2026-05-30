@@ -18,14 +18,6 @@ function toTitleCase(value) {
     .join(' ');
 }
 
-function formatPickupWindow(from, to) {
-  const start = normalizeText(from);
-  const end = normalizeText(to);
-  if (!start && !end) return 'Pickup time not specified';
-  if (start && end) return `${start} - ${end}`;
-  return start || end;
-}
-
 function formatDateText(dateValue) {
   if (!dateValue) return 'Not specified';
   const d = new Date(dateValue);
@@ -84,8 +76,6 @@ export function mapDonationToMarketplaceItem(donation = {}) {
     donorName: normalizeText(donation.donorName, 'Supplier'),
     donorType: toTitleCase(donation.donorType || 'Supplier'),
     pickupAddress: normalizeText(donation.pickupAddress, 'Pickup address not provided'),
-    pickupDate: formatDateText(donation.preferredPickupDate),
-    pickupWindow: formatPickupWindow(donation.preferredPickupTimeFrom, donation.preferredPickupTimeTo),
     distanceLabel:
       donation.distanceKm != null && !Number.isNaN(Number(donation.distanceKm))
         ? `${Number(donation.distanceKm).toFixed(1)} km away`

@@ -21,7 +21,7 @@ const InTransitCard = ({ donation }) => {
 
     const itemName = donation.itemName || 'Food Item';
     const quantity = donation.quantity || 0;
-    const driverName = donation.driverName || `Driver #${donation.assignedDriverId?.slice(-3) || 'N/A'}`;
+    const driverName = donation.driverName || `Driver #${(donation.driverId || donation.assignedDriverId || '').slice(-3) || 'N/A'}`;
     const receiverName = donation.receiverName || 'Receiver';
     const imageUrl = donation.imageUrl || foodImage;
 
@@ -53,7 +53,7 @@ const InTransitCard = ({ donation }) => {
                 <div className="detail">
                     <div className="name">
                         <div className="bag-of-fuji-apples">{itemName} ({formatQuantity(quantity)})</div>
-                        <div className="listed-2-mins-ago">Claimed by {driverName}</div>
+                        <div className="listed-2-mins-ago">Driver: {driverName}</div>
                         <div className="listed-2-mins-ago">To: {receiverName}</div>
                         <ListingPriceLine donation={donation} className="listed-2-mins-ago listing-price-line" />
                     </div>
@@ -67,7 +67,7 @@ const InTransitCard = ({ donation }) => {
                             <div className="_5-kg-available">
                                 <span>
                                     <span className="_5-kg-available-span">{quantity}</span>
-                                    <span className="_5-kg-available-span2">Available</span>
+                                    <span className="_5-kg-available-span2"> In delivery</span>
                                 </span>
                             </div>
                         </div>

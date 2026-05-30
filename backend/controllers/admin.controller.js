@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { SUPPLIER_ROLES } = require('../utils/earningsHelpers');
 const {
   listAllOrders,
   getOrderDetail,
@@ -82,17 +83,15 @@ exports.getPendingUsers = async (req, res) => {
 
 exports.getStats = async (req, res) => {
   try {
-    const activeOrPending = { $in: ['active', 'pending_approval'] };
-
-    const [donors, drivers, receivers] = await Promise.all([
-      User.countDocuments({ role: 'Donor', accountStatus: activeOrPending }),
-      User.countDocuments({ role: 'driver', accountStatus: activeOrPending }),
-      User.countDocuments({ role: 'receiver', accountStatus: activeOrPending }),
+    const [suppliers, receivers, drivers] = await Promise.all([
+      User.countDocuments({ role: { $in: SUPPLIER_ROLES }, accountStatus: 'active' }),
+      User.countDocuments({ role: { $in: ['receiver', 'customer'] }, accountStatus: 'active' }),
+      User.countDocuments({ role: 'driver', accountStatus: 'active' }),
     ]);
 
     return res.json({
       success: true,
-      stats: { donors, drivers, receivers },
+      stats: { suppliers, receivers, drivers, donors: suppliers },
     });
   } catch (err) {
     console.error('getStats error:', err);

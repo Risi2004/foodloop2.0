@@ -7,7 +7,7 @@ import ReceiverNavbar from "../../../../components/afterLogin/dashboard/Receiver
 import ReceiverFooter from "../../../../components/afterLogin/dashboard/ReceiverSection/footer/ReceiverFooter";
 import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
 import { getAvailableDonations, claimDonation } from '../../../../services/donationApi';
-import { createClaimCheckout } from '../../../../services/paymentApi';
+import { createClaimCheckout, retryClaimPayment } from '../../../../services/paymentApi';
 import ClaimPaymentModal from '../../../../components/afterLogin/receiver/findFood/claimPayment/ClaimPaymentModal';
 import { getCurrentUser } from '../../../../services/api';
 import {
@@ -75,9 +75,6 @@ function transformDonationToItem(donation, receiverPosition) {
         foodCategory: donation.foodCategory,
         storageRecommendation: donation.storageRecommendation,
         aiQualityScore: donation.aiQualityScore,
-        preferredPickupDate: donation.preferredPickupDate,
-        preferredPickupTimeFrom: donation.preferredPickupTimeFrom,
-        preferredPickupTimeTo: donation.preferredPickupTimeTo,
         donorName: donation.donorName,
         donorType: donation.donorType,
         donorAddress: donation.donorAddress || donation.pickupAddress,
@@ -121,6 +118,7 @@ const FindFood = () => {
     const [claimIsSellFlow, setClaimIsSellFlow] = useState(false);
     const [pendingClaimQuantity, setPendingClaimQuantity] = useState(1);
     const [claimQuantities, setClaimQuantities] = useState({});
+    const [pendingRetryOrderId, setPendingRetryOrderId] = useState(null);
 
     const getClaimQuantityFor = (donationId) => claimQuantities[donationId] ?? 1;
 
@@ -226,6 +224,20 @@ const FindFood = () => {
         const mergeStockUpdated = (payload) => {
             const donation = payload?.donation;
             if (!donation || !receiverPosition) return;
+            const donationId = donation.id || donation._id || payload?.donationId;
+            const maxQty = Math.max(1, Number(donation.quantity) || 1);
+
+            if (donationId) {
+                setClaimQuantities((prev) => {
+                    const current = prev[donationId] ?? 1;
+                    if (current <= maxQty) return prev;
+                    return { ...prev, [donationId]: maxQty };
+                });
+                if (pendingClaimQuantity > maxQty) {
+                    setPendingClaimQuantity(maxQty);
+                }
+            }
+
             const item = transformDonationToItem(donation, receiverPosition);
             if (!isWithinRadius(item)) {
                 setItems((prev) => prev.filter((i) => i.id !== item.id));
@@ -269,9 +281,12 @@ const FindFood = () => {
         setShowLocationModal(false);
     };
 
-    const handlePaymentSuccess = async (orderId) => {
-        const donationId = paymentCheckout?.donationId || claimingDonationId;
+    const handlePaymentSuccess = async (orderId, confirmResult) => {
+        const checkoutSnapshot = paymentCheckout;
+        const donationId = checkoutSnapshot?.donationId || claimingDonationId;
         const location = pendingClaimLocation;
+        const claimQuantity = checkoutSnapshot?.claimQuantity ?? pendingClaimQuantity;
+
         setPaymentModalOpen(false);
         setPaymentCheckout(null);
 
@@ -280,9 +295,29 @@ const FindFood = () => {
             return;
         }
 
+        if (confirmResult?.claimCompleted) {
+            setReceiverPosition([location.lat, location.lng]);
+            setReceiverAddress(location.address || 'Location set');
+            setItems((prev) =>
+                applyParentListingAfterClaim(prev, donationId, confirmResult.parentListing)
+            );
+            setSelectedItemId((current) => {
+                if (confirmResult.parentListing?.quantity > 0 && current === donationId) return donationId;
+                return current === donationId ? null : current;
+            });
+            setClaimingDonationId(null);
+            setPendingClaimLocation(null);
+            setPendingClaimQuantity(1);
+            setClaimIsSellFlow(false);
+            setPaidOrderId(null);
+            setPaymentNotice(null);
+            setPendingRetryOrderId(null);
+            navigate('/receiver/my-claims');
+            return;
+        }
+
         setClaimSaving(true);
         setClaimSaveError(null);
-        const claimQuantity = paymentCheckout?.claimQuantity ?? pendingClaimQuantity;
         try {
             const response = await claimDonation(donationId, {
                 receiverLatitude: location.lat,
@@ -307,10 +342,36 @@ const FindFood = () => {
                 setClaimIsSellFlow(false);
                 setPaidOrderId(null);
                 setPaymentNotice(null);
+                setPendingRetryOrderId(null);
                 navigate('/receiver/my-claims');
             }
         } catch (err) {
-            const msg = err.response?.data?.message || err.message || 'Failed to claim after payment.';
+            const msg =
+                confirmResult?.claimError ||
+                err.response?.data?.message ||
+                err.message ||
+                'Failed to claim after payment.';
+            setClaimSaveError(msg);
+            setPendingRetryOrderId(orderId);
+            setPaymentNotice(`${msg} Use "Complete claim" below to retry without paying again.`);
+        } finally {
+            setClaimSaving(false);
+        }
+    };
+
+    const handleRetryPaidClaim = async () => {
+        if (!pendingRetryOrderId) return;
+        setClaimSaving(true);
+        setClaimSaveError(null);
+        try {
+            const response = await retryClaimPayment(pendingRetryOrderId);
+            if (response.success && response.claimCompleted) {
+                setPendingRetryOrderId(null);
+                setPaymentNotice(null);
+                navigate('/receiver/my-claims');
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || err.message || 'Failed to complete claim.';
             setClaimSaveError(msg);
             setPaymentNotice(msg);
         } finally {
@@ -351,7 +412,8 @@ const FindFood = () => {
                     donationId,
                     lat,
                     lng,
-                    pendingClaimQuantity
+                    pendingClaimQuantity,
+                    address || ''
                 );
                 if (!checkout?.orderId) {
                     throw new Error('Invalid payment response from server.');
@@ -475,12 +537,32 @@ const FindFood = () => {
                             margin: '12px 16px 0',
                             padding: '10px 14px',
                             borderRadius: '8px',
-                            backgroundColor: '#e8f5e9',
-                            color: '#1b4332',
+                            backgroundColor: pendingRetryOrderId ? '#fff3cd' : '#e8f5e9',
+                            color: pendingRetryOrderId ? '#664d03' : '#1b4332',
                             fontSize: '14px',
                         }}
                     >
                         {paymentNotice}
+                        {pendingRetryOrderId && (
+                            <button
+                                type="button"
+                                onClick={handleRetryPaidClaim}
+                                disabled={claimSaving}
+                                style={{
+                                    display: 'block',
+                                    marginTop: '8px',
+                                    padding: '8px 14px',
+                                    background: '#1F4E36',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: claimSaving ? 'wait' : 'pointer',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {claimSaving ? 'Completing claim...' : 'Complete claim'}
+                            </button>
+                        )}
                     </div>
                 )}
                 <div className="sidebar-section">

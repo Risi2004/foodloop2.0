@@ -6,7 +6,14 @@ function DriverDetails({ tracking, driverProfileImageUrl }) {
     const isCustomerOrder = tracking?.donation?.sourceType === 'customer_order';
     const donorName = tracking?.donor?.name ?? 'Supplier';
     const donorContact = tracking?.donor?.contactNo || tracking?.donor?.email || '';
+    const donorAddress =
+        tracking?.donor?.address ||
+        tracking?.donation?.pickupAddress ||
+        tracking?.donation?.donorAddress ||
+        '';
     const receiverName = tracking?.receiver?.name ?? 'Receiver';
+    const receiverAddress =
+        tracking?.receiver?.address || tracking?.donation?.receiverAddress || '';
     const vehicleType = tracking?.driver?.vehicleType ?? 'Scooter';
     const vehicleNumber = tracking?.driver?.vehicleNumber ?? '—';
     const profileSrc = driverProfileImageUrl || defaultProfileIcon;
@@ -19,6 +26,9 @@ function DriverDetails({ tracking, driverProfileImageUrl }) {
                     <div className="driver__details__s1__sub1__sub">
                         <h5>Current Location</h5>
                         <p>{isCustomerOrder ? `Pickup for ${receiverName}` : `Pickup at ${donorName}`}</p>
+                        {donorAddress ? (
+                            <p className="driver__details__address">{donorAddress}</p>
+                        ) : null}
                         <p className="driver__details__contact">
                             Contact: {donorContact ? (
                                 /^[\d\s+()-]+$/.test(donorContact.trim()) ? (
@@ -40,6 +50,9 @@ function DriverDetails({ tracking, driverProfileImageUrl }) {
                         className="driver__details__profile-img"
                     />
                     <p>{receiverName}</p>
+                    {receiverAddress ? (
+                        <p className="driver__details__address">{receiverAddress}</p>
+                    ) : null}
                 </div>
             </div>
             <div className="driver__details__s2">

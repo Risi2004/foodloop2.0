@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './RecentRequests.css';
 import { updateUserStatus } from '../../../../services/api';
-import { getAdminUserName, getAdminUserOrganization } from '../../../../utils/adminUserDisplay';
+import { getAdminUserName, getAdminUserOrganization, getAdminRoleLabel } from '../../../../utils/adminUserDisplay';
+import DocumentsModal from '../userManagement/DocumentsModal';
 
 function formatDate(createdAt) {
     if (!createdAt) return '—';
@@ -13,6 +14,8 @@ function formatDate(createdAt) {
 const RecentRequests = ({ users = [], onStatusUpdated }) => {
     const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState(null);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleApprove = async (userId) => {
         if (updatingId) return;
@@ -40,6 +43,16 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
         } finally {
             setUpdatingId(null);
         }
+    };
+
+    const handleViewDetails = (user) => {
+        setSelectedUser(user);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedUser(null);
     };
 
     return (
@@ -76,7 +89,7 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
                                     <td className="date-cell">{formatDate(user.createdAt)}</td>
                                     <td>
                                         <div className="role-info">
-                                            <span className="role-type">{user.role}</span>
+                                            <span className="role-type">{getAdminRoleLabel(user.role)}</span>
                                             <span className="role-org">{getAdminUserOrganization(user)}</span>
                                         </div>
                                     </td>
@@ -98,6 +111,16 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
                                             >
                                                 ✕
                                             </button>
+                                            <button
+                                                className="action-btn view"
+                                                title="View Details"
+                                                onClick={() => handleViewDetails(user)}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -106,6 +129,7 @@ const RecentRequests = ({ users = [], onStatusUpdated }) => {
                     </tbody>
                 </table>
             </div>
+            <DocumentsModal user={selectedUser} isOpen={isModalOpen} onClose={handleCloseModal} />
         </div>
     );
 };

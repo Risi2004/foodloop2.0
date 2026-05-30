@@ -109,14 +109,34 @@ function DeliveryMap({ selectedPickup, driverLocation, driverAddress, onOpenLoca
         : null;
 
     // Get donor position
-    const donorPos = pickupForDisplay?.donorLatitude && pickupForDisplay?.donorLongitude
-        ? [pickupForDisplay.donorLatitude, pickupForDisplay.donorLongitude]
-        : null;
+    const donorLat =
+        pickupForDisplay?.donorLatitude ??
+        pickupForDisplay?.donor?.location?.latitude;
+    const donorLng =
+        pickupForDisplay?.donorLongitude ??
+        pickupForDisplay?.donor?.location?.longitude;
+    const donorPos =
+        donorLat != null && donorLng != null ? [donorLat, donorLng] : null;
 
     // Get receiver position
-    const receiverPos = pickupForDisplay?.receiverLatitude && pickupForDisplay?.receiverLongitude
-        ? [pickupForDisplay.receiverLatitude, pickupForDisplay.receiverLongitude]
-        : null;
+    const receiverLat =
+        pickupForDisplay?.receiverLatitude ??
+        pickupForDisplay?.receiver?.location?.latitude;
+    const receiverLng =
+        pickupForDisplay?.receiverLongitude ??
+        pickupForDisplay?.receiver?.location?.longitude;
+    const receiverPos =
+        receiverLat != null && receiverLng != null ? [receiverLat, receiverLng] : null;
+
+    const donorAddressText =
+        pickupForDisplay?.donorAddress ||
+        pickupForDisplay?.pickupAddress ||
+        pickupForDisplay?.donor?.address ||
+        '';
+    const receiverAddressText =
+        pickupForDisplay?.receiverAddress ||
+        pickupForDisplay?.receiver?.address ||
+        '';
 
     // Calculate map center and bounds
     let mapCenter = defaultCenter;
@@ -238,7 +258,7 @@ function DeliveryMap({ selectedPickup, driverLocation, driverAddress, onOpenLoca
                             <div>
                                 <strong>Donor: {pickupForDisplay.donorName}</strong>
                                 <br />
-                                {pickupForDisplay.donorAddress}
+                                {donorAddressText || 'Address not available'}
                                 <br />
                                 {pickupForDisplay.itemName} ({pickupForDisplay.quantity} servings)
                             </div>
@@ -253,7 +273,7 @@ function DeliveryMap({ selectedPickup, driverLocation, driverAddress, onOpenLoca
                             <div>
                                 <strong>Receiver: {pickupForDisplay.receiverName}</strong>
                                 <br />
-                                {pickupForDisplay.receiverAddress}
+                                {receiverAddressText || 'Address not available'}
                             </div>
                         </Popup>
                     </Marker>

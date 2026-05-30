@@ -125,17 +125,6 @@ const CurrentLocationOverlay = ({ receiverPosition, receiverAddress, onSelectLoc
     );
 };
 
-const formatDate = (date) => {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-const formatTime = (time) => {
-    if (!time) return 'N/A';
-    return time;
-};
-
 const SelectedDonationPanel = ({ selectedItem }) => {
     if (!selectedItem) return null;
     const donation = selectedItem.donation || selectedItem;
@@ -163,14 +152,6 @@ const SelectedDonationPanel = ({ selectedItem }) => {
             {donation.donorAddress && (
                 <p className="selected-donation-panel__row">
                     <strong>Pickup:</strong> {donation.donorAddress}
-                </p>
-            )}
-            {donation.preferredPickupDate && (
-                <p className="selected-donation-panel__row">
-                    <strong>Date:</strong> {formatDate(donation.preferredPickupDate)}
-                    {donation.preferredPickupTimeFrom && donation.preferredPickupTimeTo && (
-                        <> · {formatTime(donation.preferredPickupTimeFrom)} – {formatTime(donation.preferredPickupTimeTo)}</>
-                    )}
                 </p>
             )}
             <p className="selected-donation-panel__row">

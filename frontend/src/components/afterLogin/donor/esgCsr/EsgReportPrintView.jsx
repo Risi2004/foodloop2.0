@@ -104,10 +104,6 @@ function EsgReportPrintView({ report }) {
               <td>{g.fulfillmentRate != null ? `${g.fulfillmentRate}%` : '—'}</td>
             </tr>
             <tr>
-              <td>On-time pickup rate</td>
-              <td>{g.onTimePickupRate != null ? `${g.onTimePickupRate}%` : '—'}</td>
-            </tr>
-            <tr>
               <td>Deliveries completed</td>
               <td>{g.deliveriesCompleted}</td>
             </tr>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -6,8 +6,19 @@ import MapReadyNotifier from '../../../RoleLayout/MapReadyNotifier';
 import MapTileLayer from '../../../../shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 import './ReceiverMap.css';
-import { getMapLocations } from '../../../../../services/mapApi';
 import { getAvailableDonations } from '../../../../../services/donationApi';
+import { getCurrentUser } from '../../../../../services/api';
+import { getUser } from '../../../../../utils/auth';
+import { calculateDistance } from '../../../../../utils/distance';
+import {
+    getSocket,
+    onDonationCreated,
+    onDonationClaimed,
+    onDonationStockUpdated,
+    onDonationCancelled,
+    onDonationClaimCancelled,
+    MAX_RECEIVER_RADIUS_KM,
+} from '../../../../../services/socket';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -54,52 +65,183 @@ const MapController = ({ setMapInstance }) => {
     return null;
 };
 
-// Default center (Colombo, Sri Lanka)
 const DEFAULT_CENTER = [6.9271, 79.8612];
+
+function resolveReceiverCenter() {
+    const user = getUser();
+    const lat = Number(user?.receiverLatitude);
+    const lng = Number(user?.receiverLongitude);
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        return [lat, lng];
+    }
+    return DEFAULT_CENTER;
+}
+
+function isWithinRadius(lat, lng, receiverCenter) {
+    const distanceKm = calculateDistance(receiverCenter[0], receiverCenter[1], lat, lng);
+    if (distanceKm == null) return true;
+    return distanceKm <= MAX_RECEIVER_RADIUS_KM;
+}
+
+function donationToMapLocation(donation, donorNameOverride, receiverCenter) {
+    const lat = donation.donorLatitude ?? donation.position?.[0];
+    const lng = donation.donorLongitude ?? donation.position?.[1];
+    if (lat == null || lng == null || Number.isNaN(Number(lat)) || Number.isNaN(Number(lng))) {
+        return null;
+    }
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    if (!isWithinRadius(numLat, numLng, receiverCenter)) {
+        return null;
+    }
+
+    const donorName = donation.donorName || donorNameOverride;
+    return {
+        id: donation.id || donation._id,
+        lat: numLat,
+        lng: numLng,
+        displayName: donation.itemName || donorName || 'Supplier',
+        donorName,
+        itemName: donation.itemName,
+    };
+}
+
+function locationsFromDonations(donations, receiverCenter) {
+    const locations = [];
+    if (!Array.isArray(donations)) return locations;
+    donations.forEach((d) => {
+        const loc = donationToMapLocation(d, null, receiverCenter);
+        if (loc) locations.push(loc);
+    });
+    return locations;
+}
+
+function mergeLocations(existing, incoming) {
+    const byKey = new Map();
+    for (const loc of existing) {
+        const key = loc.id || `${loc.lat},${loc.lng}`;
+        byKey.set(key, loc);
+    }
+    for (const loc of incoming) {
+        const key = loc.id || `${loc.lat},${loc.lng}`;
+        byKey.set(key, { ...byKey.get(key), ...loc });
+    }
+    return Array.from(byKey.values());
+}
 
 function DonorMap() {
     const [mapInstance, setMapInstance] = React.useState(null);
     const [donorLocations, setDonorLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [receiverCenter, setReceiverCenter] = useState(() => resolveReceiverCenter());
+
+    const loadDonorLocations = useCallback(async (center) => {
+        const [lat, lng] = center;
+        setError(null);
+        try {
+            const response = await getAvailableDonations(lat, lng);
+            const locations = locationsFromDonations(response?.donations, center);
+            setDonorLocations(locations);
+        } catch (err) {
+            setError(err.message || 'Failed to load donor locations');
+            setDonorLocations([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
-        setError(null);
-        Promise.allSettled([getMapLocations(), getAvailableDonations()])
-            .then(([mapResult, availResult]) => {
-                if (cancelled) return;
-                const allDonorLocations = [];
-                if (mapResult.status === 'fulfilled' && mapResult.value.donors && Array.isArray(mapResult.value.donors)) {
-                    allDonorLocations.push(...mapResult.value.donors);
-                }
-                if (availResult.status === 'fulfilled' && availResult.value.donations && Array.isArray(availResult.value.donations)) {
-                    availResult.value.donations.forEach((d) => {
-                        if (d.position && Array.isArray(d.position) && d.position.length >= 2) {
-                            const [lat, lng] = d.position;
-                            if (typeof lat === 'number' && typeof lng === 'number') {
-                                allDonorLocations.push({
-                                    lat,
-                                    lng,
-                                    displayName: d.donorName || d.itemName || 'Supplier',
-                                });
-                            }
-                        }
-                    });
-                }
-                setDonorLocations(allDonorLocations);
-                if (allDonorLocations.length === 0 && availResult.status === 'rejected' && mapResult.status === 'rejected') {
-                    setError(mapResult.reason?.message || availResult.reason?.message || 'Failed to load donor locations');
+        getCurrentUser()
+            .then((res) => {
+                const user = res?.user;
+                const lat = Number(user?.receiverLatitude);
+                const lng = Number(user?.receiverLongitude);
+                if (!cancelled && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+                    setReceiverCenter([lat, lng]);
                 }
             })
-            .catch((err) => {
-                if (!cancelled) setError(err.message || 'Failed to load donor locations');
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
+            .catch(() => {});
         return () => { cancelled = true; };
     }, []);
+
+    useEffect(() => {
+        setLoading(true);
+        loadDonorLocations(receiverCenter);
+    }, [receiverCenter, loadDonorLocations]);
+
+    useEffect(() => {
+        getSocket();
+
+        const refreshFromServer = () => loadDonorLocations(receiverCenter);
+
+        const mergeCreated = (payload) => {
+            const donation = payload?.donation;
+            if (!donation) return;
+
+            const loc = donationToMapLocation(
+                { ...donation, donorName: payload.donorName || donation.donorName },
+                payload.donorName,
+                receiverCenter
+            );
+            if (!loc) return;
+
+            setDonorLocations((prev) => mergeLocations(prev, [loc]));
+            refreshFromServer();
+        };
+
+        const removeById = (payload) => {
+            const id = payload?.donationId;
+            if (!id) return;
+            setDonorLocations((prev) => prev.filter((loc) => loc.id !== id));
+            refreshFromServer();
+        };
+
+        const mergeClaimCancelled = (payload) => {
+            const parentListing = payload?.parentListing || payload?.donation;
+            if (!parentListing) return;
+
+            const loc = donationToMapLocation(parentListing, null, receiverCenter);
+            if (!loc) return;
+
+            setDonorLocations((prev) => mergeLocations(prev, [loc]));
+            refreshFromServer();
+        };
+
+        const mergeStockUpdated = (payload) => {
+            const donation = payload?.donation;
+            if (!donation) return;
+
+            const id = donation.id || donation._id;
+            if (donation.quantity <= 0) {
+                setDonorLocations((prev) => prev.filter((loc) => loc.id !== id));
+                return;
+            }
+
+            const loc = donationToMapLocation(donation, null, receiverCenter);
+            if (!loc) {
+                setDonorLocations((prev) => prev.filter((l) => l.id !== id));
+                return;
+            }
+
+            setDonorLocations((prev) => mergeLocations(prev, [loc]));
+        };
+
+        const unsubCreated = onDonationCreated(mergeCreated);
+        const unsubClaimed = onDonationClaimed(removeById);
+        const unsubStockUpdated = onDonationStockUpdated(mergeStockUpdated);
+        const unsubCancelled = onDonationCancelled(removeById);
+        const unsubClaimCancelled = onDonationClaimCancelled(mergeClaimCancelled);
+
+        return () => {
+            unsubCreated();
+            unsubClaimed();
+            unsubStockUpdated();
+            unsubCancelled();
+            unsubClaimCancelled();
+        };
+    }, [receiverCenter, loadDonorLocations]);
 
     const handleZoomIn = () => {
         if (mapInstance) mapInstance.zoomIn();
@@ -123,20 +265,25 @@ function DonorMap() {
                     {error && (
                         <div className="donor-map__error">{error}</div>
                     )}
-                    <MapContainer center={DEFAULT_CENTER} zoom={13} scrollWheelZoom={false} zoomControl={false} style={{ height: '100%', width: '100%' }}>
+                    <MapContainer center={receiverCenter} zoom={13} scrollWheelZoom={false} zoomControl={false} style={{ height: '100%', width: '100%' }}>
                         <MapTileLayer />
                         <MapInvalidateSize />
                         <MapReadyNotifier />
                         <MapController setMapInstance={setMapInstance} />
-                        {donorLocations.map((loc, idx) => (
+                        {donorLocations.map((loc) => (
                             <Marker
-                                key={idx}
+                                key={loc.id || `${loc.lat},${loc.lng}`}
                                 position={[loc.lat, loc.lng]}
                                 icon={donorIcon}
                             >
                                 <Popup>
-                                    <strong>Donor</strong><br />
-                                    {loc.displayName || 'Donor location'}
+                                    <strong>{loc.itemName || loc.displayName || 'New listing'}</strong>
+                                    {loc.donorName && loc.itemName && (
+                                        <>
+                                            <br />
+                                            From: {loc.donorName}
+                                        </>
+                                    )}
                                 </Popup>
                             </Marker>
                         ))}

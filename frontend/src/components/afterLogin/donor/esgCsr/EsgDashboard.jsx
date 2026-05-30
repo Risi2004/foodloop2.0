@@ -179,7 +179,6 @@ function EsgDashboard({
           <section className="esg-card">
             <h3>Governance</h3>
             <ul className="esg-metric-list">
-              <li>On-time pickup: <strong>{g.onTimePickupRate != null ? `${g.onTimePickupRate}%` : 'N/A'}</strong></li>
               <li>Deliveries completed: <strong>{g.deliveriesCompleted}</strong></li>
               <li>Status: <strong>{g.foodLoopCompliance}</strong></li>
             </ul>
