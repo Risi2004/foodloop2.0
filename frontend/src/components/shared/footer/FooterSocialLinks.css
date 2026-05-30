@@ -1,0 +1,27 @@
+.footer__s2__sub a.footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.footer__s2__sub a.footer-social-link:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.footer__s2__sub a.footer-social-link:focus-visible {
+  outline: 2px solid #73A13F;
+  outline-offset: 2px;
+}
+
+.footer__s2__sub a.footer-social-link img {
+  border-radius: 10px;
+  background: #1F4E36;
+  padding: 8px;
+  cursor: pointer;
+  display: block;
+}

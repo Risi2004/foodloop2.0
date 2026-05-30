@@ -1,8 +1,5 @@
-import icon1 from "../../../../../assets/icons/footer/1.svg"
-import icon2 from "../../../../../assets/icons/footer/2.svg"
-import icon3 from "../../../../../assets/icons/footer/3.svg"
-import icon4 from "../../../../../assets/icons/footer/4.svg"
 import { Link, useLocation } from "react-router-dom";
+import FooterSocialLinks from "../../../../shared/footer/FooterSocialLinks";
 import './DriverFooter.css'
 
 function DriverFooter() {
@@ -25,13 +22,7 @@ function DriverFooter() {
                     </div>
                     <div className='footer__s2'>
                         <p>A high-tech, real-time digital ecosystem powered by Artificial Intelligence that bridges the critical gap between food surplus and food scarcity to build a sustainable circular economy</p>
-                        <div className='footer__s2__sub'>
-                            <h3>Follow Us On</h3>
-                            <img src={icon1} alt="whatsapp" />
-                            <img src={icon2} alt="facebook" />
-                            <img src={icon3} alt="instagram" />
-                            <img src={icon4} alt="twitter" />
-                        </div>
+                        <FooterSocialLinks />
                     </div>
                     <div className="footer__s3">
                         <h1>Quick Links</h1>
