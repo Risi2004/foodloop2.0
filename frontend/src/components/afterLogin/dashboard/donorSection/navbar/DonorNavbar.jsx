@@ -1,14 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from 'react';
 import "./DonorNavbar.css"
-import notification from "../../../../../assets/icons/afterLogin/navbar/notification.svg"
 import profile from "../../../../../assets/icons/afterLogin/navbar/profile.svg"
 import menu from "../../../../../assets/icons/navbar/menu-bar.svg"
 import { clearAuth, getUser, setUser, getSupplierDisplayName, getUserProfileImageUrl } from "../../../../../utils/auth";
-import { getUnreadCount, NOTIFICATIONS_READ_EVENT } from "../../../../../services/notificationApi";
-import { getSocket, onNewNotification } from "../../../../../services/socket";
 import { deleteAccount, getCurrentUser } from "../../../../../services/api";
 import { getBundleStatus } from "../../../../../services/supplierBundleApi";
+import NotificationNavLink from "../../../shared/NotificationNavLink";
 import { SUPPLIER_BUNDLE_UPDATED } from "../../../../../utils/supplierPremiumEvents";
 import goldBadge from "../../../../../assets/icons/afterLogin/status-batch/gold.svg";
 
@@ -16,7 +14,6 @@ function Navbar() {
     const navigate = useNavigate();
     const [user, setUserState] = useState(() => getUser());
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [avatarError, setAvatarError] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
 
@@ -64,26 +61,6 @@ function Navbar() {
         };
     }, []);
 
-    useEffect(() => {
-        const fetchCount = async () => {
-            try {
-                const res = await getUnreadCount();
-                setUnreadCount(res.unreadCount ?? 0);
-            } catch (_) {
-                setUnreadCount(0);
-            }
-        };
-        fetchCount();
-        getSocket();
-        const onRead = () => fetchCount();
-        window.addEventListener(NOTIFICATIONS_READ_EVENT, onRead);
-        const unsubNewNotification = onNewNotification(() => fetchCount());
-        return () => {
-            window.removeEventListener(NOTIFICATIONS_READ_EVENT, onRead);
-            unsubNewNotification();
-        };
-    }, []);
-    
     const displayName = getSupplierDisplayName(user);
 
     const toggleMenu = () => {
@@ -161,12 +138,7 @@ function Navbar() {
                 </div>
 
                 <div className="navbar__s3">
-                    <Link to="/supplier/notifications" className="navbar__notification-wrap">
-                        <img className="navbar__s3__img1" src={notification} alt="notification-icon" />
-                        {unreadCount > 0 && (
-                            <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-                        )}
-                    </Link>
+                    <NotificationNavLink to="/supplier/notifications" />
                     {isPremium && (
                         <Link
                             to="/supplier/dashboard#supplier-plans"
@@ -222,12 +194,7 @@ function Navbar() {
                     <p>Zero Waste. Infinite Impact</p>
                 </div>
                 <div className="responsive__navbar__s3">
-                    <Link to="/supplier/notifications" className="navbar__notification-wrap">
-                        <img src={notification} alt="notification-icon" />
-                        {unreadCount > 0 && (
-                            <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-                        )}
-                    </Link>
+                    <NotificationNavLink to="/supplier/notifications" imgClassName="" />
                     {isPremium && (
                         <Link
                             to="/supplier/dashboard#supplier-plans"

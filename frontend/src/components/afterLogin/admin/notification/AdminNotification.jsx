@@ -1,13 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { getAdminNotifications, createNotification, deactivateNotification, deleteNotification } from "../../../../services/notificationApi";
+import {
+  getAdminNotifications,
+  createNotification,
+  deactivateNotification,
+  deleteNotification,
+} from "../../../../services/notificationApi";
 import "./AdminNotification.css";
 
 const ROLE_OPTIONS = [
-  { value: 'Donor', label: 'Supplier' },
-  { value: 'Receiver', label: 'Receiver' },
-  { value: 'Driver', label: 'Driver' },
-  { value: 'All', label: 'All' },
+  { value: "Donor", label: "Supplier" },
+  { value: "Receiver", label: "Receiver" },
+  { value: "Driver", label: "Driver" },
+  { value: "All", label: "All" },
 ];
+
+function formatDate(date) {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatRoles(roles) {
+  if (!Array.isArray(roles) || !roles.length) return "—";
+  return roles
+    .map((r) => (r === "Donor" ? "Supplier" : r))
+    .join(", ");
+}
 
 const AdminNotification = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -16,20 +38,8 @@ const AdminNotification = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [processing, setProcessing] = useState({});
   const [error, setError] = useState(null);
-
-  const formatDate = (date) => {
-    if (!date) return "";
-    const d = typeof date === "string" ? new Date(date) : date;
-    const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-    const month = months[d.getMonth()];
-    const day = d.getDate();
-    const year = d.getFullYear();
-    return `${month} ${day}, ${year}`;
-  };
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -64,9 +74,7 @@ const AdminNotification = () => {
 
   const handleSendNotification = async () => {
     const message = notificationMessage.trim();
-    if (!message) return;
-    const roles = selectedRoles.length ? selectedRoles : null;
-    if (!roles || roles.length === 0) return;
+    if (!message || !selectedRoles.length) return;
 
     setSending(true);
     setError(null);
@@ -74,7 +82,7 @@ const AdminNotification = () => {
       await createNotification({
         message,
         title: notificationTitle.trim() || undefined,
-        roles,
+        roles: selectedRoles,
       });
       await fetchNotifications();
       setNotificationMessage("");
@@ -88,151 +96,170 @@ const AdminNotification = () => {
   };
 
   const handleDeactivate = async (id) => {
+    if (!window.confirm("Deactivate this notification? Users will no longer see it.")) return;
     setError(null);
+    setProcessing((prev) => ({ ...prev, [id]: "deactivating" }));
     try {
       await deactivateNotification(id);
       await fetchNotifications();
     } catch (err) {
       setError(err.message || "Failed to deactivate notification");
+    } finally {
+      setProcessing((prev) => ({ ...prev, [id]: null }));
     }
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm("Delete this notification permanently?")) return;
     setError(null);
+    setProcessing((prev) => ({ ...prev, [id]: "deleting" }));
     try {
       await deleteNotification(id);
       await fetchNotifications();
     } catch (err) {
       setError(err.message || "Failed to delete notification");
+    } finally {
+      setProcessing((prev) => ({ ...prev, [id]: null }));
     }
   };
 
-  const displayStatus = (status) => (status === "active" ? "ACTIVE" : "INACTIVE");
-
   return (
-    <div className="frame-197">
-      <div className="mange">
-        <div className="user-management">Notification Management</div>
-        <div className="manage-verify-and">
+    <div className="admin-notification-page">
+      <header className="admin-notification-header">
+        <h1 className="admin-notification-title">Notification Management</h1>
+        <p className="admin-notification-subtitle">
           Manage and monitor all notifications from one central dashboard.
-        </div>
-      </div>
-      <div className="frame-107">
-        <div className="recent-donations">Active notifications</div>
-      </div>
-      {error && (
-        <div className="admin-notification-error" style={{ color: "#c00", marginBottom: "8px" }}>
-          {error}
-        </div>
-      )}
-      <div className="frame-106">
-        <div className="frame-108">
-          <div className="recent-donations2">MESSAGE</div>
-          <div className="recent-donations2">DATE</div>
-          <div className="recent-donations2">STATUS</div>
-          <div className="recent-donations2">ACTION</div>
-        </div>
+        </p>
+      </header>
+
+      {error && <div className="admin-notification-error">{error}</div>}
+
+      <section className="admin-notification-card">
+        <h2 className="admin-notification-card__title">Sent notifications</h2>
+
         {loading ? (
-          <div className="recent-donations4">Loading...</div>
+          <p className="admin-notification-empty">Loading notifications...</p>
+        ) : notifications.length === 0 ? (
+          <p className="admin-notification-empty">No notifications sent yet.</p>
         ) : (
-          notifications.map((notification, index) => {
-            const rowClass = index % 3 === 0 ? "frame-109" : index % 3 === 1 ? "frame-110" : "frame-111";
-            const dateStr = notification.createdAt
-              ? formatDate(notification.createdAt)
-              : "";
-            return (
-              <div key={notification.id} className={rowClass}>
-                <div className="frame-203">
-                  <div className="recent-donations3">{notification.title || "Update"}</div>
-                  <div className="recent-donations3">{notification.message}</div>
-                </div>
-                <div className="recent-donations4">{dateStr}</div>
-                <div className="frame-204">
-                  <div className="verified">
-                    <div className="dot"></div>
-                    <div className="verified2">{displayStatus(notification.status)}</div>
-                  </div>
-                </div>
-                <div className="frame-205">
-                  <div className="frame-208">
-                    <div
-                      className="deactivate"
-                      onClick={() => handleDeactivate(notification.id)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      Deactivate
-                    </div>
-                    <img
-                      className="cancel"
-                      src="/src/assets/Cancel.svg"
-                      alt="Cancel"
-                      onClick={() => handleDelete(notification.id)}
-                      style={{ cursor: "pointer" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          <div className="admin-notification-table-wrap">
+            <table className="admin-notification-table">
+              <thead>
+                <tr>
+                  <th>Message</th>
+                  <th>Date</th>
+                  <th>Audience</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notifications.map((notification) => {
+                  const isActive = notification.status === "active";
+                  const busy = processing[notification.id];
+                  return (
+                    <tr key={notification.id}>
+                      <td className="admin-notification-table__message">
+                        <strong>{notification.title || "Update"}</strong>
+                        <span>{notification.message}</span>
+                        {notification.recipientCount != null && (
+                          <small>{notification.recipientCount} recipient(s)</small>
+                        )}
+                      </td>
+                      <td>{formatDate(notification.createdAt)}</td>
+                      <td>{formatRoles(notification.targetRoles)}</td>
+                      <td>
+                        <span
+                          className={`admin-notification-status ${
+                            isActive
+                              ? "admin-notification-status--active"
+                              : "admin-notification-status--inactive"
+                          }`}
+                        >
+                          {isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="admin-notification-actions">
+                          {isActive && (
+                            <button
+                              type="button"
+                              className="admin-notification-btn admin-notification-btn--warn"
+                              onClick={() => handleDeactivate(notification.id)}
+                              disabled={Boolean(busy)}
+                            >
+                              {busy === "deactivating" ? "..." : "Deactivate"}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="admin-notification-btn admin-notification-btn--danger"
+                            onClick={() => handleDelete(notification.id)}
+                            disabled={Boolean(busy)}
+                            aria-label="Delete notification"
+                          >
+                            {busy === "deleting" ? "..." : "Delete"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
-      <div className="enter">
-        <div className="frame-206">
-          <div className="frame-1072">
-            <div className="recent-donations5">SEND NOTIFICATION</div>
-          </div>
-          <div className="admin-notification-roles">
-            <span className="recent-donations5">Role</span>
-            <div className="admin-notification-checkboxes">
-              {ROLE_OPTIONS.map((role) => (
-                <label key={role.value} className="admin-notification-role-label">
-                  <input
-                    type="checkbox"
-                    checked={selectedRoles.includes(role.value)}
-                    onChange={() => toggleRole(role.value)}
-                  />
-                  {role.label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="search">
-            <input
-              type="text"
-              className="admin-notification-title-input"
-              placeholder="Title (optional)"
-              value={notificationTitle}
-              onChange={(e) => setNotificationTitle(e.target.value)}
-            />
-            <textarea
-              className="change-your-password-for-security-purpose"
-              placeholder="Enter your notification message here..."
-              value={notificationMessage}
-              onChange={(e) => setNotificationMessage(e.target.value)}
-            />
-          </div>
-          <div className="frame-210">
-            <div
-              className="frame-2082"
-              onClick={
-                notificationMessage.trim() && selectedRoles.length
-                  ? handleSendNotification
-                  : undefined
-              }
-              style={{
-                cursor:
-                  notificationMessage.trim() && selectedRoles.length
-                    ? "pointer"
-                    : "not-allowed",
-                opacity:
-                  notificationMessage.trim() && selectedRoles.length ? 1 : 0.6,
-              }}
-            >
-              <div className="send">{sending ? "Sending..." : "SEND"}</div>
-            </div>
+      </section>
+
+      <section className="admin-notification-card admin-notification-compose">
+        <h2 className="admin-notification-card__title">Send notification</h2>
+
+        <div className="admin-notification-roles">
+          <span className="admin-notification-roles__label">Target roles</span>
+          <div className="admin-notification-checkboxes">
+            {ROLE_OPTIONS.map((role) => (
+              <label key={role.value} className="admin-notification-role-label">
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.includes(role.value)}
+                  onChange={() => toggleRole(role.value)}
+                />
+                {role.label}
+              </label>
+            ))}
           </div>
         </div>
-      </div>
+
+        <div className="admin-notification-compose__fields">
+          <input
+            type="text"
+            className="admin-notification-title-input"
+            placeholder="Title (optional)"
+            value={notificationTitle}
+            onChange={(e) => setNotificationTitle(e.target.value)}
+          />
+          <textarea
+            className="admin-notification-textarea"
+            placeholder="Enter your notification message here..."
+            value={notificationMessage}
+            onChange={(e) => setNotificationMessage(e.target.value)}
+            rows={5}
+          />
+        </div>
+
+        <div className="admin-notification-compose__footer">
+          <button
+            type="button"
+            className="admin-notification-send-btn"
+            onClick={handleSendNotification}
+            disabled={
+              sending || !notificationMessage.trim() || selectedRoles.length === 0
+            }
+          >
+            {sending ? "Sending..." : "Send notification"}
+          </button>
+        </div>
+      </section>
     </div>
   );
 };

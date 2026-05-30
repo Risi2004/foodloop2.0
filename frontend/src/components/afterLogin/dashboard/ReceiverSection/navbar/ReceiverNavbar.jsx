@@ -1,40 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from 'react';
 import "./ReceiverNavbar.css"
-import notification from "../../../../../assets/icons/afterLogin/navbar/notification.svg"
 import profile from "../../../../../assets/icons/afterLogin/navbar/profile.svg"
 import menu from "../../../../../assets/icons/navbar/menu-bar.svg"
 import { clearAuth, getUser } from "../../../../../utils/auth";
-import { getUnreadCount, NOTIFICATIONS_READ_EVENT } from "../../../../../services/notificationApi";
-import { getSocket, onNewNotification } from "../../../../../services/socket";
 import { deleteAccount } from "../../../../../services/api";
+import NotificationNavLink from "../../../shared/NotificationNavLink";
 
 function Navbar() {
     const navigate = useNavigate();
     const user = getUser();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
-
-    useEffect(() => {
-        const fetchCount = async () => {
-            try {
-                const res = await getUnreadCount();
-                setUnreadCount(res.unreadCount ?? 0);
-            } catch (_) {
-                setUnreadCount(0);
-            }
-        };
-        fetchCount();
-        getSocket();
-        const onRead = () => fetchCount();
-        window.addEventListener(NOTIFICATIONS_READ_EVENT, onRead);
-        const unsubNewNotification = onNewNotification(() => fetchCount());
-        return () => {
-            window.removeEventListener(NOTIFICATIONS_READ_EVENT, onRead);
-            unsubNewNotification();
-        };
-    }, []);
-    
     // Get user display name
     const getUserName = () => {
         if (!user) return 'User_Name';
@@ -126,12 +102,7 @@ function Navbar() {
                 </div>
 
                 <div className="navbar__s3">
-                    <Link to="/receiver/notifications" className="navbar__notification-wrap">
-                        <img className="navbar__s3__img1" src={notification} alt="notification-icon" />
-                        {unreadCount > 0 && (
-                            <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-                        )}
-                    </Link>
+                    <NotificationNavLink to="/receiver/notifications" />
                     <div className="navbar__s3__sub" onClick={toggleProfile}>
                         <h3>{getUserName()}</h3>
                         <img 
@@ -170,12 +141,7 @@ function Navbar() {
                     <p>Zero Waste. Infinite Impact</p>
                 </div>
                 <div className="responsive__navbar__s3">
-                    <Link to="/receiver/notifications" className="navbar__notification-wrap">
-                        <img src={notification} alt="notification-icon" />
-                        {unreadCount > 0 && (
-                            <span className="navbar__notification-badge" aria-label={`${unreadCount} unread`}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-                        )}
-                    </Link>
+                    <NotificationNavLink to="/receiver/notifications" imgClassName="" />
                     <img src={menu} alt="menu-bar" onClick={toggleMenu} />
                 </div>
             </div>

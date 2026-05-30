@@ -1,577 +1,335 @@
-.frame-197,
-.frame-197 * {
-  box-sizing: border-box;
-}
-
-.frame-197 {
+.admin-notification-page {
   min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  align-items: flex-start;
-  justify-content: flex-start;
-  position: relative;
+  gap: 24px;
+  width: 100%;
 }
 
-.mange {
+.admin-notification-header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  align-items: flex-start;
-  justify-content: flex-start;
-  align-self: stretch;
-  flex-shrink: 0;
-}
-
-.user-management {
-  color: white;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 2.2rem;
-  line-height: 1.2;
-  letter-spacing: -0.5px;
-  font-weight: 800;
-}
-
-.manage-verify-and {
-  color: #A5D6A7;
-  text-align: left;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1rem;
-  line-height: 1.5;
-  font-weight: 500;
-  margin-top: 4px;
-}
-
-.frame-107 {
-  padding: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-start;
-  align-self: stretch;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.recent-donations {
-  color: #1F4E36;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 1.25rem;
-  line-height: 1.2;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.frame-106 {
-  background: #F6F8F7;
-  border: 1px solid #DBE6E0;
-  border-radius: 24px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-self: stretch;
-  flex-shrink: 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
-}
-
-.frame-108,
-.frame-109,
-.frame-110,
-.frame-111 {
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  align-self: stretch;
-  flex-shrink: 0;
-  min-height: 60px;
-}
-
-.frame-108 {
-  border-bottom: 2px solid #DBE6E0;
-}
-
-.frame-109,
-.frame-110,
-.frame-111 {
-  border-bottom: 1px solid #EBF1EE;
-  border-radius: 12px;
-  transition: background-color 0.2s;
-}
-
-.frame-109:hover,
-.frame-110:hover,
-.frame-111:hover {
-  background-color: rgba(31, 78, 54, 0.03);
-}
-
-.frame-109:last-child,
-.frame-110:last-child,
-.frame-111:last-child {
-  border-bottom: none;
-}
-
-.recent-donations2 {
-  color: #1F4E36;
-  text-align: center;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 12px;
-  line-height: 1.2;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: 25%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.frame-203 {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 25%;
-}
-
-.recent-donations3 {
-  color: #1F4E36;
-  text-align: center;
-  font-family: "Inter-Medium", sans-serif;
-  font-size: 14px;
-  line-height: 1.4;
-  font-weight: 700;
-}
-
-.recent-donations4 {
-  color: #73A13F;
-  text-align: center;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 14px;
-  line-height: 1.4;
-  font-weight: 700;
-  width: 25%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.frame-204,
-.frame-205 {
-  padding: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 25%;
-}
-
-.verified {
-  background: #E8F5E9;
-  border: 1px solid #c8e6c9;
-  border-radius: 20px;
-  padding: 6px 14px;
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
 }
 
-.dot {
-  background: #2E7D32;
-  border-radius: 50%;
-  width: 6px;
-  height: 6px;
+.admin-notification-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
-.verified2 {
-  color: #2E7D32;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
+.admin-notification-subtitle {
+  margin: 0;
+  color: #a5d6a7;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
-.frame-208 {
-  background: #FFEBEE;
-  color: #C62828;
-  border: 1px solid #ffcdd2;
-  border-radius: 8px;
-  padding: 8px 14px;
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: transform 0.2s, background-color 0.2s;
+.admin-notification-error {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
 }
 
-.frame-208:hover {
-  transform: translateY(-1px);
-  background-color: #ffcdd2;
-}
-
-.deactivate {
-  color: currentColor;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.cancel {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.enter {
+.admin-notification-card {
+  background: #f6f8f7;
+  border: 1px solid #dbe6e0;
   border-radius: 24px;
-  padding: 1px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  align-self: stretch;
-  flex-shrink: 0;
-  width: 100%;
-}
-
-.frame-206 {
-  background: #F6F8F7;
-  border: 1px solid #DBE6E0;
-  border-radius: 24px;
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  align-items: flex-start;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 100%;
+  padding: 28px 32px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
 }
 
-.frame-1072 {
-  padding: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-start;
-  align-self: stretch;
-  flex-shrink: 0;
-  height: 38px;
+.admin-notification-card__title {
+  margin: 0 0 20px;
+  color: #1f4e36;
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
-.recent-donations5 {
-  color: #1F4E36;
+.admin-notification-empty {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  color: #5f7a6d;
+  font-size: 14px;
+}
+
+.admin-notification-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-notification-table {
+  width: 100%;
+  border-collapse: collapse;
   text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 1.25rem;
-  line-height: 1.2;
+  color: #2e4e3f;
+}
+
+.admin-notification-table th {
+  color: #1f4e36;
+  font-size: 12px;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 12px;
+  border-bottom: 1px solid #dbe6e0;
+  white-space: nowrap;
+}
+
+.admin-notification-table td {
+  padding: 16px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #ebf1ee;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.admin-notification-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-notification-table__message {
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.admin-notification-table__message strong {
+  display: block;
+  color: #1f4e36;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.admin-notification-table__message span {
+  display: block;
+  color: #2e4e3f;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.admin-notification-table__message small {
+  display: block;
+  margin-top: 6px;
+  color: #6b8a7a;
+  font-size: 12px;
+}
+
+.admin-notification-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.admin-notification-status--active {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.admin-notification-status--active::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2e7d32;
+}
+
+.admin-notification-status--inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-notification-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
+}
+
+.admin-notification-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.admin-notification-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-notification-btn--warn {
+  background: #fff8e1;
+  color: #f57f17;
+  border: 1px solid #ffe082;
+}
+
+.admin-notification-btn--warn:hover:not(:disabled) {
+  background: #ffecb3;
+}
+
+.admin-notification-btn--danger {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+.admin-notification-btn--danger:hover:not(:disabled) {
+  background: #ffcdd2;
+}
+
+.admin-notification-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .admin-notification-roles {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-self: stretch;
+  gap: 10px;
 }
 
-.admin-notification-roles .recent-donations5 {
-  font-size: 15px;
-  width: auto;
+.admin-notification-roles__label {
+  color: #1f4e36;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .admin-notification-checkboxes {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 24px;
-  align-items: center;
-  margin-top: 8px;
 }
 
 .admin-notification-role-label {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #2E4E3F;
-  font-family: "Inter-Bold", sans-serif;
+  color: #2e4e3f;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .admin-notification-role-label input {
-  cursor: pointer;
   width: 16px;
   height: 16px;
-  accent-color: #1F4E36;
+  accent-color: #1f4e36;
+  cursor: pointer;
+}
+
+.admin-notification-compose__fields {
+  background: #ffffff;
+  border: 1px solid #dbe6e0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-notification-compose__fields:focus-within {
+  border-color: #1f4e36;
+  box-shadow: 0 4px 15px rgba(31, 78, 54, 0.08);
 }
 
 .admin-notification-title-input {
   width: 100%;
-  padding: 0 0 10px 0;
   border: none;
-  border-bottom: 1px solid #EBF1EE;
+  border-bottom: 1px solid #ebf1ee;
   outline: none;
   background: transparent;
-  color: #1F4E36;
-  font-family: "Inter-Bold", sans-serif;
+  color: #1f4e36;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
+  padding-bottom: 10px;
 }
 
 .admin-notification-title-input::placeholder {
   color: #a3b8ad;
 }
 
-.search {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #DBE6E0;
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  align-self: stretch;
-  flex-shrink: 0;
-  min-height: 120px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.search:focus-within {
-  border-color: #1F4E36;
-  box-shadow: 0 4px 15px rgba(31, 78, 54, 0.08);
-}
-
-.change-your-password-for-security-purpose {
-  color: #1F4E36;
-  text-align: left;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
+.admin-notification-textarea {
   width: 100%;
-  height: 100%;
+  min-height: 120px;
   border: none;
   outline: none;
   resize: vertical;
   background: transparent;
-  padding: 0;
+  color: #1f4e36;
+  font-size: 14px;
   line-height: 1.5;
+  font-family: inherit;
 }
 
-.change-your-password-for-security-purpose::placeholder {
+.admin-notification-textarea::placeholder {
   color: #a3b8ad;
 }
 
-.frame-210 {
+.admin-notification-compose__footer {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-end;
-  justify-content: center;
-  align-self: stretch;
-  flex-shrink: 0;
+  justify-content: flex-end;
 }
 
-.frame-2082 {
-  background: #1F4E36;
+.admin-notification-send-btn {
+  background: #1f4e36;
+  color: #ffffff;
+  border: none;
   border-radius: 12px;
   padding: 14px 28px;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 15px rgba(31, 78, 54, 0.15);
-}
-
-.frame-2082:hover {
-  transform: translateY(-2px);
-  background-color: #163625;
-  box-shadow: 0 6px 20px rgba(31, 78, 54, 0.25);
-}
-
-.send {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
   font-size: 15px;
-  line-height: 1;
   font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(31, 78, 54, 0.15);
+  transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
 }
 
-/* Responsive styles for mobile */
+.admin-notification-send-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #163625;
+}
+
+.admin-notification-send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
-  .frame-197 {
-    width: 100%;
-    margin: 20px;
-    padding: 30px;
+  .admin-notification-page {
     gap: 20px;
   }
 
-  .user-management {
-    font-size: 28px;
-    line-height: 36px;
-    width: 100%;
+  .admin-notification-title {
+    font-size: 1.6rem;
   }
 
-  .manage-verify-and {
-    font-size: 14px;
-    line-height: 20px;
-    width: 100%;
+  .admin-notification-card {
+    padding: 20px 16px;
   }
 
-  .recent-donations {
-    font-size: 20px;
-    width: 100%;
-  }
-
-  /* Hide DATE column header (2nd child) */
-  .frame-108 .recent-donations2:nth-child(2) {
+  .admin-notification-table th:nth-child(3),
+  .admin-notification-table td:nth-child(3) {
     display: none;
-  }
-
-  /* Hide STATUS column header (3rd child) */
-  .frame-108 .recent-donations2:nth-child(3) {
-    display: none;
-  }
-
-  /* Hide DATE column in data rows */
-  .frame-109 .recent-donations4,
-  .frame-110 .recent-donations4,
-  .frame-111 .recent-donations4 {
-    display: none;
-  }
-
-  /* Hide STATUS column in data rows */
-  .frame-109 .frame-204,
-  .frame-110 .frame-204,
-  .frame-111 .frame-204 {
-    display: none;
-  }
-
-  /* Adjust row layout for mobile */
-  .frame-108,
-  .frame-109,
-  .frame-110,
-  .frame-111 {
-    padding: 8px;
-    height: auto;
-    min-height: 60px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  /* Center the header row content */
-  .frame-108 {
-    justify-content: center;
-    gap: 20px;
-  }
-
-  .frame-108 .recent-donations2:first-child,
-  .frame-108 .recent-donations2:last-child {
-    flex: 0 0 auto;
-    text-align: center;
-    justify-content: center;
-  }
-
-  /* Center the data rows content */
-  .frame-109,
-  .frame-110,
-  .frame-111 {
-    justify-content: center;
-    gap: 20px;
-  }
-
-  .frame-109 .frame-203,
-  .frame-110 .frame-203,
-  .frame-111 .frame-203 {
-    width: auto;
-    flex: 0 0 auto;
-    min-width: 0;
-  }
-
-  .frame-109 .frame-205,
-  .frame-110 .frame-205,
-  .frame-111 .frame-205 {
-    flex: 0 0 auto;
-    width: auto;
-  }
-
-  .frame-203 {
-    width: auto;
-    align-items: center;
-  }
-
-  .recent-donations3 {
-    width: auto;
-    text-align: center;
-    justify-content: center;
-  }
-
-  .recent-donations5 {
-    font-size: 20px;
-    width: 100%;
-  }
-
-  .frame-1072 {
-    height: auto;
-    padding: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .frame-197 {
-    padding: 15px 10px;
-    gap: 15px;
-  }
-
-  .user-management {
-    font-size: 24px;
-    line-height: 30px;
-  }
-
-  .recent-donations,
-  .recent-donations5 {
-    font-size: 18px;
-  }
-
-  .frame-208 {
-    padding: 6px 10px;
-  }
-
-  .deactivate {
-    font-size: 10px;
-  }
-
-  .frame-2082 {
-    padding: 8px 16px;
   }
 }
