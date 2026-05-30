@@ -5,7 +5,7 @@ import './ActionButtons.css';
 const ActionButtons = ({ donationId, receipt }) => {
     const handleDownloadPDF = async () => {
         if (!receipt) {
-            alert('Impact receipt is not yet available. The receiver will submit it after delivery.');
+            alert('Digital receipt is not yet available. It is generated automatically after delivery.');
             return;
         }
         try {

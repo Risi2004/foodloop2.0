@@ -239,6 +239,56 @@
   border-color: #c5dcc8;
 }
 
+.aliexpress-card--supplier-disabled {
+  opacity: 0.48;
+  pointer-events: none;
+  filter: grayscale(0.35);
+}
+
+.aliexpress-card--supplier-disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 10px rgba(31, 78, 54, 0.05);
+}
+
+.marketplace-supplier-lock-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1.1rem;
+  background: #eef7f0;
+  border: 1px solid #b8d9be;
+  border-radius: 12px;
+  color: #1b4332;
+  font-size: 0.95rem;
+}
+
+.marketplace-supplier-lock-clear {
+  border: 1px solid #1b4332;
+  background: #fff;
+  color: #1b4332;
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.marketplace-supplier-lock-clear:hover {
+  background: #f4faf5;
+}
+
+.marketplace-claim-error {
+  margin: 0.5rem 0 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+.claim-donate-btn {
+  background: #1b4332 !important;
+}
+
 .card-image-wrapper {
   position: relative;
   width: 100%;

@@ -19,8 +19,8 @@ const {
 const {
   sendDonationDriverAssignedEmails,
   sendDonationPickupConfirmedEmails,
-  sendDonationDeliveredEmails,
 } = require('../utils/sendNotificationEmail');
+const { finalizeAndNotifyDigitalReceipt } = require('../services/digitalReceiptService');
 const { isOrderCompatible, normalizeVehicleType } = require('../utils/driverCapacityRules');
 const { creditDeliveryEarnings } = require('../services/earningsService');
 const {
@@ -128,6 +128,12 @@ async function syncCustomerOrderToDonationClaims(customerOrder, nextStatus, driv
           donationId: donationIdStr,
           donation: tracking,
         });
+
+        try {
+          await finalizeAndNotifyDigitalReceipt(donationIdStr);
+        } catch (receiptErr) {
+          console.error('finalizeAndNotifyDigitalReceipt (sync) error:', receiptErr);
+        }
       }
     }
   } catch (err) {
@@ -170,8 +176,11 @@ async function syncDonationToCustomerOrder(donation, nextStatus, driverUser) {
       order.pickedUpAt = now;
     } else if (nextStatus === 'delivered') {
       const related = await getDonationsForCustomerOrder(order);
+      const expectedCount = (order.orderSummary?.items || []).length;
       const allDelivered =
-        related.length > 0 && related.every((entry) => entry.status === 'delivered');
+        expectedCount > 0 &&
+        related.length === expectedCount &&
+        related.every((entry) => entry.status === 'delivered');
       if (!allDelivered || order.status === 'delivered') return order;
       order.status = 'delivered';
       order.deliveredAt = now;
@@ -1076,12 +1085,11 @@ exports.confirmDelivery = async (req, res) => {
 
     await syncDonationToCustomerOrder(donation, 'delivered', req.user);
 
-    await sendDonationDeliveredEmails(
-      donation,
-      donation.donorId,
-      donation.receiverId,
-      donation.driverId
-    );
+    try {
+      await finalizeAndNotifyDigitalReceipt(donationIdStr);
+    } catch (receiptErr) {
+      console.error('finalizeAndNotifyDigitalReceipt error:', receiptErr);
+    }
 
     try {
       await creditDeliveryEarnings({

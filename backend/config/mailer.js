@@ -23,10 +23,10 @@ function getTransporter() {
   return transporter;
 }
 
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, subject, text, html, attachments }) {
   const from = process.env.SMTP_FROM || `FoodLoop <${process.env.SMTP_USER}>`;
   const transport = getTransporter();
-  return transport.sendMail({ from, to, subject, text, html });
+  return transport.sendMail({ from, to, subject, text, html, attachments });
 }
 
 module.exports = { getTransporter, sendMail };

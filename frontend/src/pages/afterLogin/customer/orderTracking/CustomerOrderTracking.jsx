@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import { getCustomerOrders } from '../../../../services/paymentApi';
+import { getMyClaims } from '../../../../services/donationApi';
 import { customerRoutes } from '../../../../constants/customerRoutes';
-import { getSocket, onCustomerOrderUpdated } from '../../../../services/socket';
+import { getSocket, onCustomerOrderUpdated, onDonationInTransit } from '../../../../services/socket';
 import './CustomerOrderTracking.css';
 
 const ACTIVE_STATUSES = ['finding_driver', 'driver_assigned', 'picked_up', 'in_transit'];
+const ACTIVE_CLAIM_STATUSES = ['claimed', 'driver_assigned', 'picked_up', 'in_transit'];
 const MAP_TRACK_STATUSES = ['driver_assigned', 'picked_up', 'in_transit'];
 
 function formatMoney(amount, currency = 'LKR') {
@@ -38,20 +40,27 @@ function getDriverDisplayName(order) {
 
 function CustomerOrderTracking() {
   const [orders, setOrders] = useState([]);
+  const [claims, setClaims] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadOrders = async () => {
-    setIsLoading(true);
+  const loadOrders = async (options = {}) => {
+    const { silent = false } = options;
+    if (!silent) setIsLoading(true);
     setError('');
     try {
-      const res = await getCustomerOrders();
-      setOrders(Array.isArray(res?.orders) ? res.orders : []);
+      const [ordersRes, claimsRes] = await Promise.all([
+        getCustomerOrders(),
+        getMyClaims().catch(() => ({ donations: [] })),
+      ]);
+      setOrders(Array.isArray(ordersRes?.orders) ? ordersRes.orders : []);
+      setClaims(Array.isArray(claimsRes?.donations) ? claimsRes.donations : []);
     } catch (err) {
       setError(err.message || 'Failed to load order tracking data.');
       setOrders([]);
+      setClaims([]);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -61,33 +70,48 @@ function CustomerOrderTracking() {
 
   useEffect(() => {
     getSocket();
-    const unsub = onCustomerOrderUpdated(() => {
-      loadOrders();
+    const unsubOrder = onCustomerOrderUpdated(() => {
+      loadOrders({ silent: true });
+    });
+    const unsubClaim = onDonationInTransit(() => {
+      loadOrders({ silent: true });
     });
 
     const pollTimer = setInterval(() => {
-      loadOrders();
+      loadOrders({ silent: true });
     }, 15000);
 
-    const onFocus = () => loadOrders();
+    const onFocus = () => loadOrders({ silent: true });
     window.addEventListener('focus', onFocus);
 
     return () => {
-      unsub();
+      unsubOrder();
+      unsubClaim();
       clearInterval(pollTimer);
       window.removeEventListener('focus', onFocus);
     };
   }, []);
 
-  const { activeOrders, pastOrders } = useMemo(() => {
+  const { activeOrders, pastOrders, activeClaims, pastClaims } = useMemo(() => {
     const active = [];
     const past = [];
     for (const order of orders) {
       if (ACTIVE_STATUSES.includes(order.status)) active.push(order);
       else past.push(order);
     }
-    return { activeOrders: active, pastOrders: past };
-  }, [orders]);
+    const activeClaimList = [];
+    const pastClaimList = [];
+    for (const claim of claims) {
+      if (ACTIVE_CLAIM_STATUSES.includes(claim.status)) activeClaimList.push(claim);
+      else if (claim.status === 'delivered') pastClaimList.push(claim);
+    }
+    return {
+      activeOrders: active,
+      pastOrders: past,
+      activeClaims: activeClaimList,
+      pastClaims: pastClaimList,
+    };
+  }, [orders, claims]);
 
   return (
     <CustomerPageLayout>
@@ -100,15 +124,15 @@ function CustomerOrderTracking() {
         <section className="tracking-overview">
           <article className="tracking-overview-card">
             <span>Present Orders</span>
-            <strong>{activeOrders.length}</strong>
+            <strong>{activeOrders.length + activeClaims.length}</strong>
           </article>
           <article className="tracking-overview-card">
             <span>Past Orders</span>
-            <strong>{pastOrders.length}</strong>
+            <strong>{pastOrders.length + pastClaims.length}</strong>
           </article>
           <article className="tracking-overview-card">
             <span>Total Orders</span>
-            <strong>{orders.length}</strong>
+            <strong>{orders.length + claims.length}</strong>
           </article>
         </section>
 
@@ -123,10 +147,45 @@ function CustomerOrderTracking() {
           {isLoading && <p className="tracking-state">Loading orders...</p>}
           {!isLoading && error && <p className="tracking-state tracking-state--error">{error}</p>}
 
-          {!isLoading && !error && activeOrders.length === 0 && (
+          {!isLoading && !error && activeOrders.length === 0 && activeClaims.length === 0 && (
             <div className="tracking-empty">
               <h3>No active orders right now</h3>
               <p>Once a new order is placed, its live delivery status will appear here.</p>
+            </div>
+          )}
+
+          {!isLoading && !error && activeClaims.length > 0 && (
+            <div className="tracking-list">
+              {activeClaims.map((claim) => {
+                const trackId = claim.id || claim._id;
+                const showMapLink = MAP_TRACK_STATUSES.includes(claim.status) && trackId;
+                return (
+                  <article key={`claim-${trackId}`} className="tracking-card">
+                    <div className="tracking-card-header">
+                      <div>
+                        <h3>{claim.itemName || 'Free food claim'}</h3>
+                        <p>Donation claim • {claim.donorName || 'Supplier'}</p>
+                      </div>
+                      <span className={`tracking-status tracking-status--${claim.status}`}>
+                        {statusLabel(claim.status)}
+                      </span>
+                    </div>
+                    {claim.status === 'claimed' && (
+                      <div className="driver-loading">
+                        Finding a driver… A map link will appear once a driver accepts your claim.
+                      </div>
+                    )}
+                    {showMapLink && (
+                      <div className="tracking-card-actions">
+                        <Link to={customerRoutes.trackOrder(trackId)} className="track-map-link">
+                          <span className="track-map-link__icon" aria-hidden="true">📍</span>
+                          Follow on map
+                        </Link>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
 
@@ -137,7 +196,7 @@ function CustomerOrderTracking() {
                 const showMapLink = canFollowOnMap(order) && trackId;
 
                 return (
-                  <article key={order.id} className="tracking-card">
+                  <article key={order.id || order._id || order.orderId} className="tracking-card">
                     <div className="tracking-card-header">
                       <div>
                         <h3>{order.orderId}</h3>
@@ -186,16 +245,31 @@ function CustomerOrderTracking() {
 
         <section className="customer-panel order-tracking-panel">
           <h2>Past Orders</h2>
-          {!isLoading && !error && pastOrders.length === 0 && (
+          {!isLoading && !error && pastOrders.length === 0 && pastClaims.length === 0 && (
             <div className="tracking-empty">
               <h3>No past orders found</h3>
               <p>Your completed, cancelled, or failed orders will appear in this section.</p>
             </div>
           )}
+          {!isLoading && !error && pastClaims.length > 0 && (
+            <div className="tracking-list">
+              {pastClaims.map((claim) => (
+                <article key={`past-claim-${claim.id || claim._id}`} className="tracking-card tracking-card--past">
+                  <div className="tracking-card-header">
+                    <h3>{claim.itemName || 'Free food claim'}</h3>
+                    <span className={`tracking-status tracking-status--${claim.status}`}>
+                      {statusLabel(claim.status)}
+                    </span>
+                  </div>
+                  <p><strong>Supplier:</strong> {claim.donorName || '—'}</p>
+                </article>
+              ))}
+            </div>
+          )}
           {!isLoading && !error && pastOrders.length > 0 && (
             <div className="tracking-list">
               {pastOrders.map((order) => (
-                <article key={order.id} className="tracking-card tracking-card--past">
+                <article key={order.id || order._id || order.orderId} className="tracking-card tracking-card--past">
                   <div className="tracking-card-header">
                     <h3>{order.orderId}</h3>
                     <span className={`tracking-status tracking-status--${order.status}`}>

@@ -80,6 +80,144 @@
   height: auto;
 }
 
+/* Completed History: taller outer box, no horizontal card scroll */
+.donor-my-donation-content .complited {
+  min-height: 420px;
+  padding-bottom: 32px;
+}
+
+.donor-my-donation-content .complited .donation-cards {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding-bottom: 8px;
+  align-items: flex-start;
+}
+
+.donor-my-donation-content .complited .donation-card {
+  width: 100%;
+  max-width: 420px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.donor-my-donation-content .complited .donation-card .top {
+  align-items: center;
+}
+
+/* Completed history header: keep Supplied + View Receipt on one line */
+.donor-my-donation-content .complited .supplier-completed-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 0 12px;
+  min-height: 36px;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__header .div-flex,
+.donor-my-donation-content .complited .supplier-completed-card__header .tool {
+  display: flex;
+  align-items: center;
+  height: auto;
+  width: auto;
+  position: static;
+  margin: 0;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__badge {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__badge--supplied {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__badge--receipt {
+  background: rgba(6, 78, 59, 0.88);
+  border-radius: 8px;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__badge .supplied,
+.donor-my-donation-content .complited .supplier-completed-card__badge .supplied2 {
+  width: auto;
+  height: auto;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  position: static;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__badge .supplied {
+  color: #047857;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card__badge .supplied2 {
+  color: #ffffff;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card .bag-of-fuji-apples {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.donor-my-donation-content .complited .supplier-completed-card .detail {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.donor-my-donation-content .complited .tool {
+  background: transparent;
+  margin-left: auto;
+}
+
+.donor-my-donation-content .complited .tool a {
+  text-decoration: none;
+  display: inline-flex;
+}
+
+.donor-my-donation-content .complited .tool .edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  min-height: 32px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: rgba(6, 78, 59, 0.88);
+}
+
+.donor-my-donation-content .complited .supplied2 {
+  color: #ffffff;
+  width: auto;
+  line-height: 1;
+}
+
+.donor-my-donation-content .complited .span-bg-emerald-100 {
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
 .active-donations {
   position: relative;
   align-self: stretch;
@@ -181,6 +319,10 @@
     padding: 24px;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .donor-my-donation-content .complited {
+    min-height: 380px;
   }
 
   .intransit .donation-cards,

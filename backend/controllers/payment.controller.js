@@ -4,6 +4,7 @@ const Payment = require('../models/Payment');
 const CustomerOrder = require('../models/CustomerOrder');
 const CustomerDiscountUsage = require('../models/CustomerDiscountUsage');
 const { isReceiverRole, isWithinSriLanka } = require('../utils/donationHelpers');
+const { isDonationExpired } = require('../utils/distance');
 const {
   buildReceiverDeliveryQuoteForDonation,
   getReceiverDeliveryDiscountStatus,
@@ -111,6 +112,112 @@ function validateCustomerCheckoutPayload(body = {}) {
 
 function toMoney(value) {
   return Number(Number(value || 0).toFixed(2));
+}
+
+async function resolveCustomerCheckoutItems(rawItems) {
+  const items = Array.isArray(rawItems) ? rawItems : [];
+  if (!items.length) {
+    return { ok: false, message: 'At least one cart item is required.' };
+  }
+
+  const ids = items
+    .map((item) => (item?.id != null ? String(item.id) : null))
+    .filter((id) => id && mongoose.Types.ObjectId.isValid(id));
+
+  if (ids.length !== items.length) {
+    return { ok: false, message: 'One or more cart items have an invalid listing id.' };
+  }
+
+  const donations = await Donation.find({
+    _id: { $in: ids },
+    status: 'available',
+    parentListingId: null,
+    quantity: { $gt: 0 },
+  });
+
+  const byId = new Map(donations.map((d) => [d._id.toString(), d]));
+  let supplierId = null;
+  const resolved = [];
+
+  for (const item of items) {
+    const id = String(item.id);
+    const donation = byId.get(id);
+    if (!donation) {
+      return {
+        ok: false,
+        message: `"${item.name || 'Item'}" is no longer available. Please refresh your cart.`,
+      };
+    }
+    if (isDonationExpired(donation.userProvidedExpiryDate)) {
+      return {
+        ok: false,
+        message: `"${donation.itemName}" has expired and cannot be purchased.`,
+      };
+    }
+    if (donation.listingType !== 'sell' || !donation.priceAmount || donation.priceAmount <= 0) {
+      return {
+        ok: false,
+        message: `"${donation.itemName}" is not a paid listing. Free donations must be claimed directly.`,
+      };
+    }
+
+    const donorId =
+      donation.donorId?._id?.toString?.() || donation.donorId?.toString?.() || String(donation.donorId);
+    if (!supplierId) {
+      supplierId = donorId;
+    } else if (supplierId !== donorId) {
+      return {
+        ok: false,
+        message:
+          'All items must be from the same supplier. Remove items from other suppliers and try again.',
+      };
+    }
+
+    const qty = Math.max(1, Math.round(Number(item.quantity) || 1));
+    if (qty > donation.quantity) {
+      return {
+        ok: false,
+        message: `Only ${donation.quantity} serving(s) available for "${donation.itemName}".`,
+      };
+    }
+
+    const unitPrice = getUnitPriceAmount(donation);
+    resolved.push({
+      id,
+      name: donation.itemName || String(item.name || 'Item'),
+      quantity: qty,
+      unitPrice,
+      lineTotal: toMoney(qty * unitPrice),
+      donorId,
+    });
+  }
+
+  const subtotal = toMoney(resolved.reduce((acc, line) => acc + line.lineTotal, 0));
+  return { ok: true, items: resolved, supplierId, subtotal };
+}
+
+async function buildValidatedCustomerCheckoutSummary(body = {}) {
+  const check = validateCustomerCheckoutPayload(body);
+  if (!check.ok) return check;
+
+  const resolved = await resolveCustomerCheckoutItems(check.summary.items);
+  if (!resolved.ok) return resolved;
+
+  const deliveryFee = toMoney(check.summary.deliveryFee);
+  const subtotal = resolved.subtotal;
+  const total = toMoney(subtotal + deliveryFee);
+
+  return {
+    ok: true,
+    summary: {
+      ...check.summary,
+      items: resolved.items,
+      subtotal,
+      deliveryFee,
+      total,
+      supplierId: resolved.supplierId,
+    },
+  };
 }
 
 function buildLowIncomeOfferSummary(summary, offerPayload, eligible, remainingUnits) {
@@ -289,23 +396,41 @@ async function claimCustomerOrderItems(payment, customerUser) {
   const lng = payment.orderSummary?.customerLongitude;
   const address = payment.orderSummary?.address || '';
 
+  const claimedLineItems = [];
+
   for (const item of items) {
-    try {
-      const { parent, child } = await performDonationClaim({
-        donationId: item.id,
-        receiverUser: customerUser,
-        receiverLatitude: lat,
-        receiverLongitude: lng,
-        receiverAddress: address,
-        claimQuantity: item.quantity,
-        payment: payment,
-        skipPaymentValidation: true,
-      });
-      await notifyDonationClaimed({ child, parent });
-    } catch (err) {
-      console.error(`Failed to auto-claim item ${item.id} for customer order ${payment.orderId}:`, err);
-    }
+    const { parent, child } = await performDonationClaim({
+      donationId: item.id,
+      receiverUser: customerUser,
+      receiverLatitude: lat,
+      receiverLongitude: lng,
+      receiverAddress: address,
+      claimQuantity: item.quantity,
+      payment,
+      skipPaymentValidation: true,
+      deferPaymentConsumption: true,
+    });
+    await notifyDonationClaimed({ child, parent });
+    claimedLineItems.push({
+      itemId: String(item.id),
+      childId: child._id.toString(),
+      quantity: item.quantity,
+    });
   }
+
+  payment.orderSummary = {
+    ...(payment.orderSummary || {}),
+    claimedLineItems,
+  };
+  payment.status = 'consumed';
+  payment.consumedAt = new Date();
+  if (claimedLineItems.length > 0) {
+    payment.claimedDonationId = claimedLineItems[0].childId;
+  }
+  if (payment.orderSummary?.supplierId) {
+    payment.supplierId = payment.orderSummary.supplierId;
+  }
+  await payment.save();
 }
 
 async function loadSellDonation(donationId) {
@@ -662,7 +787,7 @@ exports.createCustomerCheckout = async (req, res) => {
   try {
     if (!requireCustomer(req, res)) return;
 
-    const check = validateCustomerCheckoutPayload(req.body || {});
+    const check = await buildValidatedCustomerCheckoutSummary(req.body || {});
     if (!check.ok) {
       return res.status(400).json({ success: false, message: check.message });
     }
@@ -705,6 +830,7 @@ exports.createCustomerCheckout = async (req, res) => {
       orderId,
       paymentContext: 'customer_checkout',
       customerId,
+      supplierId: finalSummary.supplierId || undefined,
       amount,
       currency,
       orderSummary: {
@@ -720,6 +846,7 @@ exports.createCustomerCheckout = async (req, res) => {
     });
 
     if (paymentMethod === 'cod') {
+      await claimCustomerOrderItems(payment, req.user);
       await createCustomerOrderFromPayment(payment, req.user);
     }
 
@@ -766,10 +893,30 @@ exports.confirmCustomerCheckout = async (req, res) => {
     if (!payment.customerId || payment.customerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not your payment.' });
     }
-    if (payment.status === 'paid' || payment.status === 'consumed') {
+    if (payment.status === 'consumed') {
+      const existingOrder = await CustomerOrder.findOne({ paymentId: payment._id });
+      if (!existingOrder) {
+        await createCustomerOrderFromPayment(payment, req.user);
+      }
       return res.json({
         success: true,
         status: payment.status,
+        orderId: payment.orderId,
+      });
+    }
+    if (payment.status === 'paid') {
+      try {
+        await claimCustomerOrderItems(payment, req.user);
+        await createCustomerOrderFromPayment(payment, req.user);
+      } catch (claimErr) {
+        return res.status(claimErr.statusCode || 409).json({
+          success: false,
+          message: claimErr.message || 'Failed to complete order claims.',
+        });
+      }
+      return res.json({
+        success: true,
+        status: 'consumed',
         orderId: payment.orderId,
       });
     }
@@ -783,6 +930,11 @@ exports.confirmCustomerCheckout = async (req, res) => {
         success: false,
         message: 'Payment session expired. Please start checkout again.',
       });
+    }
+
+    const resolved = await resolveCustomerCheckoutItems(payment.orderSummary?.items || []);
+    if (!resolved.ok) {
+      return res.status(400).json({ success: false, message: resolved.message });
     }
 
     const last4 =
@@ -804,11 +956,21 @@ exports.confirmCustomerCheckout = async (req, res) => {
 
     payment.status = 'paid';
     payment.cardLast4 = last4;
+    payment.orderSummary = {
+      ...(payment.orderSummary || {}),
+      items: resolved.items,
+      subtotal: resolved.subtotal,
+      total: toMoney(resolved.subtotal + Number(payment.orderSummary?.deliveryFee || 0)),
+      supplierId: resolved.supplierId,
+    };
+    if (resolved.supplierId) {
+      payment.supplierId = resolved.supplierId;
+    }
+    payment.amount = payment.orderSummary.total;
     await payment.save();
-    await createCustomerOrderFromPayment(payment, req.user);
 
-    // Auto-claim the items in Mongoose and notify supplier dashboard
     await claimCustomerOrderItems(payment, req.user);
+    await createCustomerOrderFromPayment(payment, req.user);
 
     sendPaymentInvoiceEmail(req.user, { payment, donation: null }).catch(() => {});
 
@@ -830,7 +992,7 @@ exports.placeCustomerCodOrder = async (req, res) => {
   try {
     if (!requireCustomer(req, res)) return;
 
-    const check = validateCustomerCheckoutPayload({
+    const check = await buildValidatedCustomerCheckoutSummary({
       ...(req.body || {}),
       paymentMethod: 'cod',
     });
@@ -879,6 +1041,7 @@ exports.placeCustomerCodOrder = async (req, res) => {
       orderId,
       paymentContext: 'customer_checkout',
       customerId,
+      supplierId: finalSummary.supplierId || undefined,
       amount,
       currency,
       orderSummary: {
@@ -889,10 +1052,9 @@ exports.placeCustomerCodOrder = async (req, res) => {
       status: 'paid',
       expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
     });
-    await createCustomerOrderFromPayment(payment, req.user);
 
-    // Auto-claim the items in Mongoose and notify supplier dashboard
     await claimCustomerOrderItems(payment, req.user);
+    await createCustomerOrderFromPayment(payment, req.user);
 
     return res.json({
       success: true,

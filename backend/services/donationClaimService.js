@@ -143,6 +143,7 @@ async function performDonationClaim({
   payment = null,
   paymentOrderId = null,
   skipPaymentValidation = false,
+  deferPaymentConsumption = false,
 }) {
   const claimQuantity = Math.max(1, Math.round(Number(rawClaimQuantity) || 1));
   const lat = Number(receiverLatitude);
@@ -279,7 +280,7 @@ async function performDonationClaim({
 
   await child.save();
 
-  if (resolvedPayment && resolvedPayment.status === 'paid') {
+  if (resolvedPayment && resolvedPayment.status === 'paid' && !deferPaymentConsumption) {
     await consumePaidPaymentForClaim(resolvedPayment, child._id);
   }
 

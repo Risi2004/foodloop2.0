@@ -6,7 +6,7 @@ import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/
 import { getListingPriceDisplay } from '../../../../../utils/donationDisplay';
 import SupplierNameWithPremium from '../../../shared/SupplierNameWithPremium';
 
-const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity, onClaimQuantityChange, ordersBlocked = false }) => {
+const FoodCard = ({ item, onCardClick, onClaim, selected = false, supplierDisabled = false, claimQuantity, onClaimQuantityChange, ordersBlocked = false }) => {
     const donation = item.donation || item;
     const [isClaiming, setIsClaiming] = useState(false);
     const maxQty = item.impactPeople ?? donation.quantity ?? 1;
@@ -25,15 +25,16 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
     const donorIsPremium = item.donorIsPremium === true || donation.donorIsPremium === true;
 
     const handleCardClick = () => {
+        if (supplierDisabled) return;
         if (onCardClick) {
             onCardClick(item);
         }
     };
 
     const handleClaimClick = async (e) => {
-        e.stopPropagation(); // Prevent card click event
+        e.stopPropagation();
         
-        if (ordersBlocked || !onClaim || isClaiming) {
+        if (supplierDisabled || ordersBlocked || !onClaim || isClaiming) {
             return;
         }
 
@@ -56,9 +57,9 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
 
     return (
         <div
-            className={`food-card${selected ? ' food-card--selected' : ''}`}
+            className={`food-card${selected ? ' food-card--selected' : ''}${supplierDisabled ? ' food-card--supplier-disabled' : ''}`}
             onClick={handleCardClick}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: supplierDisabled ? 'not-allowed' : 'pointer' }}
         >
             {showAIBadge && (
                 <div className="card-badge verified">
@@ -81,10 +82,10 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
             <button 
                 className="claim-btn" 
                 onClick={handleClaimClick}
-                disabled={isClaiming || !onClaim || ordersBlocked}
+                disabled={isClaiming || !onClaim || ordersBlocked || supplierDisabled}
                 style={{ 
-                    opacity: isClaiming || ordersBlocked ? 0.6 : 1,
-                    cursor: isClaiming || ordersBlocked ? 'not-allowed' : 'pointer'
+                    opacity: isClaiming || ordersBlocked || supplierDisabled ? 0.6 : 1,
+                    cursor: isClaiming || ordersBlocked || supplierDisabled ? 'not-allowed' : 'pointer'
                 }}
             >
                 {isClaiming

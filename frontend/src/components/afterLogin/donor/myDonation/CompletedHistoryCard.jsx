@@ -34,30 +34,29 @@ const CompletedHistoryCard = ({ donation }) => {
     const imageUrl = donation.imageUrl || foodImage;
 
     return (
-        <div className="donation-card">
-            <div className="top">
+        <div className="donation-card supplier-completed-card">
+            <div className="top supplier-completed-card__header">
                 <div className="div-flex">
-                    <div className="span-bg-emerald-100">
+                    <div className="span-bg-emerald-100 supplier-completed-card__badge supplier-completed-card__badge--supplied">
                         <img
                             className="check-circle"
                             src={checkCircleIcon}
                             alt="Supplied"
                         />
-                        <div className="supplied">Supplied</div>
+                        <span className="supplied">Supplied</span>
                     </div>
                 </div>
                 <div className="tool">
-                    <Link to={`/supplier/digital-receipt?donationId=${donation.id}`}>
-                        <div className="edit">
-                            <img
-                                className="receipt"
-                                src={receipt}
-                                alt="View receipt"
-                            />
-                            <div className="supplied2">
-                                View Receipt
-                            </div>
-                        </div>
+                    <Link
+                        to={`/supplier/digital-receipt?donationId=${donation.id}`}
+                        className="supplier-completed-card__badge supplier-completed-card__badge--receipt"
+                    >
+                        <img
+                            className="receipt"
+                            src={receipt}
+                            alt="View receipt"
+                        />
+                        <span className="supplied2">View Receipt</span>
                     </Link>
                 </div>
             </div>

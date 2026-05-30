@@ -1,22 +1,6 @@
 import { getToken, getAuthHeaders } from '../utils/auth';
 import { buildUrl, parseResponse } from './api';
 
-const emptyPdfBlob = () =>
-  new Blob(['%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n'], { type: 'application/pdf' });
-
-const demoDonation = (id = 'offline') => ({
-  _id: id,
-  id,
-  itemName: 'Demo item',
-  foodCategory: 'Other',
-  quantity: 1,
-  storageRecommendation: 'Room temperature',
-  imageUrl: '',
-  status: 'draft',
-  donorLatitude: 6.9271,
-  donorLongitude: 79.8612,
-});
-
 export const uploadDonationImage = async (file) => {
   const imageUrl = file instanceof File ? URL.createObjectURL(file) : '';
   return { success: true, imageUrl };
@@ -266,25 +250,36 @@ export const submitDonation = async (donationData) => {
   return parseResponse(response);
 };
 
-export const getDonationReceiptDetails = async (donationId) => ({
-  success: true,
-  donation: demoDonation(donationId),
-  receipt: null,
-});
+async function fetchReceiptPdf(donationId) {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/receipt/pdf`), {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to download PDF');
+  }
+  return response.blob();
+}
+
+export const getDonationReceiptDetails = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/receipt/details`), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
 export const createImpactReceipt = async () => ({
-  success: true,
+  success: false,
+  message: 'Receipts are generated automatically after delivery.',
 });
 
-export const getReceiptPDF = async () => emptyPdfBlob();
+export const getReceiptPDF = async (donationId) => fetchReceiptPdf(donationId);
 
-export const getDonorReceiptView = async (donationId) => ({
-  donation: demoDonation(donationId),
-  donor: { name: 'Demo Donor' },
-  receiver: { name: 'Demo Receiver' },
-  driver: { name: 'Demo Driver' },
-  deliveryDate: null,
-  receipt: null,
-});
+export const getDonorReceiptView = async (donationId) => {
+  const response = await fetch(buildUrl(`/api/donations/${donationId}/receipt/view`), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
 
-export const getDonorReceiptPDF = async () => emptyPdfBlob();
+export const getDonorReceiptPDF = async (donationId) => fetchReceiptPdf(donationId);

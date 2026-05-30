@@ -15,6 +15,9 @@ const Sidebar = ({
     onClaimQuantityChange,
     getClaimQuantityFor,
     ordersBlocked = false,
+    lockedSupplierId = null,
+    lockedSupplierName = null,
+    onClearSupplierLock,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -127,6 +130,18 @@ const Sidebar = ({
     };
 
     const expiryLabel = selectedExpiry === '3days' ? 'Within 3 days' : selectedExpiry === 'week' ? 'This week' : selectedExpiry === 'month' ? 'This month' : null;
+
+    const getItemSupplierId = (item) => {
+        const donation = item?.donation || item;
+        return donation?.donorId || item?.donorId || null;
+    };
+
+    const isItemSupplierDisabled = (item) => {
+        if (!lockedSupplierId) return false;
+        const supplierId = getItemSupplierId(item);
+        if (!supplierId) return false;
+        return String(supplierId) !== String(lockedSupplierId);
+    };
 
     return (
         <div className="sidebar-container">
@@ -314,6 +329,17 @@ const Sidebar = ({
                     )}
                 </div>
 
+                {lockedSupplierId && lockedSupplierName && (
+                    <div className="sidebar-supplier-lock-banner">
+                        <span>Viewing <strong>{lockedSupplierName}</strong> only</span>
+                        {onClearSupplierLock && (
+                            <button type="button" onClick={onClearSupplierLock}>
+                                Change supplier
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 <div style={{ 
                     fontSize: '12px', 
                     color: '#666', 
@@ -358,6 +384,7 @@ const Sidebar = ({
                             onCardClick={onCardClick}
                             onClaim={onClaim}
                             selected={item.id === selectedItemId}
+                            supplierDisabled={isItemSupplierDisabled(item)}
                             claimQuantity={
                                 getClaimQuantityFor
                                     ? getClaimQuantityFor(item.id)

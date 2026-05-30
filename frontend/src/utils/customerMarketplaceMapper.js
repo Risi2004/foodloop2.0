@@ -74,6 +74,11 @@ export function mapDonationToMarketplaceItem(donation = {}) {
     priceDisplay,
     image: normalizeText(donation.imageUrl, FALLBACK_IMAGE),
     donorName: normalizeText(donation.donorName, 'Supplier'),
+    donorId:
+      donation.donorId?._id?.toString?.() ||
+      donation.donorId?.toString?.() ||
+      donation.donorId ||
+      null,
     donorIsPremium: donation.donorIsPremium === true,
     donorType: toTitleCase(donation.donorType || 'Supplier'),
     pickupAddress: normalizeText(donation.pickupAddress, 'Pickup address not provided'),

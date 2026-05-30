@@ -18,6 +18,7 @@ const CustomerCart = () => {
     setOfferEnabled,
     discountOfferSelections,
     toggleOfferSelection,
+    activeSupplier,
   } = useMarketplace();
   const navigate = useNavigate();
   const [offerStatus, setOfferStatus] = useState(null);
@@ -56,6 +57,9 @@ const CustomerCart = () => {
           </Link>
           <h1>Your Shopping Cart</h1>
           <p>{cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart</p>
+          {activeSupplier?.name && (
+            <p className="cart-supplier-note">Supplier: <strong>{activeSupplier.name}</strong></p>
+          )}
         </header>
 
         {cart.length === 0 ? (

@@ -35,7 +35,9 @@ const ImpactCards = ({ receipt }) => {
     if (!receipt) {
         return (
             <div className="impact-cards-container">
-                <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Impact receipt pending. The receiver will submit impact details after delivery.</p>
+                <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+                    Impact summary will appear here once the delivery receipt is generated.
+                </p>
             </div>
         );
     }

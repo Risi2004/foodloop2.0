@@ -2,8 +2,9 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import Contact from '../../../../components/beforeLogin/Contact/Contact';
+import LocationMapModal from '../../../../components/afterLogin/donor/myDonation/locationMapModal/LocationMapModal';
 import { useMarketplace } from '../../../../contexts/MarketplaceContext';
-import { getCustomerMarketplaceListings } from '../../../../services/donationApi';
+import { getCustomerMarketplaceListings, claimDonation } from '../../../../services/donationApi';
 import { mapDonationsToMarketplaceItems } from '../../../../utils/customerMarketplaceMapper';
 import { getListingPriceDisplay } from '../../../../utils/donationDisplay';
 import { customerRoutes } from '../../../../constants/customerRoutes';
@@ -23,7 +24,15 @@ import './CustomerMarketplace.css';
 const CustomerMarketplace = () => {
   const { hash } = useLocation();
   const navigate = useNavigate();
-  const { addToCart } = useMarketplace();
+  const {
+    addToCart,
+    activeSupplier,
+    lockSupplier,
+    clearSupplierLock,
+    isProductAllowed,
+    clearCart,
+    cart,
+  } = useMarketplace();
   const { blockNewOrders } = useMaintenance();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +43,10 @@ const CustomerMarketplace = () => {
   const [loadError, setLoadError] = useState('');
   const [selectedListing, setSelectedListing] = useState(null);
   const [cartToast, setCartToast] = useState(null);
+  const [claimListing, setClaimListing] = useState(null);
+  const [claimLocationModalOpen, setClaimLocationModalOpen] = useState(false);
+  const [claimSaving, setClaimSaving] = useState(false);
+  const [claimError, setClaimError] = useState(null);
 
   const buildCartItem = (product) => ({
     id: product.id,
@@ -41,9 +54,29 @@ const CustomerMarketplace = () => {
     image: product.image,
     price: product.unitPrice ?? product.price,
     vendorName: product.donorName,
+    donorId: product.donorId,
     listingType: product.listingType,
-    maxQuantity: product.quantity, // restrict quantity based on posted available stock
+    maxQuantity: product.quantity,
   });
+
+  const handleProductSelect = (product) => {
+    lockSupplier(product);
+    setSelectedListing(product);
+  };
+
+  const handleChangeSupplier = () => {
+    if (cart.length > 0) {
+      const ok = window.confirm(
+        'Changing supplier will clear your cart. Continue?'
+      );
+      if (!ok) return;
+      clearCart();
+    } else {
+      clearSupplierLock();
+    }
+  };
+
+  const isProductDisabled = (product) => !isProductAllowed(product);
 
   const showAddedToCartToast = (product) => {
     setCartToast({
@@ -53,23 +86,71 @@ const CustomerMarketplace = () => {
   };
 
   const handleAddToCart = (product) => {
-    if (!product.isSell) return;
+    if (!product.isSell || isProductDisabled(product)) return;
     if (blockNewOrders) {
       window.alert(MAINTENANCE_BLOCK_MESSAGE);
       return;
     }
-    addToCart(buildCartItem(product));
+    lockSupplier(product);
+    const result = addToCart(buildCartItem(product));
+    if (result?.ok === false) {
+      window.alert(result.message);
+      return;
+    }
     showAddedToCartToast(product);
   };
 
   const handleBuyNow = (product) => {
-    if (!product.isSell) return;
+    if (!product.isSell || isProductDisabled(product)) return;
     if (blockNewOrders) {
       window.alert(MAINTENANCE_BLOCK_MESSAGE);
       return;
     }
-    addToCart(buildCartItem(product));
+    lockSupplier(product);
+    const result = addToCart(buildCartItem(product));
+    if (result?.ok === false) {
+      window.alert(result.message);
+      return;
+    }
     navigate(customerRoutes.cart());
+  };
+
+  const handleClaimDonation = (product) => {
+    if (!product || product.isSell || isProductDisabled(product)) return;
+    if (blockNewOrders) {
+      window.alert(MAINTENANCE_BLOCK_MESSAGE);
+      return;
+    }
+    lockSupplier(product);
+    setClaimError(null);
+    setClaimListing(product);
+    setClaimLocationModalOpen(true);
+  };
+
+  const handleClaimLocationConfirm = async (lat, lng, address) => {
+    if (!claimListing?.id) return;
+    setClaimSaving(true);
+    setClaimError(null);
+    try {
+      const response = await claimDonation(claimListing.id, {
+        receiverLatitude: lat,
+        receiverLongitude: lng,
+        receiverAddress: address || '',
+        claimQuantity: 1,
+      });
+      if (response.success) {
+        setClaimLocationModalOpen(false);
+        setClaimListing(null);
+        setSelectedListing(null);
+        clearSupplierLock();
+        navigate(customerRoutes.orderTracking());
+      }
+    } catch (err) {
+      setClaimError(err.message || 'Failed to claim donation.');
+      throw err;
+    } finally {
+      setClaimSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -145,12 +226,16 @@ const CustomerMarketplace = () => {
       if (!donationId) return;
 
       setListings((prev) => {
+        const qty = Number(donation.quantity) || 0;
+        if (qty <= 0) {
+          return prev.filter((item) => item.id !== donationId);
+        }
         return prev.map((item) => {
           if (item.id === donationId) {
             return {
               ...item,
-              quantity: donation.quantity,
-              raw: { ...item.raw, quantity: donation.quantity },
+              quantity: qty,
+              raw: { ...item.raw, quantity: qty },
             };
           }
           return item;
@@ -293,6 +378,17 @@ const CustomerMarketplace = () => {
               </div>
             </div>
 
+            {activeSupplier && (
+              <div className="marketplace-supplier-lock-banner" role="status">
+                <span>
+                  Ordering from <strong>{activeSupplier.name}</strong>. Other suppliers are disabled.
+                </span>
+                <button type="button" className="marketplace-supplier-lock-clear" onClick={handleChangeSupplier}>
+                  Change supplier
+                </button>
+              </div>
+            )}
+
             {isLoading && <p className="marketplace-empty">Loading supplier listings...</p>}
 
             {loadError && !isLoading && (
@@ -307,8 +403,14 @@ const CustomerMarketplace = () => {
             {!isLoading && !loadError && (
               <>
                 <div className="aliexpress-grid">
-                  {filteredProducts.map((product) => (
-                    <div key={product.id} className="aliexpress-card">
+                  {filteredProducts.map((product) => {
+                    const supplierDisabled = isProductDisabled(product);
+                    return (
+                    <div
+                      key={product.id}
+                      className={`aliexpress-card${supplierDisabled ? ' aliexpress-card--supplier-disabled' : ''}`}
+                      onClick={() => !supplierDisabled && lockSupplier(product)}
+                    >
                       <div className="card-image-wrapper">
                         <img src={product.image} alt={product.name} className="product-img" />
                         <span className={`listing-type-badge ${product.isSell ? 'sell' : 'donate'}`}>
@@ -350,7 +452,11 @@ const CustomerMarketplace = () => {
                           <button
                             type="button"
                             className="details-btn"
-                            onClick={() => setSelectedListing(product)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProductSelect(product);
+                            }}
+                            disabled={supplierDisabled}
                           >
                             View Details
                           </button>
@@ -359,29 +465,44 @@ const CustomerMarketplace = () => {
                               <button
                                 type="button"
                                 className="floating-cart-btn inline-cart-btn"
-                                onClick={() => handleAddToCart(product)}
-                                disabled={blockNewOrders}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToCart(product);
+                                }}
+                                disabled={blockNewOrders || supplierDisabled}
                               >
                                 Add to Cart
                               </button>
                               <button
                                 type="button"
                                 className="buy-now-btn"
-                                onClick={() => handleBuyNow(product)}
-                                disabled={blockNewOrders}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBuyNow(product);
+                                }}
+                                disabled={blockNewOrders || supplierDisabled}
                               >
                                 Buy Now
                               </button>
                             </>
                           ) : (
-                            <button type="button" className="floating-cart-btn inline-cart-btn" disabled>
-                              Donation
+                            <button
+                              type="button"
+                              className="floating-cart-btn inline-cart-btn claim-donate-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClaimDonation(product);
+                              }}
+                              disabled={blockNewOrders || supplierDisabled}
+                            >
+                              Claim food
                             </button>
                           )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {filteredProducts.length === 0 && (
@@ -431,7 +552,7 @@ const CustomerMarketplace = () => {
                 <p><strong>Pickup Address:</strong> {selectedListing.pickupAddress}</p>
                 <p><strong>Distance:</strong> {selectedListing.distanceLabel}</p>
               </div>
-              {selectedListing.isSell && (
+              {selectedListing.isSell ? (
                 <div className="listing-modal-actions">
                   <button
                     type="button"
@@ -440,7 +561,7 @@ const CustomerMarketplace = () => {
                       handleAddToCart(selectedListing);
                       setSelectedListing(null);
                     }}
-                    disabled={blockNewOrders}
+                    disabled={blockNewOrders || isProductDisabled(selectedListing)}
                   >
                     Add to Cart
                   </button>
@@ -451,14 +572,46 @@ const CustomerMarketplace = () => {
                       handleBuyNow(selectedListing);
                       setSelectedListing(null);
                     }}
-                    disabled={blockNewOrders}
+                    disabled={blockNewOrders || isProductDisabled(selectedListing)}
                   >
                     Buy Now
+                  </button>
+                </div>
+              ) : (
+                <div className="listing-modal-actions">
+                  <button
+                    type="button"
+                    className="floating-cart-btn inline-cart-btn claim-donate-btn"
+                    onClick={() => {
+                      handleClaimDonation(selectedListing);
+                      setSelectedListing(null);
+                    }}
+                    disabled={blockNewOrders || isProductDisabled(selectedListing)}
+                  >
+                    Claim food (confirm location)
                   </button>
                 </div>
               )}
             </div>
           </div>
+        )}
+
+        <LocationMapModal
+          isOpen={claimLocationModalOpen}
+          onClose={() => {
+            if (!claimSaving) {
+              setClaimLocationModalOpen(false);
+              setClaimListing(null);
+              setClaimError(null);
+            }
+          }}
+          onConfirm={handleClaimLocationConfirm}
+          title="Confirm delivery location"
+          confirmLabel={claimSaving ? 'Claiming…' : 'Confirm & claim food'}
+          initialAddress=""
+        />
+        {claimError && claimLocationModalOpen && (
+          <p className="marketplace-claim-error" role="alert">{claimError}</p>
         )}
 
         {cartToast && (

@@ -77,6 +77,7 @@ function transformDonationToItem(donation, receiverPosition) {
         storageRecommendation: donation.storageRecommendation,
         aiQualityScore: donation.aiQualityScore,
         donorName: donation.donorName,
+        donorId: donation.donorId || donation.donation?.donorId || null,
         donorIsPremium: donation.donorIsPremium === true,
         donorType: donation.donorType,
         donorAddress: donation.donorAddress || donation.pickupAddress,
@@ -121,7 +122,14 @@ const FindFood = () => {
     const [pendingClaimQuantity, setPendingClaimQuantity] = useState(1);
     const [claimQuantities, setClaimQuantities] = useState({});
     const [pendingRetryOrderId, setPendingRetryOrderId] = useState(null);
+    const [lockedSupplier, setLockedSupplier] = useState(null);
     const receiverPositionRef = useRef(null);
+
+    const getItemSupplierId = (item) => {
+        if (!item) return null;
+        const donation = item.donation || item;
+        return donation.donorId || item.donorId || null;
+    };
 
     const getClaimQuantityFor = (donationId) => claimQuantities[donationId] ?? 1;
 
@@ -433,6 +441,13 @@ const FindFood = () => {
 
         setClaimingDonationId(donationId);
         setClaimIsSellFlow(Boolean(isSell));
+        const supplierId = getItemSupplierId(item);
+        if (supplierId) {
+            setLockedSupplier({
+                id: String(supplierId),
+                name: item?.donorName || item?.donation?.donorName || 'Supplier',
+            });
+        }
         setClaimLocationModalOpen(true);
     };
 
@@ -514,6 +529,17 @@ const FindFood = () => {
 
     const handleCardClick = (item) => {
         if (item?.id) setSelectedItemId(item.id);
+        const supplierId = getItemSupplierId(item);
+        if (supplierId) {
+            setLockedSupplier({
+                id: String(supplierId),
+                name: item.donorName || item.donation?.donorName || 'Supplier',
+            });
+        }
+    };
+
+    const handleClearSupplierLock = () => {
+        setLockedSupplier(null);
     };
 
     const locationRequired = !receiverPosition;
@@ -613,6 +639,9 @@ const FindFood = () => {
                         onClaimQuantityChange={handleClaimQuantityChange}
                         getClaimQuantityFor={getClaimQuantityFor}
                         ordersBlocked={blockNewOrders}
+                        lockedSupplierId={lockedSupplier?.id || null}
+                        lockedSupplierName={lockedSupplier?.name || null}
+                        onClearSupplierLock={handleClearSupplierLock}
                     />
                 </div>
                 <div className="map-section">

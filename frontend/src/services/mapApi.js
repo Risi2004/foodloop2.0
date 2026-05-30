@@ -1,13 +1,18 @@
 /**
- * Map routing — delegates to routingService (backend OSRM proxy).
+ * Map locations and routing helpers.
  */
 
+import { buildUrl, parseResponse } from './api';
 import { getRoute } from './routingService';
 
-export const getMapLocations = async () => ({
-  donors: [],
-  receivers: [],
-});
+export const getMapLocations = async () => {
+  const response = await fetch(buildUrl('/api/map/locations'));
+  const data = await parseResponse(response);
+  return {
+    donors: Array.isArray(data.donors) ? data.donors : [],
+    receivers: Array.isArray(data.receivers) ? data.receivers : [],
+  };
+};
 
 /**
  * @returns {Promise<Array<{ latitude: number, longitude: number }>>}

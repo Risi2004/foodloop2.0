@@ -47,7 +47,6 @@ import DonorTrackingPage from "./pages/afterLogin/donor/trackingPage/DonorTracki
 import DigitalReceipt from "./pages/afterLogin/donor/digitalReceipt/DigitalReceipt";
 import IndividualEditProfile from "./pages/afterLogin/donor/individualEditProfile/IndividualEditProfile";
 import ReceiverFindFood from "./pages/afterLogin/receiver/findFood/ReceiverFindFood";
-import ReceiptForm from "./pages/afterLogin/receiver/receiptForm/ReceiptForm";
 import Myclaims from "./pages/afterLogin/receiver/myClaims/MyClaims";
 import ReceiverTrackingPage from "./pages/afterLogin/receiver/trackingPage/ReceiverTrackingPage";
 import SupplierEarnings from "./pages/afterLogin/donor/earnings/SupplierEarnings";
@@ -148,7 +147,7 @@ function App() {
           <Route path="profile" element={<ReceiverProfile />} />
           <Route path="edit-profile" element={<ReceiverEditProfile />} />
           <Route path="find-food" element={<ReceiverFindFood />} />
-          <Route path="digital-receipt" element={<ReceiptForm />} />
+          <Route path="digital-receipt" element={<DigitalReceipt />} />
           <Route path="my-claims" element={<Myclaims />} />
           <Route path="track-order" element={<ReceiverTrackingPage />} />
         </Route>
@@ -162,6 +161,7 @@ function App() {
           <Route path="notifications" element={<DriverNotifications />} />
           <Route path="delivery" element={<Delivery />} />
           <Route path="delivery-confirmation" element={<DeliveryConfirmation />} />
+          <Route path="digital-receipt" element={<DigitalReceipt />} />
           <Route path="profile" element={<DriverProfile />} />
           <Route path="edit-profile" element={<EditProfile />} />
           <Route path="my-pickups" element={<MyPickups />} />
@@ -190,6 +190,7 @@ function App() {
           <Route path="payment" element={<CustomerPayment />} />
           <Route path="order-history" element={<CustomerOrderHistory />} />
           <Route path="order-tracking" element={<CustomerOrderTracking />} />
+          <Route path="digital-receipt" element={<DigitalReceipt />} />
           <Route path="track-order" element={<ReceiverTrackingPage />} />
           <Route path="profile" element={<CustomerProfile />} />
           <Route path="about" element={<CustomerAbout />} />

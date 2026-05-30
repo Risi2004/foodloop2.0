@@ -66,6 +66,28 @@
     color: #fff;
 }
 
+.map__empty {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1F4E36;
+    font-size: 0.9rem;
+    font-weight: 600;
+    max-width: calc(100% - 40px);
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.map__pin-count {
+    color: #1F4E36;
+    font-weight: 600;
+}
+
 
 .map__zoom-controls {
     position: absolute;

@@ -768,6 +768,35 @@ function donationDeliveredReceiverEmail({ name, donation, driverName, myClaimsUr
   return { subject: `FoodLoop — Your order was delivered${itemLabel}`, html, text };
 }
 
+function digitalReceiptEmail({ name, donation, receiptUrl, deliveryDate }) {
+  const d = donation;
+  const rows = buildDonationDetailRows(d, [
+    ['Delivered', deliveryDate || '—'],
+    ['Status', 'Delivered — receipt attached'],
+  ]);
+  const tableRows = donationDetailsTableHtml(rows);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #4CAF50;">FoodLoop</h2>
+      <h3 style="color: #1F4E36; margin-bottom: 12px;">Digital delivery receipt</h3>
+      <p style="color: #444; line-height: 1.5;">Hello ${name},</p>
+      <p style="color: #444; line-height: 1.5;">Your delivery is complete. A digital receipt with full delivery details is attached as a PDF. You can also view it online.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;"><tbody>${tableRows}</tbody></table>
+      <p style="color: #444; line-height: 1.5;">View receipt: <a href="${receiptUrl}" style="color: #4CAF50;">${receiptUrl}</a></p>
+    </div>`;
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Delivery completed for "${d.itemName || 'Food'}". Your digital receipt is attached.`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `View receipt: ${receiptUrl}`,
+  ].join('\n');
+  const itemLabel = d.itemName ? ` — ${d.itemName}` : '';
+  return { subject: `FoodLoop — Digital delivery receipt${itemLabel}`, html, text };
+}
+
 function customerOrderNewPickupDriverEmail({
   name,
   orderId,
@@ -1749,6 +1778,7 @@ module.exports = {
   donationPickupConfirmedReceiverEmail,
   donationDeliveredDonorEmail,
   donationDeliveredReceiverEmail,
+  digitalReceiptEmail,
   customerOrderNewPickupDriverEmail,
   aiPriceReductionAlertEmail,
   payoutSubmittedEmail,

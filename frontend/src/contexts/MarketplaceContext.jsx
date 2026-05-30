@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 const MarketplaceContext = createContext();
 
@@ -6,16 +6,23 @@ export const useMarketplace = () => {
     return useContext(MarketplaceContext);
 };
 
-export const MarketplaceProvider = ({ children }) => {
-    // Customer marketplace now reads backend supplier listings directly.
-    // Keep this list for legacy vendor-local screens still using MarketplaceContext.
-    const [products, setProducts] = useState([]);
+function getProductSupplierId(product) {
+    if (!product) return null;
+    return (
+        product.donorId ||
+        product.raw?.donorId ||
+        product.supplierId ||
+        null
+    );
+}
 
+export const MarketplaceProvider = ({ children }) => {
+    const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [discountOfferEnabled, setDiscountOfferEnabled] = useState(false);
     const [discountOfferSelections, setDiscountOfferSelections] = useState({});
+    const [activeSupplier, setActiveSupplier] = useState(null);
 
-    // --- Product Management ---
     const addProduct = (product) => {
         setProducts([...products, { ...product, id: Date.now() }]);
     };
@@ -35,20 +42,48 @@ export const MarketplaceProvider = ({ children }) => {
     const [vendorClaims, setVendorClaims] = useState([]);
 
     const claimVendorProduct = (product, receiverInfo) => {
-        setVendorClaims(prev => [...prev, { 
-            ...product, 
-            ...receiverInfo, 
+        setVendorClaims(prev => [...prev, {
+            ...product,
+            ...receiverInfo,
             status: 'assigned',
-            claimedAt: new Date().toISOString() 
+            claimedAt: new Date().toISOString()
         }]);
-        // Remove from available products if it's a one-off donation
         if (product.isDonation) {
             setProducts(prev => prev.filter(p => p.id !== product.id));
         }
     };
 
-    // --- Cart Management ---
+    const lockSupplier = useCallback((product) => {
+        const id = getProductSupplierId(product);
+        if (!id) return;
+        const name = product.vendorName || product.donorName || 'Supplier';
+        setActiveSupplier({ id: String(id), name });
+    }, []);
+
+    const clearSupplierLock = useCallback(() => {
+        setActiveSupplier(null);
+    }, []);
+
+    const isProductAllowed = useCallback((product) => {
+        if (!activeSupplier?.id) return true;
+        const supplierId = getProductSupplierId(product);
+        if (!supplierId) return true;
+        return String(supplierId) === String(activeSupplier.id);
+    }, [activeSupplier]);
+
     const addToCart = (product) => {
+        const supplierId = getProductSupplierId(product);
+        if (activeSupplier?.id && supplierId && String(supplierId) !== String(activeSupplier.id)) {
+            return {
+                ok: false,
+                message: `Your cart is locked to ${activeSupplier.name}. Clear the cart or finish checkout to order from another supplier.`,
+            };
+        }
+
+        if (!activeSupplier?.id && supplierId) {
+            lockSupplier(product);
+        }
+
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
             const maxQty = Number(product.maxQuantity ?? product.quantity ?? 9999);
@@ -56,12 +91,23 @@ export const MarketplaceProvider = ({ children }) => {
                 const newQty = Math.min(maxQty, existing.quantity + 1);
                 return prev.map(item => item.id === product.id ? { ...item, quantity: newQty } : item);
             }
-            return [...prev, { ...product, quantity: Math.min(maxQty, 1) }];
+            return [...prev, {
+                ...product,
+                donorId: supplierId,
+                quantity: Math.min(maxQty, 1),
+            }];
         });
+        return { ok: true };
     };
 
     const removeFromCart = (id) => {
-        setCart(prev => prev.filter(item => item.id !== id));
+        setCart(prev => {
+            const next = prev.filter(item => item.id !== id);
+            if (next.length === 0) {
+                setActiveSupplier(null);
+            }
+            return next;
+        });
         setDiscountOfferSelections((prev) => {
             const next = { ...prev };
             delete next[String(id)];
@@ -84,6 +130,7 @@ export const MarketplaceProvider = ({ children }) => {
         setCart([]);
         setDiscountOfferSelections({});
         setDiscountOfferEnabled(false);
+        setActiveSupplier(null);
     };
 
     const setOfferEnabled = (enabled) => {
@@ -144,6 +191,10 @@ export const MarketplaceProvider = ({ children }) => {
         setOfferEnabled,
         toggleOfferSelection,
         getSelectedDiscountItemIds,
+        activeSupplier,
+        lockSupplier,
+        clearSupplierLock,
+        isProductAllowed,
     };
 
     return (

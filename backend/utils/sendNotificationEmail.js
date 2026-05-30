@@ -23,6 +23,7 @@ const {
   donationPickupConfirmedReceiverEmail,
   donationDeliveredDonorEmail,
   donationDeliveredReceiverEmail,
+  digitalReceiptEmail,
   paymentInvoiceEmail,
   customerOrderNewPickupDriverEmail,
   aiPriceReductionAlertEmail,
@@ -95,6 +96,22 @@ function getReceiverTrackOrderUrl(donationId) {
 
 function getDriverPickupUrl(donationId) {
   return `${getFrontendBase()}/driver/pickup?donationId=${donationId}`;
+}
+
+function getSupplierDigitalReceiptUrl(donationId) {
+  return `${getFrontendBase()}/supplier/digital-receipt?donationId=${donationId}`;
+}
+
+function getReceiverDigitalReceiptUrl(donationId) {
+  return `${getFrontendBase()}/receiver/digital-receipt?donationId=${donationId}`;
+}
+
+function getCustomerDigitalReceiptUrl(donationId) {
+  return `${getFrontendBase()}/customer/digital-receipt?donationId=${donationId}`;
+}
+
+function getDriverDigitalReceiptUrl(donationId) {
+  return `${getFrontendBase()}/driver/digital-receipt?donationId=${donationId}`;
 }
 
 function getDonationPayload(donation) {
@@ -465,6 +482,68 @@ async function sendDonationDeliveredEmails(donation, donorUser, receiverUser, dr
       await sendMail({ to: receiverUser.email, subject, text, html });
     } catch (err) {
       console.error(`[email] Delivered email to receiver failed:`, err.message);
+    }
+  }
+}
+
+async function sendDigitalReceiptEmails(donation, view, pdfBuffer) {
+  if (!donation || !view || !pdfBuffer) return;
+
+  const donationId =
+    donation._id?.toString?.() || donation.id?.toString?.() || String(donation._id || donation.id);
+  const payload = getDonationPayload(donation);
+  const deliveryDate = view.deliveryDate || null;
+  const trackingId = payload.trackingId || donationId;
+  const filename = `impact-receipt-${trackingId}.pdf`;
+  const attachment = {
+    filename,
+    content: pdfBuffer,
+    contentType: 'application/pdf',
+  };
+
+  const donorUser = donation.donorId;
+  const receiverUser = donation.receiverId;
+  const driverUser = donation.driverId;
+
+  const recipients = [
+    {
+      user: donorUser,
+      name: getDonorDisplayName(donorUser),
+      receiptUrl: getSupplierDigitalReceiptUrl(donationId),
+    },
+    {
+      user: receiverUser,
+      name: getReceiverDisplayName(receiverUser),
+      receiptUrl:
+        (receiverUser?.role || '').toLowerCase() === 'customer'
+          ? getCustomerDigitalReceiptUrl(donationId)
+          : getReceiverDigitalReceiptUrl(donationId),
+    },
+    {
+      user: driverUser,
+      name: getDriverDisplayName(driverUser),
+      receiptUrl: getDriverDigitalReceiptUrl(donationId),
+    },
+  ];
+
+  for (const { user, name, receiptUrl } of recipients) {
+    if (!user?.email) continue;
+    try {
+      const { subject, html, text } = digitalReceiptEmail({
+        name,
+        donation: payload,
+        receiptUrl,
+        deliveryDate,
+      });
+      await sendMail({
+        to: user.email,
+        subject,
+        text,
+        html,
+        attachments: [attachment],
+      });
+    } catch (err) {
+      console.error(`[email] Digital receipt email to ${user.email} failed:`, err.message);
     }
   }
 }
@@ -991,6 +1070,11 @@ module.exports = {
   sendDonationDriverAssignedEmails,
   sendDonationPickupConfirmedEmails,
   sendDonationDeliveredEmails,
+  sendDigitalReceiptEmails,
+  getSupplierDigitalReceiptUrl,
+  getReceiverDigitalReceiptUrl,
+  getCustomerDigitalReceiptUrl,
+  getDriverDigitalReceiptUrl,
   sendPaymentInvoiceEmail,
   sendSupplierAiSubscriptionPaymentEmail,
   sendSupplierAiAutoRenewCancelledEmail,

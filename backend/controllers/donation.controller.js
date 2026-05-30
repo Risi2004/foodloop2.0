@@ -416,18 +416,38 @@ exports.getDeliveryQuote = async (req, res) => {
   }
 };
 
+function canClaimFoodRole(role) {
+  const r = (role || '').toLowerCase();
+  return isReceiverRole(role) || r === 'customer';
+}
+
 exports.claimDonation = async (req, res) => {
   try {
-    if (!isReceiverRole(req.user.role)) {
+    if (!canClaimFoodRole(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Only receivers can claim donations.',
+        message: 'Only receivers and customers can claim food listings.',
       });
     }
 
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid donation id.' });
+    }
+
+    const listing = await Donation.findById(id);
+    if (!listing) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+
+    const role = (req.user.role || '').toLowerCase();
+    const isPaidSell =
+      listing.listingType === 'sell' && Number(listing.priceAmount) > 0;
+    if (role === 'customer' && isPaidSell) {
+      return res.status(400).json({
+        success: false,
+        message: 'Paid listings must be purchased through checkout. Free donations can be claimed directly.',
+      });
     }
 
     const body = req.body || {};
@@ -581,10 +601,10 @@ exports.cancelClaim = async (req, res) => {
 
 exports.getMyClaims = async (req, res) => {
   try {
-    if (!isReceiverRole(req.user.role)) {
+    if (!canClaimFoodRole(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Only receivers can view claims.',
+        message: 'Only receivers and customers can view claims.',
       });
     }
 
