@@ -93,9 +93,6 @@ function validateCustomerCheckoutPayload(body = {}) {
 
   const computedSubtotal = Number(normalizedItems.reduce((acc, i) => acc + i.lineTotal, 0).toFixed(2));
   const computedTotal = Number((computedSubtotal + deliveryFee).toFixed(2));
-  if (Math.abs(computedSubtotal - subtotal) > 0.01 || Math.abs(computedTotal - total) > 0.01) {
-    return { ok: false, message: 'Checkout totals mismatch. Please refresh and retry.' };
-  }
 
   return {
     ok: true,
@@ -681,6 +678,12 @@ exports.createCustomerCheckout = async (req, res) => {
     }
     const finalSummary = offerBuild.summary;
 
+    const bodySubtotal = Number(req.body?.subtotal);
+    const bodyTotal = Number(req.body?.total);
+    if (Math.abs(finalSummary.subtotal - bodySubtotal) > 0.01 || Math.abs(finalSummary.total - bodyTotal) > 0.01) {
+      return res.status(400).json({ success: false, message: 'Checkout totals mismatch. Please refresh and retry.' });
+    }
+
     await Payment.updateMany(
       {
         paymentContext: 'customer_checkout',
@@ -845,6 +848,12 @@ exports.placeCustomerCodOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: offerBuild.message });
     }
     const finalSummary = offerBuild.summary;
+
+    const bodySubtotal = Number(req.body?.subtotal);
+    const bodyTotal = Number(req.body?.total);
+    if (Math.abs(finalSummary.subtotal - bodySubtotal) > 0.01 || Math.abs(finalSummary.total - bodyTotal) > 0.01) {
+      return res.status(400).json({ success: false, message: 'Checkout totals mismatch. Please refresh and retry.' });
+    }
     const discountOffer = {
       ...offerBuild.discountOffer,
       yearMonth: offerStatus.yearMonth,
