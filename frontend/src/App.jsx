@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import LandingPage from "./pages/beforeLogin/landingPage/LandingPage";
 import DonorDashboard from "./pages/afterLogin/donor/dashboard/DonorDashboard"
@@ -77,6 +78,126 @@ import { DONOR_DASHBOARD_ROLES } from "./utils/auth";
 import { legacyDonorToSupplier } from "./constants/supplierRoutes";
 import Chatbot from "./components/chatbot/Chatbot";
 
+const ROUTE_TITLE_MAP = {
+  "/": "FoodLoop | Surplus Food Rescue & Community Marketplace",
+  "/login": "FoodLoop | Login",
+  "/forgot-password": "FoodLoop | Reset Password",
+  "/reset-password": "FoodLoop | Reset Password",
+  "/signup": "FoodLoop | Select Role & Register",
+  "/signup/verify-otp": "FoodLoop | Verify OTP",
+  "/privacy-policy": "FoodLoop | Privacy Policy",
+  "/terms-&-conditions": "FoodLoop | Terms & Conditions",
+  "/contact": "FoodLoop | Contact Us",
+
+  // Supplier / Donor Routes
+  "/supplier/dashboard": "FoodLoop | Supplier Dashboard",
+  "/supplier/about": "FoodLoop | About Us",
+  "/supplier/privacy-policy": "FoodLoop | Privacy Policy",
+  "/supplier/terms-&-conditions": "FoodLoop | Terms & Conditions",
+  "/supplier/notifications": "FoodLoop | Notifications",
+  "/supplier/profile": "FoodLoop | Supplier Profile",
+  "/supplier/edit-profile": "FoodLoop | Edit Profile",
+  "/supplier/my-donation": "FoodLoop | My Donations",
+  "/supplier/new-donation": "FoodLoop | List New Surplus Food",
+  "/supplier/track-order": "FoodLoop | Track Orders",
+  "/supplier/digital-receipt": "FoodLoop | Digital Receipt",
+  "/supplier/individual-edit-profile": "FoodLoop | Edit Profile",
+  "/supplier/earnings": "FoodLoop | Supplier Earnings",
+  "/supplier/esg-csr": "FoodLoop | ESG & CSR Impact",
+
+  // Receiver Routes
+  "/receiver/dashboard": "FoodLoop | Receiver Dashboard",
+  "/receiver/about": "FoodLoop | About Us",
+  "/receiver/privacy-policy": "FoodLoop | Privacy Policy",
+  "/receiver/terms-&-conditions": "FoodLoop | Terms & Conditions",
+  "/receiver/notifications": "FoodLoop | Notifications",
+  "/receiver/profile": "FoodLoop | Receiver Profile",
+  "/receiver/edit-profile": "FoodLoop | Edit Profile",
+  "/receiver/find-food": "FoodLoop | Find Food Donations",
+  "/receiver/my-claims": "FoodLoop | My Claims",
+  "/receiver/track-order": "FoodLoop | Track Claims",
+
+  // Driver Routes
+  "/driver/dashboard": "FoodLoop | Driver Dashboard",
+  "/driver/about": "FoodLoop | About Us",
+  "/driver/privacy-policy": "FoodLoop | Privacy Policy",
+  "/driver/terms-&-conditions": "FoodLoop | Terms & Conditions",
+  "/driver/notifications": "FoodLoop | Notifications",
+  "/driver/delivery": "FoodLoop | Active Deliveries",
+  "/driver/delivery-confirmation": "FoodLoop | Delivery Confirmation",
+  "/driver/profile": "FoodLoop | Driver Profile",
+  "/driver/edit-profile": "FoodLoop | Edit Profile",
+  "/driver/my-pickups": "FoodLoop | My Pickups",
+  "/driver/pickup": "FoodLoop | Pickup Orders",
+  "/driver/earnings": "FoodLoop | Driver Earnings",
+
+  // Admin Routes
+  "/admin/dashboard": "FoodLoop | Admin Console",
+  "/admin/notification": "FoodLoop | Admin Alerts",
+  "/admin/user-management": "FoodLoop | User Management",
+  "/admin/reviews": "FoodLoop | Review Approvals",
+  "/admin/messages": "FoodLoop | Support Messages",
+  "/admin/payout-requests": "FoodLoop | Payout Requests",
+  "/admin/orders": "FoodLoop | Order Management",
+  "/admin/user-monitoring": "FoodLoop | User Activity Monitor",
+  "/admin/finance": "FoodLoop | Financial Analytics",
+  "/admin/maintenance": "FoodLoop | System Maintenance",
+
+  // Customer Routes
+  "/customer/marketplace": "FoodLoop | Customer Marketplace",
+  "/customer/cart": "FoodLoop | Shopping Cart",
+  "/customer/payment": "FoodLoop | Secure Checkout",
+  "/customer/order-history": "FoodLoop | My Orders",
+  "/customer/order-tracking": "FoodLoop | Track Order",
+  "/customer/profile": "FoodLoop | Customer Profile",
+  "/customer/about": "FoodLoop | About Us",
+  "/customer/notifications": "FoodLoop | Notifications",
+  "/customer/privacy-policy": "FoodLoop | Privacy Policy",
+  "/customer/terms-&-conditions": "FoodLoop | Terms & Conditions",
+};
+
+const getDynamicTitle = (pathname) => {
+  if (ROUTE_TITLE_MAP[pathname]) {
+    return ROUTE_TITLE_MAP[pathname];
+  }
+
+  if (pathname.startsWith("/signup/")) {
+    const role = pathname.split("/").pop();
+    const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+    return `FoodLoop | Signup as ${capitalizedRole}`;
+  }
+
+  if (pathname.startsWith("/supplier/edit-donation/")) {
+    return "FoodLoop | Edit Donation Listing";
+  }
+
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return "FoodLoop";
+
+  const formattedSegments = segments
+    .filter(segment => !/^[0-9a-fA-F]{24}$/.test(segment) && !/^\d+$/.test(segment))
+    .map(segment => {
+      return segment
+        .replace(/[-_]+/g, " ")
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    });
+
+  if (formattedSegments.length === 0) return "FoodLoop";
+  return `FoodLoop | ${formattedSegments.join(" - ")}`;
+};
+
+function TitleManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    document.title = getDynamicTitle(location.pathname);
+  }, [location]);
+
+  return null;
+}
+
 function LegacyDonorRedirect() {
   const { pathname, search, hash } = useLocation();
   return <Navigate to={legacyDonorToSupplier(pathname) + search + hash} replace />;
@@ -98,6 +219,7 @@ function App() {
   return (
     <MarketplaceProvider>
     <Router>
+      <TitleManager />
       <ScrollToTop />
       <Chatbot />
       <Routes>
