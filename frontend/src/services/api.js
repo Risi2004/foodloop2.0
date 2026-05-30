@@ -140,6 +140,14 @@ export const updateUserStatus = async (userId, status) => {
   return parseResponse(response);
 };
 
+export const adminDeleteUser = async (userId) => {
+  const response = await fetch(buildUrl(`/api/admin/users/${userId}`), {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
 export const getAllUsers = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
@@ -229,6 +237,14 @@ export const toggleAudit = async (isPaused) => {
     method: 'POST',
     headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ isPaused }),
+  });
+  return parseResponse(response);
+};
+
+export const aiVerifyUser = async (userId) => {
+  const response = await fetch(buildUrl(`/api/admin/users/${userId}/ai-verify`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
   });
   return parseResponse(response);
 };

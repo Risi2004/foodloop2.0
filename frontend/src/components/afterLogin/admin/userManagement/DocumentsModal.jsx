@@ -1,11 +1,64 @@
+import { useState, useEffect } from 'react';
 import './AdminUserManagement.css';
 import {
   getAdminRoleLabel,
   getAdminUserName,
   getAdminUserProfileDetails,
 } from '../../../../utils/adminUserDisplay';
+import { aiVerifyUser } from '../../../../services/api';
 
 const DocumentsModal = ({ user, isOpen, onClose }) => {
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
+  const [aiError, setAiError] = useState('');
+  const [loadingPhase, setLoadingPhase] = useState('');
+
+  const PHASES = [
+    'Initializing AI Document Scan...',
+    'Reading national identity cards & business registers...',
+    'Cross-referencing address proofs & GN letters...',
+    'Validating authenticity & verifying registration stamps...',
+    'Finalizing evaluation and preparing recommendation...'
+  ];
+
+  // Reset AI states when a different user is viewed
+  useEffect(() => {
+    setAiResult(null);
+    setAiLoading(false);
+    setAiError('');
+  }, [user?._id, user?.id]);
+
+  const handleAiVerify = async () => {
+    setAiLoading(true);
+    setAiError('');
+    setAiResult(null);
+    
+    let phaseIndex = 0;
+    setLoadingPhase(PHASES[0]);
+    const interval = setInterval(() => {
+      phaseIndex = (phaseIndex + 1) % PHASES.length;
+      setLoadingPhase(PHASES[phaseIndex]);
+    }, 3000);
+    
+    try {
+      const res = await aiVerifyUser(user._id || user.id);
+      if (res.success) {
+        setAiResult({
+          summary: res.summary,
+          decision: res.decision,
+          reason: res.reason
+        });
+      } else {
+        setAiError(res.message || 'Failed to complete AI verification audit.');
+      }
+    } catch (err) {
+      setAiError(err.message || 'An error occurred during AI analysis.');
+    } finally {
+      clearInterval(interval);
+      setAiLoading(false);
+    }
+  };
+
   if (!isOpen || !user) return null;
 
   const isValidUrl = (url) => {
@@ -108,6 +161,92 @@ const DocumentsModal = ({ user, isOpen, onClose }) => {
             </div>
           </section>
 
+          {/* AI Verification Co-Pilot Section */}
+          <section className="user-ai-analysis-section">
+            <h3 className="user-details-section-title">AI Verification Co-Pilot</h3>
+            
+            {!aiResult && !aiLoading && (
+              <div className="ai-pilot-intro-card">
+                <div className="ai-pilot-icon">🤖</div>
+                <div className="ai-pilot-text">
+                  <h4>Let AI Audit the Documents</h4>
+                  <p>Our multimodal AI Co-Pilot will scan all submitted PDF/image files and verify them against the user profile information.</p>
+                </div>
+                <button 
+                  type="button" 
+                  className="admin-btn"
+                  onClick={handleAiVerify}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  Run AI Audit
+                </button>
+              </div>
+            )}
+
+            {aiLoading && (
+              <div className="ai-pilot-loading-card">
+                <div className="ai-spinner"></div>
+                <div className="ai-loading-details">
+                  <h4>Analyzing Files...</h4>
+                  <p className="ai-phase-text">{loadingPhase}</p>
+                </div>
+              </div>
+            )}
+
+            {aiError && (
+              <div className="ai-pilot-error-card">
+                <span className="error-icon">⚠️</span>
+                <p>{aiError}</p>
+                <button 
+                  type="button" 
+                  className="admin-btn admin-btn--secondary"
+                  onClick={handleAiVerify}
+                  style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {aiResult && (
+              <div className={`ai-pilot-result-card ${aiResult.decision}`}>
+                <div className="ai-result-header">
+                  <span className="ai-pilot-badge-icon">🤖</span>
+                  <div className="ai-result-title">
+                    <h4>AI Evaluation Summary</h4>
+                    <p>Scanned via Google Gemini Multimodal Engine</p>
+                  </div>
+                  <span className={`ai-recommendation-badge ${aiResult.decision}`}>
+                    {aiResult.decision === 'approve' ? 'Approve Recommended' : 'Reject Recommended'}
+                  </span>
+                </div>
+                
+                <div className="ai-result-body">
+                  <div className="ai-summary-block">
+                    <h5>Document Scan Findings</h5>
+                    <p>{aiResult.summary}</p>
+                  </div>
+                  
+                  <div className="ai-decision-reasons">
+                    <h5>{aiResult.decision === 'approve' ? 'Verification Success' : 'Mismatch / Verification Flags'}</h5>
+                    <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{aiResult.reason}</p>
+                  </div>
+                </div>
+                
+                <div className="ai-result-footer">
+                  <button 
+                    type="button" 
+                    className="admin-btn admin-btn--secondary" 
+                    onClick={handleAiVerify}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                  >
+                    Re-Analyze Documents
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
           <section className="user-documents-section">
             <h3 className="user-details-section-title">Submitted Documents</h3>
             {documents.length === 0 ? (
@@ -120,8 +259,8 @@ const DocumentsModal = ({ user, isOpen, onClose }) => {
               </div>
             ) : (
               <div className="documents-grid">
-                {documents.map((doc) => (
-                  <div key={`${doc.label}-${doc.url}`} className="document-item">
+                {documents.map((doc, index) => (
+                  <div key={`${doc.label}-${doc.url}-${index}`} className="document-item">
                     <div className="document-label">{doc.label}</div>
                     {doc.type === 'pdf' ? (
                       <div className="document-pdf-viewer">

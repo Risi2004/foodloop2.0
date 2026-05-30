@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './AdminUserManagement.css';
-import { getAllUsers, updateUserStatus } from '../../../../services/api';
+import { getAllUsers, updateUserStatus, adminDeleteUser } from '../../../../services/api';
 import { getAdminUserName, getAdminUserOrganization, getAdminRoleLabel } from '../../../../utils/adminUserDisplay';
 import DocumentsModal from './DocumentsModal';
 
@@ -110,6 +110,32 @@ const MembersTable = ({ refreshTrigger, searchTerm = '', roleFilter = '', status
             await fetchMembers();
         } catch (err) {
             alert(err.response?.data?.message || err.message || 'Failed to activate user');
+        } finally {
+            setProcessing((p) => ({ ...p, [userId]: false }));
+        }
+    };
+
+    const handleApprove = async (userId) => {
+        if (!window.confirm('Approve this user? They will be able to log in.')) return;
+        try {
+            setProcessing((p) => ({ ...p, [userId]: true }));
+            await updateUserStatus(userId, 'completed');
+            await fetchMembers();
+        } catch (err) {
+            alert(err.response?.data?.message || err.message || 'Failed to approve user');
+        } finally {
+            setProcessing((p) => ({ ...p, [userId]: false }));
+        }
+    };
+
+    const handleDeleteUser = async (userId, userEmail) => {
+        if (!window.confirm(`Are you absolutely sure you want to permanently delete the user account for ${userEmail}? This will permanently wipe their data and clean up active transactions. This cannot be undone.`)) return;
+        try {
+            setProcessing((p) => ({ ...p, [userId]: true }));
+            await adminDeleteUser(userId);
+            await fetchMembers();
+        } catch (err) {
+            alert(err.response?.data?.message || err.message || 'Failed to delete user');
         } finally {
             setProcessing((p) => ({ ...p, [userId]: false }));
         }
@@ -232,7 +258,7 @@ const MembersTable = ({ refreshTrigger, searchTerm = '', roleFilter = '', status
                                                 </button>
                                             </td>
                                             <td className="action-cell">
-                                                <div className="action-cell-inner">
+                                                <div className="action-cell-inner" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                                     {canToggleActive && (
                                                         isActive ? (
                                                             <button
@@ -254,9 +280,27 @@ const MembersTable = ({ refreshTrigger, searchTerm = '', roleFilter = '', status
                                                             </button>
                                                         )
                                                     )}
-                                                    {status === 'pending' && (
-                                                        <span className="details-text muted">Use Recent Requests</span>
+                                                    {status === 'rejected' && (
+                                                        <button
+                                                            type="button"
+                                                            className="action-btn-long activate"
+                                                            onClick={() => handleApprove(member._id)}
+                                                            disabled={processing[member._id]}
+                                                        >
+                                                            Approve
+                                                        </button>
                                                     )}
+                                                    {status === 'pending' && (
+                                                        <span className="details-text muted" style={{ display: 'inline-flex', alignItems: 'center' }}>Use Recent Requests</span>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className="action-btn-long delete-user"
+                                                        onClick={() => handleDeleteUser(member._id, member.email)}
+                                                        disabled={processing[member._id]}
+                                                    >
+                                                        Delete
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>

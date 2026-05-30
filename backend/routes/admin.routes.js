@@ -16,6 +16,8 @@ router.get('/pending-users', adminController.getPendingUsers);
 router.get('/stats', adminController.getStats);
 router.get('/users', adminController.getAllUsers);
 router.patch('/users/:id/status', adminController.updateUserStatus);
+router.post('/users/:id/ai-verify', adminController.aiVerifyUser);
+router.delete('/users/:id', adminController.deleteUser);
 
 router.get('/orders', adminController.getAllOrders);
 router.get('/orders/:orderType/:id', adminController.getOrderDetail);

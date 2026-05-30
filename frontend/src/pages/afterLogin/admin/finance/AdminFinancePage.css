@@ -28,15 +28,29 @@
 }
 
 .admin-finance-period select {
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid #dbe6e0;
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 10px 36px 10px 14px;
   min-width: 160px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background-color: #f6f8f7;
+  color: #2e4e3f;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%232E4E3F' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.admin-finance-period select:focus {
+  outline: 2px solid rgba(115, 161, 63, 0.45);
+  outline-offset: 2px;
+}
+
+.admin-finance-period select option {
+  background: #ffffff;
+  color: #2e4e3f;
 }
 
 .admin-finance-status {
