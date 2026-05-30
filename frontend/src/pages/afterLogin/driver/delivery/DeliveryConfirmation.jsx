@@ -285,6 +285,12 @@ function DeliveryConfirmation() {
     const donationStatus = donationData?.donation?.status;
     const codAmount = Number(donationData?.donation?.codAmount || donationData?.codAmount || 0);
     const isCodOrder = (donationData?.donation?.paymentMethod || donationData?.paymentMethod || '').toLowerCase() === 'cod';
+    const deliveryFeeEarnings = Number(
+      donationData?.earnings ||
+      donationData?.deliveryFee ||
+      donationData?.donation?.deliveryFee ||
+      0
+    );
     const canConfirmDelivery = donationStatus === 'picked_up';
 
     const handleConfirmDelivery = async () => {
@@ -521,6 +527,12 @@ function DeliveryConfirmation() {
                                         LKR {codAmount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </p>
                                 )}
+                                {deliveryFeeEarnings > 0 && (
+                                    <p>
+                                        <strong>Your delivery fee (bank payout):</strong>{' '}
+                                        LKR {deliveryFeeEarnings.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                )}
                             </>
                         )}
                     </div>
@@ -543,6 +555,9 @@ function DeliveryConfirmation() {
                                 {isCodOrder && (
                                     <p className='delivery-confirmation__warning' style={{ color: '#1f4e36', background: '#e8f6ff' }}>
                                         Collect LKR {codAmount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in cash before confirming delivery.
+                                        {deliveryFeeEarnings > 0 && (
+                                            <> Your per-km delivery fee of LKR {deliveryFeeEarnings.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} will be credited to your earnings balance.</>
+                                        )}
                                     </p>
                                 )}
                                 <button

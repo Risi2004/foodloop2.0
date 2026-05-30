@@ -76,6 +76,7 @@ function transformDonationToItem(donation, receiverPosition) {
         storageRecommendation: donation.storageRecommendation,
         aiQualityScore: donation.aiQualityScore,
         donorName: donation.donorName,
+        donorIsPremium: donation.donorIsPremium === true,
         donorType: donation.donorType,
         donorAddress: donation.donorAddress || donation.pickupAddress,
         priceLabel: donation.priceLabel,

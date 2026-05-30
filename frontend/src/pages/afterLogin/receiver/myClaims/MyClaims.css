@@ -8,32 +8,10 @@
   gap: 20px;
 }
 
-.intransit {
-  background-image:
-    linear-gradient(to left,
-      rgba(14, 73, 34, 0.35),
-      rgba(11, 60, 27, 0.715)),
-    url("/src/assets/07-live-delivery.jpg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-radius: 20px;
-  padding: 20px 30px 20px 30px;
-  height: 265px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
-  justify-content: flex-start;
-  align-self: stretch;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
+.intransit,
 .looking,
 .complited {
-  background: #F6F8F7;
+  background: #ffffff;
   border: 1px solid #DBE6E0;
   border-radius: 20px;
   padding: 20px 30px 20px 30px;

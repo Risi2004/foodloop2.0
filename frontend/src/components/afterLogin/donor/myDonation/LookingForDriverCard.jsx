@@ -39,7 +39,6 @@ const LookingForDriverCard = ({ donation, onCancelClaim, onAiSuggestDiscount, ai
             <div className="top">
                 <div className="div-flex">
                     <div className="span-bg-orange-100">
-                        <div className="span-size-1-5-orange"></div>
                         <div className="in-transit-orange">Looking for Driver</div>
                     </div>
                 </div>

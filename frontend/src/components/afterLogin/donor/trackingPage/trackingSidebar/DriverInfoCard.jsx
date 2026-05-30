@@ -2,6 +2,13 @@ import scooterIcon from '../../../../../assets/icons/afterLogin/driver/scooter.s
 import profileIcon from '../../../../../assets/icons/afterLogin/navbar/profile.svg';
 import './DriverInfoCard.css';
 
+function formatVehicleType(value) {
+  if (!value) return '—';
+  return String(value)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
 function formatStatusMessage(status, receiverName, _driverLocation) {
     if (!status) return 'Awaiting driver';
     if (status === 'assigned') return `On the way to pickup${receiverName ? ` • Delivery to ${receiverName}` : ''}`;
@@ -20,7 +27,7 @@ function DriverInfoCard({ trackingData, driverLocation }) {
     const locationText = hasDriver
         ? formatStatusMessage(status, receiverName, driverLocation)
         : 'No driver assigned yet';
-    const vehicleType = driver?.vehicleType ? String(driver.vehicleType).toLowerCase() : '—';
+    const vehicleType = formatVehicleType(driver?.vehicleType);
     const vehicleNumber = driver?.vehicleNumber || '—';
     const driverName = driver?.name || 'Driver';
 

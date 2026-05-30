@@ -23,12 +23,17 @@ const {
 } = require('../utils/sendNotificationEmail');
 const { isOrderCompatible, normalizeVehicleType } = require('../utils/driverCapacityRules');
 const { creditDeliveryEarnings } = require('../services/earningsService');
-const { computeFinalDeliveryFee } = require('../utils/deliveryPricing');
+const {
+  findCustomerOrderForDonation,
+  getDonationsForCustomerOrder,
+} = require('../services/customerOrderSync');
+const { computeFinalDeliveryFee, resolveDonationDriverEarnings } = require('../utils/deliveryPricing');
 const {
   emitToDrivers,
   emitToDonor,
   emitToReceivers,
   emitToDonationRoom,
+  emitToCustomer,
 } = require('../socket');
 
 const TRACKING_POPULATE = [
@@ -36,7 +41,7 @@ const TRACKING_POPULATE = [
   { path: 'receiverId', select: 'username receiverName email contactNo' },
   {
     path: 'driverId',
-    select: 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude',
+    select: 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage',
   },
   { path: 'parentListingId' },
 ];
@@ -130,6 +135,67 @@ async function syncCustomerOrderToDonationClaims(customerOrder, nextStatus, driv
   }
 }
 
+function notifyCustomerOrderUpdated(customerOrder) {
+  const customerId =
+    customerOrder.customerId?._id?.toString?.() || customerOrder.customerId?.toString?.();
+  if (!customerId) return;
+  emitToCustomer(customerId, 'customerOrder:updated', {
+    orderId: customerOrder._id?.toString?.() || customerOrder.id,
+    status: customerOrder.status,
+    driverId:
+      customerOrder.driverId?._id?.toString?.() || customerOrder.driverId?.toString?.() || null,
+  });
+}
+
+/** When a driver accepts/updates a marketplace claim, mirror status on the parent CustomerOrder. */
+async function syncDonationToCustomerOrder(donation, nextStatus, driverUser) {
+  try {
+    const order = await findCustomerOrderForDonation(donation);
+    if (!order) return null;
+
+    const now = new Date();
+
+    if (nextStatus === 'driver_assigned') {
+      if (order.status !== 'finding_driver') return order;
+      order.driverId = driverUser._id;
+      order.status = 'driver_assigned';
+      order.assignedAt = now;
+    } else if (nextStatus === 'picked_up') {
+      if (!['finding_driver', 'driver_assigned'].includes(order.status)) return order;
+      if (!order.driverId) {
+        order.driverId = driverUser._id;
+        order.assignedAt = order.assignedAt || now;
+      }
+      order.status = 'picked_up';
+      order.pickedUpAt = now;
+    } else if (nextStatus === 'delivered') {
+      const related = await getDonationsForCustomerOrder(order);
+      const allDelivered =
+        related.length > 0 && related.every((entry) => entry.status === 'delivered');
+      if (!allDelivered || order.status === 'delivered') return order;
+      order.status = 'delivered';
+      order.deliveredAt = now;
+      if (!order.driverId) {
+        order.driverId = driverUser._id;
+      }
+    } else {
+      return null;
+    }
+
+    await order.save();
+    await order.populate('customerId', 'username email contactNo');
+    await order.populate(
+      'driverId',
+      'username driverName contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+    );
+    notifyCustomerOrderUpdated(order);
+    return order;
+  } catch (err) {
+    console.error('syncDonationToCustomerOrder error:', err);
+    return null;
+  }
+}
+
 function requireDriver(req, res) {
   if (!isDriverRole(req.user.role)) {
     res.status(403).json({ success: false, message: 'Only drivers can access this resource.' });
@@ -180,9 +246,10 @@ function toDriverCustomerOrderJSON(order) {
     currency: base.currency || 'LKR',
     totalAmount: Number(base.orderSummary?.total || 0),
     deliveryFee: Number(base.orderSummary?.deliveryFee || 0),
-    earnings: Number(base.orderSummary?.deliveryFee) > 0
-      ? Number(base.orderSummary.deliveryFee)
-      : DRIVER_EARNINGS_LKR,
+    earnings:
+      Number(base.orderSummary?.deliveryFee) > 0
+        ? Number(base.orderSummary.deliveryFee)
+        : DRIVER_EARNINGS_LKR,
     expiryText: 'Customer order ready for delivery',
     createdAt: base.createdAt,
     updatedAt: base.updatedAt,
@@ -194,6 +261,9 @@ function toDriverCustomerOrderJSON(order) {
           name: driver.driverName || driver.username || 'Driver',
           contactNo: driver.contactNo || null,
           email: driver.email || null,
+          vehicleType: driver.vehicleType || null,
+          vehicleNumber: driver.vehicleNumber || null,
+          profileImageUrl: driver.profileImage || null,
           location:
             driver.driverLatitude != null && driver.driverLongitude != null
               ? { latitude: driver.driverLatitude, longitude: driver.driverLongitude }
@@ -218,7 +288,7 @@ function toDriverCustomerOrderJSON(order) {
     donation: {
       id: base._id?.toString?.() || base.id,
       trackingId: base.orderId,
-      itemName: `Customer order (${(base.orderSummary?.items || []).length} items)`,
+      itemName: title,
       quantity: totalQty,
       itemCount: items.length,
       items,
@@ -230,6 +300,47 @@ function toDriverCustomerOrderJSON(order) {
       totalAmount: Number(base.orderSummary?.total || 0),
     },
   };
+}
+
+async function resolveCustomerOrderImageUrl(order) {
+  const itemIds = (order.orderSummary?.items || []).map((item) => item.id).filter(Boolean);
+  if (!itemIds.length) return null;
+
+  const linked = await Donation.findOne({
+    $or: [{ _id: { $in: itemIds } }, { parentListingId: { $in: itemIds } }],
+  })
+    .select('imageUrl')
+    .populate('parentListingId', 'imageUrl')
+    .lean();
+
+  if (!linked) return null;
+  return linked.imageUrl || linked.parentListingId?.imageUrl || null;
+}
+
+async function buildCustomerOrderTrackingPayload(order) {
+  const payload = toDriverCustomerOrderJSON(order);
+  const imageUrl = await resolveCustomerOrderImageUrl(order);
+  if (payload.donation && imageUrl) {
+    payload.donation.imageUrl = imageUrl;
+  }
+
+  const linkedDonations = await getDonationsForCustomerOrder(order);
+  let driverEarnings = Number(order.orderSummary?.deliveryFee) || 0;
+  for (const linked of linkedDonations) {
+    const fee = resolveDonationDriverEarnings(linked, 0);
+    if (fee > 0) {
+      driverEarnings = fee;
+      break;
+    }
+  }
+  if (!driverEarnings) driverEarnings = DRIVER_EARNINGS_LKR;
+  payload.earnings = driverEarnings;
+  payload.deliveryFee = driverEarnings;
+  if (payload.donation) {
+    payload.donation.deliveryFee = driverEarnings;
+  }
+
+  return payload;
 }
 
 function stopDemoSession(driverId) {
@@ -264,6 +375,18 @@ async function applyDriverLocation(driverId, lat, lng) {
     const donationIdStr = activeDonation._id.toString();
     emitToDonationRoom(donationIdStr, 'driver:location', {
       donationId: donationIdStr,
+      driverLocation: { latitude: lat, longitude: lng },
+    });
+  }
+
+  const activeCustomerOrder = await CustomerOrder.findOne({
+    driverId,
+    status: { $in: ACTIVE_CUSTOMER_ORDER_STATUSES },
+  });
+  if (activeCustomerOrder) {
+    const orderIdStr = activeCustomerOrder._id.toString();
+    emitToDonationRoom(orderIdStr, 'driver:location', {
+      donationId: orderIdStr,
       driverLocation: { latitude: lat, longitude: lng },
     });
   }
@@ -476,8 +599,21 @@ exports.getAvailablePickups = async (req, res) => {
         capacityFilteredCount += 1;
         continue;
       }
+      const linkedDonations = await getDonationsForCustomerOrder(order);
+      let driverEarnings = Number(order.orderSummary?.deliveryFee) || 0;
+      for (const linked of linkedDonations) {
+        const fee = resolveDonationDriverEarnings(linked, 0);
+        if (fee > 0) {
+          driverEarnings = fee;
+          break;
+        }
+      }
+      if (!driverEarnings) driverEarnings = DRIVER_EARNINGS_LKR;
+
       customerPickups.push({
         ...toDriverCustomerOrderJSON(order),
+        earnings: driverEarnings,
+        deliveryFee: driverEarnings,
         capacity: {
           loadScore: capacity.loadScore,
           vehicleLimit: capacity.vehicleLimit,
@@ -525,7 +661,7 @@ exports.getActiveDeliveries = async (req, res) => {
       status: { $in: ACTIVE_CUSTOMER_ORDER_STATUSES },
     })
       .populate('customerId', 'username email contactNo')
-      .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude')
+      .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage')
       .sort({ updatedAt: -1 });
     const customerDeliveries = customerOrders.map((order) => toDriverCustomerOrderJSON(order));
 
@@ -575,7 +711,7 @@ exports.acceptPickup = async (req, res) => {
     if (!donation) {
       const customerOrder = await CustomerOrder.findById(donationId)
         .populate('customerId', 'username email contactNo')
-        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage');
       if (!customerOrder) {
         return res.status(404).json({ success: false, message: 'Pickup not found.' });
       }
@@ -604,11 +740,12 @@ exports.acceptPickup = async (req, res) => {
       await customerOrder.populate('customerId', 'username email contactNo');
       await customerOrder.populate(
         'driverId',
-        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage'
       );
 
       // Sync status to child donations so supplier's dashboard updates in real-time
       await syncCustomerOrderToDonationClaims(customerOrder, 'driver_assigned', req.user);
+      notifyCustomerOrderUpdated(customerOrder);
 
       return res.json({
         success: true,
@@ -671,6 +808,8 @@ exports.acceptPickup = async (req, res) => {
       donation: payload,
     });
 
+    await syncDonationToCustomerOrder(donation, 'driver_assigned', req.user);
+
     await sendDonationDriverAssignedEmails(
       donation,
       donation.donorId,
@@ -706,7 +845,7 @@ exports.getDonationTracking = async (req, res) => {
     if (!donation) {
       const customerOrder = await CustomerOrder.findById(donationId)
         .populate('customerId', 'username email contactNo')
-        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage');
       if (!customerOrder) {
         return res.status(404).json({ success: false, message: 'Tracking item not found.' });
       }
@@ -721,7 +860,7 @@ exports.getDonationTracking = async (req, res) => {
       }
       return res.json({
         success: true,
-        tracking: toDriverCustomerOrderJSON(customerOrder),
+        tracking: await buildCustomerOrderTrackingPayload(customerOrder),
       });
     }
     if (!userCanViewTracking(donation, req.user._id)) {
@@ -771,7 +910,7 @@ exports.confirmPickup = async (req, res) => {
     if (!donation) {
       const customerOrder = await CustomerOrder.findById(donationId)
         .populate('customerId', 'username email contactNo')
-        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage');
       if (!customerOrder) {
         return res.status(404).json({ success: false, message: 'Pickup not found.' });
       }
@@ -790,11 +929,12 @@ exports.confirmPickup = async (req, res) => {
       await customerOrder.populate('customerId', 'username email contactNo');
       await customerOrder.populate(
         'driverId',
-        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage'
       );
 
       // Sync status to child donations so supplier's dashboard updates in real-time
       await syncCustomerOrderToDonationClaims(customerOrder, 'picked_up', req.user);
+      notifyCustomerOrderUpdated(customerOrder);
 
       return res.json({
         success: true,
@@ -828,6 +968,8 @@ exports.confirmPickup = async (req, res) => {
     });
     emitToDonor(donorId, 'donation:picked_up', { donationId: donationIdStr, donation: tracking });
     emitToReceivers('donation:picked_up', { donationId: donationIdStr, donation: tracking });
+
+    await syncDonationToCustomerOrder(donation, 'picked_up', req.user);
 
     await sendDonationPickupConfirmedEmails(
       donation,
@@ -863,7 +1005,7 @@ exports.confirmDelivery = async (req, res) => {
     if (!donation) {
       const customerOrder = await CustomerOrder.findById(donationId)
         .populate('customerId', 'username email contactNo')
-        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude');
+        .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage');
       if (!customerOrder) {
         return res.status(404).json({ success: false, message: 'Delivery item not found.' });
       }
@@ -882,14 +1024,16 @@ exports.confirmDelivery = async (req, res) => {
       await customerOrder.populate('customerId', 'username email contactNo');
       await customerOrder.populate(
         'driverId',
-        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude'
+        'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage'
       );
 
       // Sync status to child donations so supplier's dashboard updates in real-time
       await syncCustomerOrderToDonationClaims(customerOrder, 'delivered', req.user);
+      notifyCustomerOrderUpdated(customerOrder);
 
       try {
         await creditDeliveryEarnings({
+          donation,
           customerOrder,
           driverId: req.user._id,
         });
@@ -929,6 +1073,8 @@ exports.confirmDelivery = async (req, res) => {
     });
     emitToDonor(donorId, 'donation:delivered', { donationId: donationIdStr, donation: tracking });
     emitToReceivers('donation:delivered', { donationId: donationIdStr, donation: tracking });
+
+    await syncDonationToCustomerOrder(donation, 'delivered', req.user);
 
     await sendDonationDeliveredEmails(
       donation,

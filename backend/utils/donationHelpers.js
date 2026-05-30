@@ -24,6 +24,7 @@ const {
   formatDistanceKm,
   DRIVER_EARNINGS_LKR,
 } = require('./distance');
+const { resolveDonationDriverEarnings } = require('./deliveryPricing');
 
 function isDriverRole(role) {
   return (role || '').toLowerCase() === 'driver';
@@ -120,7 +121,8 @@ function toDriverPickupJSON(donation, driverLat, driverLng) {
     receiverName,
     priceLabel,
     isPaidListing: !!priceLabel,
-    earnings: DRIVER_EARNINGS_LKR,
+    earnings: resolveDonationDriverEarnings(donation, DRIVER_EARNINGS_LKR),
+    deliveryFee: resolveDonationDriverEarnings(donation, DRIVER_EARNINGS_LKR),
     expiryText: formatExpiryText(donation.userProvidedExpiryDate),
     donor: {
       name: donorName,
@@ -366,13 +368,23 @@ function enrichClaimFromParent(donation) {
   return claim;
 }
 
-function toAvailableDonationJSON(donation, distanceKm) {
+function toAvailableDonationJSON(donation, distanceKm, options = {}) {
   const base = donation.toPublicJSON();
   const lat = donation.donorLatitude;
   const lng = donation.donorLongitude;
   const donor = donation.donorId && typeof donation.donorId === 'object' ? donation.donorId : null;
+  const donorId =
+    donor?._id?.toString?.() ||
+    donation.donorId?.toString?.() ||
+    null;
 
   const priceLabel = formatListingPriceLabel(donation);
+  let donorIsPremium = false;
+  if (typeof options.donorIsPremium === 'boolean') {
+    donorIsPremium = options.donorIsPremium;
+  } else if (options.premiumSupplierIds && donorId) {
+    donorIsPremium = options.premiumSupplierIds.has(donorId);
+  }
 
   return {
     ...base,
@@ -380,6 +392,7 @@ function toAvailableDonationJSON(donation, distanceKm) {
     distanceKm: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
     donorName: getDonorDisplayName(donor),
     donorType: donor?.role || null,
+    donorIsPremium,
     priceLabel,
     isPaidListing: !!priceLabel,
   };

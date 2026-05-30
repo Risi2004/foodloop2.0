@@ -9,6 +9,7 @@ const {
   enrichClaimFromParent,
 } = require('../utils/donationHelpers');
 const { emitToReceivers, emitToDonor, emitToDrivers } = require('../socket');
+const { isSupplierPremium } = require('./supplierPremiumAccess');
 const { sendDonationClaimedEmails } = require('../utils/sendNotificationEmail');
 const {
   buildReceiverDeliveryQuoteForDonation,
@@ -297,12 +298,17 @@ async function performDonationClaim({
   return { parent, child, claimQuantity, parentListing: freshParent };
 }
 
-function notifyDonationClaimed({ child, parent }) {
+async function notifyDonationClaimed({ child, parent }) {
   const childId = child._id.toString();
   const parentId = parent?._id?.toString() || childId;
   const donorId = child.donorId._id?.toString?.() || child.donorId.toString();
   const claimPayload = child.parentListingId ? enrichClaimFromParent(child) : toClaimJSON(child);
-  const parentPayload = parent ? toAvailableDonationJSON(parent, null) : null;
+  let parentPayload = null;
+  if (parent) {
+    const premiumDonorId = parent.donorId?._id || parent.donorId;
+    const donorIsPremium = premiumDonorId ? await isSupplierPremium(premiumDonorId) : false;
+    parentPayload = toAvailableDonationJSON(parent, null, { donorIsPremium });
+  }
 
   if (parent && parent.quantity > 0) {
     emitToReceivers('donation:stockUpdated', {

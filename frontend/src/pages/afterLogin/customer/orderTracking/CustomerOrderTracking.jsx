@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import CustomerPageLayout from '../../../../components/afterLogin/dashboard/customerSection/layout/CustomerPageLayout';
 import { getCustomerOrders } from '../../../../services/paymentApi';
+import { customerRoutes } from '../../../../constants/customerRoutes';
+import { getSocket, onCustomerOrderUpdated } from '../../../../services/socket';
 import './CustomerOrderTracking.css';
 
 const ACTIVE_STATUSES = ['finding_driver', 'driver_assigned', 'picked_up', 'in_transit'];
+const MAP_TRACK_STATUSES = ['driver_assigned', 'picked_up', 'in_transit'];
 
 function formatMoney(amount, currency = 'LKR') {
   const value = Number(amount || 0);
@@ -16,8 +19,24 @@ function statusLabel(status) {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
 
+function getOrderTrackId(order) {
+  return order?.id || order?._id || null;
+}
+
+function canFollowOnMap(order) {
+  if (!order) return false;
+  if (MAP_TRACK_STATUSES.includes(order.status)) return true;
+  if (order.assignedAt && order.driverId) return true;
+  return Boolean(order.driverId || order.driver?.id);
+}
+
+function getDriverDisplayName(order) {
+  if (order?.driver?.name) return order.driver.name;
+  if (order?.driverId && order.status !== 'finding_driver') return 'Assigned';
+  return 'Not assigned yet';
+}
+
 function CustomerOrderTracking() {
-  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,6 +57,26 @@ function CustomerOrderTracking() {
 
   useEffect(() => {
     loadOrders();
+  }, []);
+
+  useEffect(() => {
+    getSocket();
+    const unsub = onCustomerOrderUpdated(() => {
+      loadOrders();
+    });
+
+    const pollTimer = setInterval(() => {
+      loadOrders();
+    }, 15000);
+
+    const onFocus = () => loadOrders();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      unsub();
+      clearInterval(pollTimer);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const { activeOrders, pastOrders } = useMemo(() => {
@@ -93,61 +132,54 @@ function CustomerOrderTracking() {
 
           {!isLoading && !error && activeOrders.length > 0 && (
             <div className="tracking-list">
-              {activeOrders.map((order) => (
-                <article key={order.id} className="tracking-card">
-                  <div className="tracking-card-header">
-                    <div>
-                      <h3>{order.orderId}</h3>
-                      <p>{(order.orderSummary?.items || []).length} items</p>
+              {activeOrders.map((order) => {
+                const trackId = getOrderTrackId(order);
+                const showMapLink = canFollowOnMap(order) && trackId;
+
+                return (
+                  <article key={order.id} className="tracking-card">
+                    <div className="tracking-card-header">
+                      <div>
+                        <h3>{order.orderId}</h3>
+                        <p>{(order.orderSummary?.items || []).length} items</p>
+                      </div>
+                      <span className={`tracking-status tracking-status--${order.status}`}>
+                        {statusLabel(order.status)}
+                      </span>
                     </div>
-                    <span className={`tracking-status tracking-status--${order.status}`}>
-                      {statusLabel(order.status)}
-                    </span>
-                  </div>
-                  {order.status === 'finding_driver' && (
-                    <div className="driver-loading">Finding a driver...</div>
-                  )}
-                  <div className="tracking-grid">
-                    <p>
-                      <strong>Address:</strong> {order.customerAddress || order.orderSummary?.address || '—'}
-                    </p>
-                    <p>
-                      <strong>Payment:</strong> {(order.paymentMethod || 'card').toUpperCase()}
-                    </p>
-                    <p>
-                      <strong>Total:</strong> {formatMoney(order.orderSummary?.total, order.currency)}
-                    </p>
-                    <p>
-                      <strong>Driver:</strong> {order.driver?.name || 'Not assigned yet'}
-                    </p>
-                  </div>
-                  {order.status !== 'finding_driver' && (
-                    <div className="tracking-card-actions" style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="track-map-btn"
-                        onClick={() => navigate(`/customer/track-order?donationId=${order.id || order._id}`)}
-                        style={{
-                          padding: '0.45rem 1rem',
-                          backgroundColor: '#1f4e36',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '999px',
-                          cursor: 'pointer',
-                          fontWeight: '700',
-                          fontSize: '0.86rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          transition: 'transform 0.16s ease, box-shadow 0.16s ease'
-                        }}
-                      >
-                        📍 View Map / Track Order
-                      </button>
+
+                    {order.status === 'finding_driver' && (
+                      <div className="driver-loading">
+                        Finding a driver… A map link will appear once a driver accepts your order.
+                      </div>
+                    )}
+
+                    <div className="tracking-grid">
+                      <p>
+                        <strong>Address:</strong> {order.customerAddress || order.orderSummary?.address || '—'}
+                      </p>
+                      <p>
+                        <strong>Payment:</strong> {(order.paymentMethod || 'card').toUpperCase()}
+                      </p>
+                      <p>
+                        <strong>Total:</strong> {formatMoney(order.orderSummary?.total, order.currency)}
+                      </p>
+                      <p>
+                        <strong>Driver:</strong> {getDriverDisplayName(order)}
+                      </p>
                     </div>
-                  )}
-                </article>
-              ))}
+
+                    {showMapLink && (
+                      <div className="tracking-card-actions">
+                        <Link to={customerRoutes.trackOrder(trackId)} className="track-map-link">
+                          <span className="track-map-link__icon" aria-hidden="true">📍</span>
+                          Follow on map
+                        </Link>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

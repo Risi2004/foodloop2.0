@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const CustomerOrder = require('../models/CustomerOrder');
+const Donation = require('../models/Donation');
 const { isDriverRole } = require('../utils/donationHelpers');
 
 function requireCustomer(req, res) {
@@ -28,15 +29,52 @@ function toCustomerOrderJSON(order) {
   };
 }
 
+async function repairCustomerOrderFromLinkedDonation(order) {
+  if (!order || order.status !== 'finding_driver' || order.driverId) {
+    return order;
+  }
+
+  const itemIds = (order.orderSummary?.items || []).map((item) => item.id).filter(Boolean);
+  if (!itemIds.length) return order;
+
+  const linkedDonation = await Donation.findOne({
+    receiverId: order.customerId,
+    driverId: { $ne: null },
+    status: { $in: ['driver_assigned', 'picked_up', 'in_transit'] },
+    $or: [{ parentListingId: { $in: itemIds } }, { _id: { $in: itemIds } }],
+  }).sort({ updatedAt: -1 });
+
+  if (!linkedDonation?.driverId) return order;
+
+  order.driverId = linkedDonation.driverId;
+  order.status =
+    linkedDonation.status === 'in_transit' ? 'in_transit' : linkedDonation.status;
+  order.assignedAt = order.assignedAt || linkedDonation.assignedAt || new Date();
+  if (linkedDonation.pickedUpAt) {
+    order.pickedUpAt = linkedDonation.pickedUpAt;
+  }
+  await order.save();
+  return order;
+}
+
 exports.getMyCustomerOrders = async (req, res) => {
   try {
     if (!requireCustomer(req, res)) return;
     const orders = await CustomerOrder.find({ customerId: req.user._id })
       .populate('driverId', 'username driverName contactNo vehicleType vehicleNumber')
       .sort({ createdAt: -1 });
+
+    for (const order of orders) {
+      await repairCustomerOrderFromLinkedDonation(order);
+    }
+
+    const refreshed = await CustomerOrder.find({ customerId: req.user._id })
+      .populate('driverId', 'username driverName contactNo vehicleType vehicleNumber')
+      .sort({ createdAt: -1 });
+
     return res.json({
       success: true,
-      orders: orders.map((order) => toCustomerOrderJSON(order)),
+      orders: refreshed.map((order) => toCustomerOrderJSON(order)),
     });
   } catch (err) {
     console.error('getMyCustomerOrders error:', err);

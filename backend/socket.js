@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const Donation = require('./models/Donation');
+const CustomerOrder = require('./models/CustomerOrder');
 const { userCanViewTracking } = require('./utils/donationHelpers');
 
 const DONOR_ROLES = ['donor', 'restaurant', 'supermarket', 'business', 'individual'];
@@ -34,6 +35,11 @@ function emitToDrivers(event, payload) {
 function emitToDonationRoom(donationId, event, payload) {
   if (!io || !donationId) return;
   io.to(`donation:${donationId}`).emit(event, payload);
+}
+
+function emitToCustomer(customerId, event, payload) {
+  if (!io || !customerId) return;
+  io.to(`customer:${customerId}`).emit(event, payload);
 }
 
 function attachSocketAuth(socketServer) {
@@ -72,6 +78,9 @@ function attachSocketAuth(socketServer) {
     if (DONOR_ROLES.includes(role) && userId) {
       socket.join(`donor:${userId}`);
     }
+    if (role === 'customer' && userId) {
+      socket.join(`customer:${userId}`);
+    }
 
     socket.on('join_donation', async (payload, callback) => {
       try {
@@ -80,6 +89,23 @@ function attachSocketAuth(socketServer) {
           callback?.({ success: false, message: 'Invalid donation id.' });
           return;
         }
+
+        const customerOrder = await CustomerOrder.findById(donationId);
+        if (customerOrder) {
+          const customerId =
+            customerOrder.customerId?._id?.toString?.() || customerOrder.customerId?.toString?.();
+          const driverId =
+            customerOrder.driverId?._id?.toString?.() || customerOrder.driverId?.toString?.();
+          const viewerId = socket.user._id.toString();
+          if (![customerId, driverId].includes(viewerId)) {
+            callback?.({ success: false, message: 'Not allowed to join this order room.' });
+            return;
+          }
+          socket.join(`donation:${donationId}`);
+          callback?.({ success: true });
+          return;
+        }
+
         const donation = await Donation.findById(donationId);
         if (!donation) {
           callback?.({ success: false, message: 'Donation not found.' });
@@ -112,5 +138,6 @@ module.exports = {
   emitToDonor,
   emitToDrivers,
   emitToDonationRoom,
+  emitToCustomer,
   attachSocketAuth,
 };

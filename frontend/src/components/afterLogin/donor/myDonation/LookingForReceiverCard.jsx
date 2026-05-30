@@ -49,7 +49,6 @@ const LookingForReceiverCard = ({ donation, onEdit, onDelete, onAiSuggestDiscoun
             <div className="top">
                 <div className="div-flex">
                     <div className="span-bg-orange-100-receiver">
-                        <div className="span-size-1-5-orange"></div>
                         <div className="in-transit-orange-receiver">Looking for Receiver</div>
                     </div>
                 </div>

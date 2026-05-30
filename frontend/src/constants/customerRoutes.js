@@ -11,6 +11,7 @@ export const customerRoutes = {
   payment: () => customerPath('payment'),
   orderHistory: () => customerPath('order-history'),
   orderTracking: () => customerPath('order-tracking'),
+  trackOrder: (orderId) => `${customerPath('track-order')}?donationId=${encodeURIComponent(orderId)}`,
   profile: () => customerPath('profile'),
   about: () => customerPath('about'),
   notifications: () => customerPath('notifications'),

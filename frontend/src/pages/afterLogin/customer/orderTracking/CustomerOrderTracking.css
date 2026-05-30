@@ -168,6 +168,36 @@
   font-size: 0.88rem;
 }
 
+.tracking-card-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.track-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: linear-gradient(140deg, #1f4e36, #2f6a4a);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-decoration: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.track-map-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(31, 78, 54, 0.22);
+  color: #fff;
+}
+
+.track-map-link__icon {
+  line-height: 1;
+}
+
 @media (max-width: 900px) {
   .tracking-overview {
     grid-template-columns: 1fr;

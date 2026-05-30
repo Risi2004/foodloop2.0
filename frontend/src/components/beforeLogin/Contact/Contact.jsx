@@ -3,18 +3,8 @@ import icon1 from '../../../assets/icons/contact/1.svg';
 import icon2 from '../../../assets/icons/contact/2.svg';
 import icon3 from '../../../assets/icons/contact/3.svg';
 import './Contact.css';
-import { getUser, isAuthenticated } from '../../../utils/auth';
+import { getUser, isAuthenticated, getChatbotDisplayName } from '../../../utils/auth';
 import { submitContactMessage } from '../../../services/contactApi';
-
-function getDisplayName(user) {
-  if (!user) return '';
-  if (user.role === 'Donor') {
-    return user.donorType === 'Business' ? (user.businessName || user.email) : (user.username || user.email);
-  }
-  if (user.role === 'Receiver') return user.receiverName || user.email;
-  if (user.role === 'Driver') return user.driverName || user.email;
-  return user.email || '';
-}
 
 function Contact() {
   const [name, setName] = useState('');
@@ -31,7 +21,7 @@ function Contact() {
     if (!isAuthenticated()) return;
     const user = getUser();
     if (user) {
-      setName(getDisplayName(user) || '');
+      setName(getChatbotDisplayName(user) || '');
       setEmail(user.email || '');
       setContactNo(user.contactNo || '');
     }

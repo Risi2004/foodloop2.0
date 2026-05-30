@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import MapTileLayer from '../../../../shared/map/MapTileLayer';
 import MapInvalidateSize from '../../../../shared/map/MapInvalidateSize';
 import { getDonationExpiryDisplay, getListingPriceDisplay } from '../../../../../utils/donationDisplay';
+import SupplierNameWithPremium from '../../../shared/SupplierNameWithPremium';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -159,7 +160,11 @@ const SelectedDonationPanel = ({ selectedItem }) => {
             </p>
             {donation.donorName && (
                 <p className="selected-donation-panel__row">
-                    <strong>Donor:</strong> {donation.donorName}
+                    <strong>Donor:</strong>{' '}
+                    <SupplierNameWithPremium
+                        name={donation.donorName}
+                        isPremium={donation.donorIsPremium === true || selectedItem.donorIsPremium === true}
+                    />
                 </p>
             )}
         </div>

@@ -2,14 +2,15 @@
     display: flex;
     flex-wrap: nowrap;
     gap: 16px;
-    align-items: stretch;
+    align-items: flex-start;
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    padding-bottom: 12px;
 }
 
 .donation-cards::-webkit-scrollbar {
@@ -23,16 +24,71 @@
     min-width: 560px;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 24px 20px 20px 20px;
+    padding: 20px 20px 24px;
     flex-direction: column;
     justify-content: flex-start;
-    align-items: flex-start;
+    align-items: stretch;
+    align-self: flex-start;
+    height: auto;
+    min-height: 0;
     border-radius: 16px;
     background: #FFF;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.05);
     transition: transform 0.2s, box-shadow 0.2s;
-    overflow: hidden;
+    overflow: visible;
+}
+
+.donation-card.in-transit-card .fed {
+    align-items: flex-start;
+    padding: 4px 0 0;
+    width: 100%;
+    overflow: visible;
+}
+
+.donation-card.in-transit-card .detail {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+}
+
+.donation-card.in-transit-card .wight {
+    margin-top: 8px;
+}
+
+.donation-card.in-transit-card .img {
+    margin-top: 2px;
+}
+
+.donation-card.in-transit-card {
+    width: 560px;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 0 auto;
+    height: auto;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    overflow: visible;
+}
+
+.donation-card.in-transit-card .bag-of-fuji-apples {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.donation-card.in-transit-card .top {
+    width: 100%;
+}
+
+.donor-my-donation-content .intransit .donation-cards {
+    flex-wrap: wrap;
+    overflow: visible;
+    overflow-x: visible;
 }
 
 
@@ -104,56 +160,12 @@
 
 .div-flex {
     flex-shrink: 0;
-    min-width: 0;
+    width: auto;
+    min-width: fit-content;
     height: auto;
     position: relative;
     display: flex;
     align-items: center;
-}
-
-.span-bg-emerald-100 {
-    background: #d1fae5;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-}
-
-.span-bg-blue-100 {
-    background: #dbeafe;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-}
-
-.span-size-1-5 {
-    background: #3b82f6;
-}
-
-.span-bg-orange-100 {
-    background: #fef3c7;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-}
-
-.span-bg-orange-100-receiver {
-    background: #fef3c7;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-}
-
-.span-size-1-5,
-.span-size-1-5-orange {
-    border-radius: 9999px;
-    width: 6px;
-    height: 6px;
-    position: relative;
-    flex-shrink: 0;
 }
 
 .span-bg-emerald-100,
@@ -165,6 +177,43 @@
     height: auto;
     position: relative;
     box-sizing: border-box;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    width: fit-content !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+.span-bg-emerald-100 {
+    background: #ecfdf5;
+    border: 1px solid #6ee7b7;
+}
+
+.span-bg-blue-100 {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+}
+
+.span-bg-orange-100,
+.span-bg-orange-100-receiver {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+}
+
+.span-size-1-5 {
+    background: #3b82f6;
+}
+
+.span-size-1-5,
+.span-size-1-5-orange {
+    border-radius: 9999px;
+    width: 6px;
+    height: 6px;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .span-size-1-5-orange {
@@ -185,21 +234,66 @@
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
 }
 
 .in-transit {
     color: #1d4ed8;
-    width: 63.23px;
+    width: auto;
 }
 
 .in-transit-orange {
     color: #c2410c;
-    width: 110px;
+    width: auto;
 }
 
 .in-transit-orange-receiver {
     color: #c2410c;
-    width: 130px;
+    width: auto;
+}
+
+/* Override receiver my-claims fixed badge widths when donor cards load both stylesheets */
+.donation-card .div-flex {
+    width: auto !important;
+    min-width: fit-content !important;
+    height: auto !important;
+}
+
+.donation-card .span-bg-blue-100,
+.donation-card .span-bg-emerald-100,
+.donation-card .span-bg-orange-100,
+.donation-card .span-bg-orange-100-receiver {
+    width: auto !important;
+    min-width: fit-content !important;
+    max-width: none !important;
+}
+
+.donation-card .in-transit,
+.donation-card .in-transit-orange,
+.donation-card .in-transit-orange-receiver {
+    width: auto !important;
+    max-width: none !important;
+}
+
+.donation-card .in-transit-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    color: #1d4ed8;
+    font-family: "Inter-Bold", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
+    white-space: nowrap;
+    width: auto;
+    min-width: fit-content;
+    flex-shrink: 0;
 }
 
 .check-circle {
@@ -303,7 +397,7 @@
     letter-spacing: 0.5px;
     font-weight: 700;
     position: relative;
-    height: 12px;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -318,33 +412,32 @@
 }
 
 .fed {
-    padding: 8px 0;
+    padding: 8px 4px 4px;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
     gap: 16px;
-    align-self: flex-start;
+    align-self: stretch;
     flex-shrink: 0;
     min-width: 0;
+    width: 100%;
     position: relative;
+    overflow: visible;
 }
 
 .img {
     background: #f8f9fa;
     border-radius: 50%;
-    /* Circle */
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
+    display: block;
     flex-shrink: 0;
     width: 80px;
-    /* Slightly smaller */
     height: 80px;
+    min-width: 80px;
+    min-height: 80px;
     position: relative;
     object-fit: cover;
+    object-position: center;
     border: 2px solid #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -444,8 +537,8 @@
     line-height: 16px;
     font-weight: 400;
     position: relative;
-    width: 87px;
-    height: 15px;
+    width: auto;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: flex-start;

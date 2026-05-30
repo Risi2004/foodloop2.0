@@ -117,6 +117,10 @@ export function onDonationNewPickup(handler) {
   return subscribe('donation:newPickup', handler);
 }
 
+export function onCustomerOrderUpdated(handler) {
+  return subscribe('customerOrder:updated', handler);
+}
+
 export function onDonationPickupTaken(handler) {
   return subscribe('donation:pickupTaken', handler);
 }

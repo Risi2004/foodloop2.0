@@ -9,6 +9,7 @@ import { getListingPriceDisplay } from '../../../../utils/donationDisplay';
 import { customerRoutes } from '../../../../constants/customerRoutes';
 import { useMaintenance } from '../../../../contexts/MaintenanceContext';
 import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
+import SupplierNameWithPremium from '../../../../components/afterLogin/shared/SupplierNameWithPremium';
 import {
   getSocket,
   onDonationCreated,
@@ -321,7 +322,15 @@ const CustomerMarketplace = () => {
                         </div>
 
                         <h3 className="product-title-text">{product.name}</h3>
-                        <p className="supplier-line">{product.donorName} • {product.donorType}</p>
+                        <p className="supplier-line">
+                          <SupplierNameWithPremium
+                            name={product.donorName}
+                            isPremium={product.donorIsPremium}
+                          />
+                          {product.donorType && (
+                            <span className="supplier-line__type"> • {product.donorType}</span>
+                          )}
+                        </p>
                         <p className="pickup-line">{product.pickupAddress}</p>
 
                         <div className="price-row">
@@ -406,7 +415,14 @@ const CustomerMarketplace = () => {
               </p>
               <p>{selectedListing.description}</p>
               <div className="listing-modal-meta">
-                <p><strong>Supplier:</strong> {selectedListing.donorName} ({selectedListing.donorType})</p>
+                <p>
+                  <strong>Supplier:</strong>{' '}
+                  <SupplierNameWithPremium
+                    name={selectedListing.donorName}
+                    isPremium={selectedListing.donorIsPremium}
+                  />
+                  {selectedListing.donorType && ` (${selectedListing.donorType})`}
+                </p>
                 <p><strong>Available Qty:</strong> {selectedListing.quantity}</p>
                 <p><strong>Expiry:</strong> {selectedListing.expiryText}</p>
                 <p><strong>Pickup Address:</strong> {selectedListing.pickupAddress}</p>

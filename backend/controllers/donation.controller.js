@@ -29,6 +29,7 @@ const {
 } = require('../utils/donationHelpers');
 const { buildReceiverDeliveryQuoteForDonation } = require('../utils/receiverDeliveryQuote');
 const { emitToReceivers, emitToDonor, emitToDrivers } = require('../socket');
+const { getPremiumSupplierIdSet, isSupplierPremium } = require('../services/supplierPremiumAccess');
 const {
   sendDonationClaimedEmails,
   sendDonationClaimCancelledEmails,
@@ -263,8 +264,10 @@ exports.createDonation = async (req, res) => {
       'username businessName role'
     );
     if (populated) {
+      const donorId = populated.donorId?._id || populated.donorId;
+      const donorIsPremium = donorId ? await isSupplierPremium(donorId) : false;
       emitToReceivers('donation:created', {
-        donation: toAvailableDonationJSON(populated, null),
+        donation: toAvailableDonationJSON(populated, null, { donorIsPremium }),
         donorName: getDonorDisplayName(populated.donorId),
       });
     }
@@ -309,6 +312,10 @@ exports.getAvailableDonations = async (req, res) => {
       .populate('donorId', 'username businessName role')
       .sort({ createdAt: -1 });
 
+    const premiumSupplierIds = await getPremiumSupplierIdSet(
+      donations.map((donation) => donation.donorId?._id || donation.donorId)
+    );
+
     const results = [];
     for (const donation of donations) {
       if (isDonationExpired(donation.userProvidedExpiryDate)) continue;
@@ -329,7 +336,7 @@ exports.getAvailableDonations = async (req, res) => {
       );
       if (distanceKm == null || distanceKm > MAX_RECEIVER_RADIUS_KM) continue;
 
-      results.push(toAvailableDonationJSON(donation, distanceKm));
+      results.push(toAvailableDonationJSON(donation, distanceKm, { premiumSupplierIds }));
     }
 
     results.sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
@@ -448,7 +455,7 @@ exports.claimDonation = async (req, res) => {
       throw claimErr;
     }
 
-    const { claimPayload, parentPayload } = notifyDonationClaimed({ child, parent });
+    const { claimPayload, parentPayload } = await notifyDonationClaimed({ child, parent });
 
     return res.json({
       success: true,
@@ -519,7 +526,10 @@ exports.cancelClaim = async (req, res) => {
       await donation.save();
       const parent = await restoreParentQuantityOnCancel(donation);
       if (parent) {
-        parentPayload = toAvailableDonationJSON(parent, null);
+        await parent.populate('donorId', 'username businessName role');
+        const donorId = parent.donorId?._id || parent.donorId;
+        const donorIsPremium = donorId ? await isSupplierPremium(donorId) : false;
+        parentPayload = toAvailableDonationJSON(parent, null, { donorIsPremium });
       }
     } else {
       donation.status = 'available';

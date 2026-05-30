@@ -96,6 +96,28 @@ function coordsMatch(aLat, aLng, bLat, bLng, tolerance = 0.0005) {
   return latDiff <= tolerance && lngDiff <= tolerance;
 }
 
+/** Driver payout from per-km fields on a donation / claim document. */
+function resolveDonationDriverEarnings(donation, fallbackAmount = 0) {
+  if (!donation) return roundCurrency(fallbackAmount);
+
+  const finalFee = Number(donation.deliveryFeeFinal);
+  if (finalFee > 0) return roundCurrency(finalFee);
+
+  const quotedFee = Number(donation.deliveryFeeQuoted);
+  if (quotedFee > 0) return roundCurrency(quotedFee);
+
+  const dist = Number(donation.deliveryDistanceKm);
+  if (dist > 0) {
+    const rate = Number(
+      donation.deliveryFinalRatePerKm || donation.deliveryQuotedRatePerKm || DELIVERY_QUOTE_RATE_LKR
+    );
+    const computed = calculateDeliveryFee(dist, rate);
+    if (computed > 0) return computed;
+  }
+
+  return roundCurrency(fallbackAmount);
+}
+
 module.exports = {
   DELIVERY_QUOTE_RATE_LKR,
   LOW_INCOME_DELIVERY_DISCOUNT_RATE,
@@ -110,4 +132,5 @@ module.exports = {
   buildDeliveryQuote,
   computeFinalDeliveryFee,
   coordsMatch,
+  resolveDonationDriverEarnings,
 };

@@ -301,7 +301,7 @@ async function claimCustomerOrderItems(payment, customerUser) {
         payment: payment,
         skipPaymentValidation: true,
       });
-      notifyDonationClaimed({ child, parent });
+      await notifyDonationClaimed({ child, parent });
     } catch (err) {
       console.error(`Failed to auto-claim item ${item.id} for customer order ${payment.orderId}:`, err);
     }
@@ -536,7 +536,7 @@ exports.confirmClaimPayment = async (req, res) => {
           payment: paymentDoc,
           skipPaymentValidation: true,
         });
-        const { claimPayload, parentPayload } = notifyDonationClaimed({ child, parent });
+        const { claimPayload, parentPayload } = await notifyDonationClaimed({ child, parent });
         return {
           claimCompleted: true,
           donation: claimPayload,
@@ -628,13 +628,15 @@ exports.retryClaimPayment = async (req, res) => {
       receiverUser: req.user,
     });
 
-    const claimPayload = result.child.parentListingId
+    let claimPayload = result.child.parentListingId
       ? enrichClaimFromParent(result.child)
       : toClaimJSON(result.child);
-    const parentPayload = result.parent ? toAvailableDonationJSON(result.parent, null) : null;
+    let parentPayload = result.parent ? toAvailableDonationJSON(result.parent, null) : null;
 
     if (!result.alreadyClaimed) {
-      notifyDonationClaimed({ child: result.child, parent: result.parent });
+      const notified = await notifyDonationClaimed({ child: result.child, parent: result.parent });
+      claimPayload = notified.claimPayload;
+      parentPayload = notified.parentPayload;
     }
 
     return res.json({

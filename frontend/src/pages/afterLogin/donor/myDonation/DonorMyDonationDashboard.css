@@ -24,6 +24,7 @@
   flex-direction: column;
   gap: 30px;
   overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .donor-my-donation-content .supplier-ai-panel {
@@ -32,7 +33,33 @@
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
 }
 
-.intransit,
+.intransit {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  position: relative;
+  background: #f8fbff;
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+  min-height: fit-content;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  padding: 24px 24px 28px;
+  height: auto;
+  overflow: visible;
+}
+
+/* Override receiver MyClaims fixed height / hidden overflow on shared .intransit class */
+.donor-my-donation-content .intransit {
+  width: 100%;
+  height: auto;
+  min-height: fit-content;
+  overflow: visible;
+}
+
 .lookingForReceiver,
 .looking,
 .complited {
@@ -83,15 +110,37 @@
   display: flex;
   flex-wrap: nowrap;
   gap: 16px;
-  align-items: stretch;
+  align-items: flex-start;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   box-sizing: border-box;
-  padding-bottom: 8px;
+  padding: 4px 0 16px;
   -webkit-overflow-scrolling: touch;
+}
+
+/* In Transit: no inner scroll — outer box grows with content, width stays 100% */
+.donor-my-donation-content .intransit .donation-cards {
+  flex-wrap: wrap;
+  overflow: visible;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding-bottom: 8px;
+}
+
+.donor-my-donation-content .intransit .donation-card,
+.donor-my-donation-content .intransit .donation-card.in-transit-card {
+  width: 560px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 0 auto;
+  height: auto;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  align-self: flex-start;
+  overflow: visible;
 }
 
 
@@ -139,6 +188,12 @@
   .looking .donation-cards,
   .complited .donation-cards,
   .donation-cards {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .donor-my-donation-content .intransit .donation-card,
+  .donor-my-donation-content .intransit .donation-card.in-transit-card {
     width: 100%;
     max-width: 100%;
   }

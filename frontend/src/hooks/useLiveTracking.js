@@ -37,7 +37,8 @@ const useLiveTracking = (donationId, options = {}) => {
         setTrackingData(data);
         setDriverLocation(data.driver?.location || null);
         setError(null);
-        if (data.donation?.status === 'delivered') {
+        const deliveryStatus = data.donation?.status;
+        if (deliveryStatus === 'delivered') {
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
@@ -94,6 +95,7 @@ const useLiveTracking = (donationId, options = {}) => {
     }
 
     const unsubscribe = onDriverLocation((payload) => {
+      if (payload?.donationId !== donationId) return;
       if (payload?.driverLocation) {
         setDriverLocation(payload.driverLocation);
       }

@@ -4,6 +4,7 @@ import sunIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/S
 import winterIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Winter.svg';
 import blurIcon from '../../../../../assets/icons/afterLogin/donor/new-donation/Blur.svg';
 import { getListingPriceDisplay } from '../../../../../utils/donationDisplay';
+import SupplierNameWithPremium from '../../../shared/SupplierNameWithPremium';
 
 const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity, onClaimQuantityChange, ordersBlocked = false }) => {
     const donation = item.donation || item;
@@ -20,6 +21,8 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
                        donation.aiQualityScore !== undefined && 
                        donation.aiQualityScore >= 0.8;
     const priceDisplay = getListingPriceDisplay(donation, { perServing: true });
+    const donorName = item.donorName || donation.donorName;
+    const donorIsPremium = item.donorIsPremium === true || donation.donorIsPremium === true;
 
     const handleCardClick = () => {
         if (onCardClick) {
@@ -105,6 +108,11 @@ const FoodCard = ({ item, onCardClick, onClaim, selected = false, claimQuantity,
 
                 <div className="card-details">
                     <h3 className="card-title">{item.title || donation.itemName || 'Food Item'}</h3>
+                    {donorName && (
+                        <p className="card-meta card-meta--supplier">
+                            <SupplierNameWithPremium name={donorName} isPremium={donorIsPremium} />
+                        </p>
+                    )}
                     <p className="card-meta">Listed {item.listedTime || 'Recently'}</p>
                     <p className="card-meta highlight">EXP: {item.expiry || 'N/A'}</p>
                     {item.distanceLabel && (

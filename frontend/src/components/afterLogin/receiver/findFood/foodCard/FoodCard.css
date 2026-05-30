@@ -182,6 +182,12 @@
     opacity: 0.8;
 }
 
+.card-meta--supplier {
+    font-weight: 700;
+    color: #1b4332;
+    opacity: 1;
+}
+
 .card-meta--distance {
     color: #1b4332;
     font-weight: 700;

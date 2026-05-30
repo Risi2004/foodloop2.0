@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 const EarningsTransaction = require('../models/EarningsTransaction');
+const {
+  findCustomerOrderForDonation,
+  getDonationsForCustomerOrder,
+} = require('./customerOrderSync');
+const { resolveDonationDriverEarnings } = require('../utils/deliveryPricing');
 const PayoutRequest = require('../models/PayoutRequest');
 const Payment = require('../models/Payment');
 const Donation = require('../models/Donation');
@@ -178,14 +183,53 @@ async function creditSuppliersFromCustomerOrder(customerOrder) {
   return results;
 }
 
+async function resolveDriverDeliveryFee({ donation, customerOrder, linkedDonations = null }) {
+  if (donation) {
+    const fromDonation = resolveDonationDriverEarnings(donation, 0);
+    if (fromDonation > 0) return fromDonation;
+  }
+
+  const donations =
+    linkedDonations ||
+    (customerOrder ? await getDonationsForCustomerOrder(customerOrder) : []);
+
+  for (const entry of donations) {
+    const fee = resolveDonationDriverEarnings(entry, 0);
+    if (fee > 0) return fee;
+  }
+
+  if (customerOrder && Number(customerOrder.orderSummary?.deliveryFee) > 0) {
+    return roundCurrency(Number(customerOrder.orderSummary.deliveryFee));
+  }
+
+  return DRIVER_EARNINGS_LKR;
+}
+
 async function creditDeliveryEarnings({ donation, customerOrder, driverId }) {
   const credited = { driver: null, suppliers: [] };
 
+  if (donation && !customerOrder) {
+    customerOrder = await findCustomerOrderForDonation(donation, { includeDelivered: true });
+  }
+
   if (customerOrder) {
-    const deliveryFee =
-      Number(customerOrder.orderSummary?.deliveryFee) > 0
-        ? Number(customerOrder.orderSummary.deliveryFee)
-        : DRIVER_EARNINGS_LKR;
+    const linkedDonations = donation
+      ? [donation, ...(await getDonationsForCustomerOrder(customerOrder))]
+      : await getDonationsForCustomerOrder(customerOrder);
+    const uniqueDonations = [];
+    const seen = new Set();
+    for (const entry of linkedDonations) {
+      const id = entry?._id?.toString?.();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      uniqueDonations.push(entry);
+    }
+
+    const deliveryFee = await resolveDriverDeliveryFee({
+      donation,
+      customerOrder,
+      linkedDonations: uniqueDonations,
+    });
     const foodSubtotal = Number(customerOrder.orderSummary?.subtotal || 0);
     const paymentMethod = customerOrder.paymentMethod === 'cod' ? 'cod' : 'card';
     const codAmountCollected =
@@ -198,6 +242,7 @@ async function creditDeliveryEarnings({ donation, customerOrder, driverId }) {
       referenceLabel: customerOrder.orderId || 'Customer order delivery',
       customerOrderId: customerOrder._id,
       paymentId: customerOrder.paymentId || null,
+      donationId: donation?._id || null,
       amount: deliveryFee,
       paymentMethod,
       codAmountCollected,
@@ -209,10 +254,7 @@ async function creditDeliveryEarnings({ donation, customerOrder, driverId }) {
   }
 
   if (donation) {
-    const driverAmount =
-      donation.deliveryFeeFinal != null && Number(donation.deliveryFeeFinal) > 0
-        ? Number(donation.deliveryFeeFinal)
-        : DRIVER_EARNINGS_LKR;
+    const driverAmount = await resolveDriverDeliveryFee({ donation });
     const donationPaymentMethod =
       donation.deliveryPayer === 'receiver' ? 'card' : donation.deliveryPayer === 'platform' ? null : null;
     credited.driver = await creditDriverDelivery({

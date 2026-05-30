@@ -26,13 +26,10 @@ const InTransitCard = ({ donation }) => {
     const imageUrl = donation.imageUrl || foodImage;
 
     return (
-        <div className="donation-card">
+        <div className="donation-card in-transit-card">
             <div className="top">
                 <div className="div-flex">
-                    <div className="span-bg-blue-100">
-                        <div className="span-size-1-5"></div>
-                        <div className="in-transit">In Transit</div>
-                    </div>
+                    <span className="in-transit-badge">In Transit</span>
                 </div>
                 <div className="tool">
                     <Link to={trackOrderUrl} className="edit" style={{ textDecoration: 'none', color: 'inherit', cursor: donationId ? 'pointer' : 'default' }} aria-label="Follow map to track delivery">

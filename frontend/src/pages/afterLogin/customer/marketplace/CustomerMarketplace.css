@@ -214,10 +214,12 @@
   cursor: pointer;
 }
 
+
+
 .aliexpress-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.35rem;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.6rem;
 }
 
 .aliexpress-card {
@@ -302,36 +304,55 @@
 }
 
 .card-content {
-  padding: 1rem 1.1rem 1.15rem;
+  padding: 1rem 1.25rem 1.15rem;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
-.badge-row {
+
+
+.marketplace-page .badge-row {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 0.15rem;
 }
 
-.badge {
-  font-size: 0.62rem;
+.marketplace-page .badge-row .badge {
+  width: auto;
+  height: auto;
+  min-width: max-content;
+  flex-shrink: 0;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
   text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  border: none;
 }
 
-.badge.choice {
+.marketplace-page .badge-row .badge.choice {
   background: #fff3cd;
   color: #856404;
+  border: 1px solid #ffeeba;
 }
 
-.badge.sale {
+.marketplace-page .badge-row .badge.sale {
   background: #e8f5e9;
   color: #2e7d32;
+  border: 1px solid #c3e6cb;
 }
 
 .product-title-text {
@@ -352,6 +373,16 @@
   margin: 0;
   color: #334155;
   font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.supplier-line__type {
+  color: #334155;
   font-weight: 700;
 }
 
@@ -486,6 +517,7 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -608,23 +640,29 @@
     padding: 0.65rem 0.75rem;
     top: 120px;
   }
+
   .marketplace-container {
     padding: 0.75rem 0 2rem;
   }
+
   .sub-nav-container {
     flex-wrap: wrap;
   }
+
   .grid-header {
     flex-direction: column;
     align-items: stretch;
   }
+
   .marketplace-search-bar {
     max-width: none;
   }
+
   .aliexpress-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
+
   .card-image-wrapper {
     height: 190px;
   }
@@ -635,6 +673,7 @@
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
+
   .card-image-wrapper {
     height: 180px;
   }
