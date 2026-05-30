@@ -51,8 +51,13 @@ const AdminMessages = () => {
     setReplyError(null);
   };
 
+  const selectedMessage = selectedMessageId
+    ? messages.find((m) => m.id === selectedMessageId)
+    : null;
+  const canSendReply = Boolean(selectedMessage && !selectedMessage.adminReply && replyText.trim());
+
   const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedMessageId) return;
+    if (!canSendReply || !selectedMessageId) return;
     setSendingReply(true);
     setReplySuccess(null);
     setReplyError(null);
@@ -140,6 +145,9 @@ const AdminMessages = () => {
                   {msg.email && (
                     <div style={{ fontSize: "14px", color: "#6b7280", marginTop: "4px" }}>{msg.email}</div>
                   )}
+                  {msg.contactNo && (
+                    <div style={{ fontSize: "14px", color: "#6b7280", marginTop: "2px" }}>{msg.contactNo}</div>
+                  )}
                   {msg.adminReply && (
                     <div className="replies-container">
                       <div className="reply-item">
@@ -178,10 +186,11 @@ const AdminMessages = () => {
           <div className="search2">
             <textarea
               className="change-your-password-for-security-purpose"
-              placeholder="Type your reply here..."
+              placeholder={selectedMessage?.adminReply ? "This message has already been replied to." : "Type your reply here..."}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               rows={3}
+              disabled={Boolean(selectedMessage?.adminReply)}
             />
           </div>
           {replySuccess && <div style={{ color: "#86efac", fontSize: "14px" }}>{replySuccess}</div>}
@@ -190,7 +199,7 @@ const AdminMessages = () => {
             <div
               className="frame-208"
               onClick={handleSendReply}
-              style={{ cursor: sendingReply || !selectedMessageId ? "not-allowed" : "pointer", opacity: sendingReply || !selectedMessageId ? 0.7 : 1 }}
+              style={{ cursor: sendingReply || !canSendReply ? "not-allowed" : "pointer", opacity: sendingReply || !canSendReply ? 0.7 : 1 }}
             >
               <div className="send">{sendingReply ? "SENDING..." : "SEND"}</div>
             </div>

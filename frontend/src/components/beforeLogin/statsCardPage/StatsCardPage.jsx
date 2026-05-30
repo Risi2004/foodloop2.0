@@ -9,44 +9,68 @@ import icon6 from "../../../assets/icons/stats/6.svg"
 import { getPublicStats } from "../../../services/statsApi";
 import "./StatsCardPage.css"
 
-const defaultStats = [
-    { id: 1, icon: icon1, count: "12,540", title: "Suppliers Registered" },
-    { id: 2, icon: icon2, count: "3,280", title: "Volunteer Drivers Registered" },
-    { id: 3, icon: icon3, count: "1,120", title: "NGOs Registered" },
-    { id: 4, icon: icon4, count: "45600 Kg", title: "Food Saved" },
-    { id: 5, icon: icon5, count: "182,000", title: "People Fed" },
-    { id: 6, icon: icon6, count: "9300 Kg", title: "Methane Saved" },
-];
-
 function formatNumber(n) {
     if (n == null || !Number.isFinite(n)) return "0";
     return n >= 1000 ? n.toLocaleString() : String(n);
 }
 
+function buildStatsCards(stats) {
+    const s = stats || {};
+    return [
+        { id: 1, icon: icon1, count: formatNumber(s.suppliers ?? s.donors), title: "Active Suppliers" },
+        { id: 2, icon: icon3, count: formatNumber(s.receivers), title: "Active Receivers" },
+        { id: 3, icon: icon5, count: formatNumber(s.mealsRescued ?? s.peopleFed), title: "Meals Rescued" },
+        { id: 4, icon: icon4, count: `${formatNumber(s.kgDiverted ?? s.foodSavedKg)} Kg`, title: "Kg Diverted" },
+        { id: 5, icon: icon2, count: `${formatNumber(s.co2OffsetKg)} Kg`, title: "CO₂ Offset (est.)" },
+        { id: 6, icon: icon6, count: `${formatNumber(Math.round(Number(s.methaneSavedKg) || 0))} Kg`, title: "Methane Saved (est.)" },
+    ];
+}
+
+const LOADING_STATS = buildStatsCards({
+    suppliers: null,
+    receivers: null,
+    mealsRescued: null,
+    kgDiverted: null,
+    co2OffsetKg: null,
+    methaneSavedKg: null,
+}).map((card) => ({
+    ...card,
+    count: "—",
+}));
+
 function StatsCardPage() {
-    const [statsData, setStatsData] = useState(defaultStats);
+    const [statsData, setStatsData] = useState(LOADING_STATS);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
+
         getPublicStats()
             .then((res) => {
                 if (cancelled || !res?.stats) return;
-                const s = res.stats;
-                setStatsData([
-                    { id: 1, icon: icon1, count: formatNumber(s.donors), title: "Suppliers Registered" },
-                    { id: 2, icon: icon2, count: formatNumber(s.drivers), title: "Volunteer Drivers Registered" },
-                    { id: 3, icon: icon3, count: formatNumber(s.receivers), title: "NGOs Registered" },
-                    { id: 4, icon: icon4, count: `${formatNumber(s.foodSavedKg)} Kg`, title: "Food Saved" },
-                    { id: 5, icon: icon5, count: formatNumber(s.peopleFed), title: "People Fed" },
-                    { id: 6, icon: icon6, count: `${formatNumber(Math.round(Number(s.methaneSavedKg)))} Kg`, title: "Methane Saved" },
-                ]);
+                setStatsData(buildStatsCards(res.stats));
             })
-            .catch(() => { /* keep default on error */ });
+            .catch(() => {
+                if (!cancelled) {
+                    setStatsData(buildStatsCards({
+                        suppliers: 0,
+                        receivers: 0,
+                        mealsRescued: 0,
+                        kgDiverted: 0,
+                        co2OffsetKg: 0,
+                        methaneSavedKg: 0,
+                    }));
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+
         return () => { cancelled = true; };
     }, []);
 
     return (
-        <div className="stats__card__page">
+        <div className="stats__card__page" aria-busy={loading}>
             {statsData.map((stat) => (
                 <StatsCard
                     key={stat.id}

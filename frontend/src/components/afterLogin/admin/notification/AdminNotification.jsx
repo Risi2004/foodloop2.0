@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getAdminNotifications, createNotification } from "../../../../services/notificationApi";
+import { getAdminNotifications, createNotification, deactivateNotification, deleteNotification } from "../../../../services/notificationApi";
 import "./AdminNotification.css";
 
 const ROLE_OPTIONS = [
@@ -87,16 +87,24 @@ const AdminNotification = () => {
     }
   };
 
-  const handleDeactivate = (id) => {
-    // Optional: PATCH /api/admin/notifications/:id with status: 'inactive' when backend supports it
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, status: "inactive" } : n))
-    );
+  const handleDeactivate = async (id) => {
+    setError(null);
+    try {
+      await deactivateNotification(id);
+      await fetchNotifications();
+    } catch (err) {
+      setError(err.message || "Failed to deactivate notification");
+    }
   };
 
-  const handleDelete = (id) => {
-    // Optional: DELETE when backend supports it; for now just remove from local state for UI consistency
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const handleDelete = async (id) => {
+    setError(null);
+    try {
+      await deleteNotification(id);
+      await fetchNotifications();
+    } catch (err) {
+      setError(err.message || "Failed to delete notification");
+    }
   };
 
   const displayStatus = (status) => (status === "active" ? "ACTIVE" : "INACTIVE");

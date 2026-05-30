@@ -1,13 +1,40 @@
-export const submitContactMessage = async () => ({
-  success: true,
-  message: 'Offline mode — message not sent.',
-});
+import { buildUrl, parseResponse } from './api';
+import { getAuthHeaders, isAuthenticated } from '../utils/auth';
 
-export const getContactMessages = async () => ({
-  success: true,
-  messages: [],
-});
+export const submitContactMessage = async ({ name, email, contactNo, subject, message }) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(isAuthenticated() ? getAuthHeaders() : {}),
+  };
 
-export const replyToMessage = async () => ({
-  success: true,
-});
+  const response = await fetch(buildUrl('/api/contact'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      name,
+      email,
+      contactNo,
+      subject,
+      message,
+      sourcePage: window.location.pathname,
+    }),
+  });
+
+  return parseResponse(response);
+};
+
+export const getContactMessages = async () => {
+  const response = await fetch(buildUrl('/api/admin/contact-messages'), {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response);
+};
+
+export const replyToMessage = async (messageId, reply) => {
+  const response = await fetch(buildUrl(`/api/admin/contact-messages/${messageId}/reply`), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ reply }),
+  });
+  return parseResponse(response);
+};

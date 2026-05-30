@@ -44,13 +44,16 @@ const {
   supplierBundleSubscriptionPaymentEmail,
   supplierBundleAutoRenewCancelledEmail,
   adminLoginNotificationEmail,
+  contactFormConfirmationEmail,
+  contactAdminReplyEmail,
+  adminBroadcastNotificationEmail,
 } = require('./emailTemplates');
 const {
   getDonorDisplayName,
   getReceiverDisplayName,
   getDriverDisplayName,
 } = require('./donationHelpers');
-const { formatTransferDueDate } = require('./workingDays');
+const { formatTransferDueDate, addWorkingDays } = require('./workingDays');
 
 function getFrontendBase() {
   return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
@@ -1043,6 +1046,56 @@ async function sendAdminLoginNotificationEmail(user, { timestamp, device, locati
   }
 }
 
+async function sendContactConfirmationEmail({ name, email, subject }) {
+  if (!email) return;
+  const expectedResponseBy = formatTransferDueDate(addWorkingDays(new Date(), 2));
+  const { subject: mailSubject, html, text } = contactFormConfirmationEmail({
+    name: name || 'there',
+    subject,
+    expectedResponseBy,
+  });
+  await sendMail({ to: email, subject: mailSubject, text, html });
+}
+
+async function sendContactReplyEmail({ name, email, subject, originalMessage, adminReply }) {
+  if (!email) throw new Error('Recipient email is required');
+  const { subject: mailSubject, html, text } = contactAdminReplyEmail({
+    name: name || 'there',
+    subject,
+    originalMessage,
+    adminReply,
+  });
+  await sendMail({ to: email, subject: mailSubject, text, html });
+}
+
+async function sendAdminBroadcastNotificationEmails({ title, message, users }) {
+  if (!Array.isArray(users) || !users.length) return;
+
+  const loginUrl = getLoginUrl();
+  let sent = 0;
+  let failed = 0;
+
+  for (const user of users) {
+    if (!user.email || !user.isEmailVerified) continue;
+    try {
+      const name = getUserDisplayName(user);
+      const { subject, html, text } = adminBroadcastNotificationEmail({
+        name,
+        title: title || 'Update',
+        message,
+        loginUrl,
+      });
+      await sendMail({ to: user.email, subject, text, html });
+      sent += 1;
+    } catch (err) {
+      failed += 1;
+      console.error(`[email] Failed to send admin broadcast to ${user.email}:`, err.message);
+    }
+  }
+
+  console.log(`[email] Admin broadcast sent=${sent} failed=${failed}`);
+}
+
 module.exports = {
   getLoginUrl,
   getSupplierMyDonationsUrl,
@@ -1095,4 +1148,7 @@ module.exports = {
   sendSuddenMaintenanceAnnouncementEmails,
   sendMaintenanceCancelledAnnouncementEmails,
   sendAdminLoginNotificationEmail,
+  sendContactConfirmationEmail,
+  sendContactReplyEmail,
+  sendAdminBroadcastNotificationEmails,
 };

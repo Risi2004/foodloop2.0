@@ -114,7 +114,7 @@ function Contact() {
             <textarea id='message' placeholder='How can we help you?' value={message} onChange={(e) => setMessage(e.target.value)} />
           </div>
           {error && <p style={{ color: '#f87171', marginBottom: '12px' }}>{error}</p>}
-          {success && <p style={{ color: '#86efac', marginBottom: '12px' }}>Message sent. You will receive a confirmation email.</p>}
+          {success && <p style={{ color: '#86efac', marginBottom: '12px' }}>Message sent. You&apos;ll receive a confirmation email. Our team will contact you within 2 working days.</p>}
           <button type="submit" disabled={submitting}>{submitting ? 'Sending...' : 'Send Message'}</button>
         </form>
       </div>

@@ -48,6 +48,11 @@ function emitToCustomer(customerId, event, payload) {
   io.to(`customer:${customerId}`).emit(event, payload);
 }
 
+function emitToUser(userId, event, payload) {
+  if (!io || !userId) return;
+  io.to(`user:${userId}`).emit(event, payload);
+}
+
 function attachSocketAuth(socketServer) {
   socketServer.use(async (socket, next) => {
     try {
@@ -74,6 +79,10 @@ function attachSocketAuth(socketServer) {
   socketServer.on('connection', (socket) => {
     const role = (socket.user?.role || '').toLowerCase();
     const userId = socket.user?._id?.toString();
+
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
 
     if (FOOD_LISTING_ROLES.includes(role)) {
       joinFoodListingRoom(socket);
@@ -150,5 +159,6 @@ module.exports = {
   emitToDrivers,
   emitToDonationRoom,
   emitToCustomer,
+  emitToUser,
   attachSocketAuth,
 };

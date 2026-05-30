@@ -3,6 +3,8 @@ const adminController = require('../controllers/admin.controller');
 const earningsController = require('../controllers/earnings.controller');
 const adminFinanceController = require('../controllers/adminFinance.controller');
 const maintenanceController = require('../controllers/maintenance.controller');
+const contactController = require('../controllers/contact.controller');
+const notificationController = require('../controllers/notification.controller');
 const { requireAdmin } = require('../middleware/adminAuth');
 
 const router = express.Router();
@@ -34,5 +36,13 @@ router.post('/maintenance/sudden/start', maintenanceController.startSudden);
 router.post('/maintenance/sudden/activate', maintenanceController.forceSuddenActive);
 router.post('/maintenance/end', maintenanceController.endMaintenance);
 router.post('/maintenance/cancel', maintenanceController.cancelMaintenance);
+
+router.get('/contact-messages', contactController.listContactMessages);
+router.post('/contact-messages/:id/reply', contactController.replyToContactMessage);
+
+router.get('/notifications', notificationController.listAdminNotifications);
+router.post('/notifications', notificationController.createAdminNotification);
+router.patch('/notifications/:id', notificationController.updateAdminNotification);
+router.delete('/notifications/:id', notificationController.deleteAdminNotification);
 
 module.exports = router;

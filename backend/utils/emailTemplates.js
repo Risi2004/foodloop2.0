@@ -1713,6 +1713,111 @@ function maintenanceCancelledEmail({
   return { subject, html, text: textLines.join('\n') };
 }
 
+function contactFormConfirmationEmail({ name, subject, expectedResponseBy }) {
+  const subjectLine = subject || 'General inquiry';
+  const dateLine = expectedResponseBy
+    ? `We aim to respond by <strong>${expectedResponseBy}</strong> (within 2 working days).`
+    : 'Our team will contact you within <strong>2 working days</strong>.';
+
+  const html = layoutHtml(
+    'We received your message',
+    [
+      `Hello ${name},`,
+      'Thank you for contacting FoodLoop. We have received your message and our team will get back to you soon.',
+      dateLine,
+      subject ? `Subject: <strong>${subjectLine}</strong>` : '',
+    ].filter(Boolean),
+    'If you did not submit this form, you can ignore this email.'
+  );
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'Thank you for contacting FoodLoop. We have received your message and our team will get back to you soon.',
+    expectedResponseBy
+      ? `We aim to respond by ${expectedResponseBy} (within 2 working days).`
+      : 'Our team will contact you within 2 working days.',
+    subject ? `Subject: ${subjectLine}` : '',
+    '',
+    'If you did not submit this form, you can ignore this email.',
+  ].filter(Boolean).join('\n');
+
+  return {
+    subject: 'FoodLoop — We received your message',
+    html,
+    text,
+  };
+}
+
+function contactAdminReplyEmail({ name, subject, originalMessage, adminReply }) {
+  const subjectLine = subject || 'General inquiry';
+
+  const html = layoutHtml(
+    'Reply from FoodLoop',
+    [
+      `Hello ${name},`,
+      `Thank you for reaching out. Here is our reply regarding <strong>${subjectLine}</strong>:`,
+      `<div style="background: #f3f4f6; padding: 12px 16px; border-radius: 8px; margin: 12px 0; white-space: pre-wrap;">${adminReply}</div>`,
+      'For reference, your original message was:',
+      `<div style="background: #fafafa; padding: 12px 16px; border-radius: 8px; margin: 12px 0; color: #555; white-space: pre-wrap;">${originalMessage}</div>`,
+    ],
+    'FoodLoop — Connecting surplus food with those who need it.'
+  );
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    `Thank you for reaching out. Here is our reply regarding "${subjectLine}":`,
+    '',
+    adminReply,
+    '',
+    'For reference, your original message was:',
+    originalMessage,
+    '',
+    'FoodLoop — Connecting surplus food with those who need it.',
+  ].join('\n');
+
+  return {
+    subject: `FoodLoop — Re: ${subjectLine}`,
+    html,
+    text,
+  };
+}
+
+function adminBroadcastNotificationEmail({ name, title, message, loginUrl }) {
+  const subjectLine = title || 'Update';
+
+  const html = layoutHtml(
+    subjectLine,
+    [
+      `Hello ${name},`,
+      'You have a new notification from FoodLoop:',
+      `<div style="background: #f3f4f6; padding: 12px 16px; border-radius: 8px; margin: 12px 0; white-space: pre-wrap;">${message}</div>`,
+      `View all notifications after signing in: <a href="${loginUrl}" style="color: #4CAF50;">${loginUrl}</a>`,
+    ],
+    'FoodLoop — Connecting surplus food with those who need it.'
+  );
+
+  const text = [
+    `Hello ${name},`,
+    '',
+    'You have a new notification from FoodLoop:',
+    '',
+    subjectLine,
+    message,
+    '',
+    `Sign in: ${loginUrl}`,
+    '',
+    'FoodLoop — Connecting surplus food with those who need it.',
+  ].join('\n');
+
+  return {
+    subject: `FoodLoop — ${subjectLine}`,
+    html,
+    text,
+  };
+}
+
 function adminLoginNotificationEmail({ name, email, timestamp, device, location }) {
   const html = layoutHtml(
     'Admin Login Alert',
@@ -1798,4 +1903,7 @@ module.exports = {
   supplierBundleSubscriptionPaymentEmail,
   supplierBundleAutoRenewCancelledEmail,
   adminLoginNotificationEmail,
+  contactFormConfirmationEmail,
+  contactAdminReplyEmail,
+  adminBroadcastNotificationEmail,
 };
