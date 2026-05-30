@@ -51,10 +51,12 @@ export const MarketplaceProvider = ({ children }) => {
     const addToCart = (product) => {
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
+            const maxQty = Number(product.maxQuantity ?? product.quantity ?? 9999);
             if (existing) {
-                return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+                const newQty = Math.min(maxQty, existing.quantity + 1);
+                return prev.map(item => item.id === product.id ? { ...item, quantity: newQty } : item);
             }
-            return [...prev, { ...product, quantity: 1 }];
+            return [...prev, { ...product, quantity: Math.min(maxQty, 1) }];
         });
     };
 
@@ -70,7 +72,8 @@ export const MarketplaceProvider = ({ children }) => {
     const updateQuantity = (id, amount) => {
         setCart(prev => prev.map(item => {
             if (item.id === id) {
-                const newQuantity = Math.max(1, item.quantity + amount);
+                const maxQty = Number(item.maxQuantity ?? 9999);
+                const newQuantity = Math.min(maxQty, Math.max(1, item.quantity + amount));
                 return { ...item, quantity: newQuantity };
             }
             return item;

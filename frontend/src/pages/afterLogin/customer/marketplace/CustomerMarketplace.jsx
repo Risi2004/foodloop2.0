@@ -9,6 +9,13 @@ import { getListingPriceDisplay } from '../../../../utils/donationDisplay';
 import { customerRoutes } from '../../../../constants/customerRoutes';
 import { useMaintenance } from '../../../../contexts/MaintenanceContext';
 import { MAINTENANCE_BLOCK_MESSAGE } from '../../../../services/maintenanceApi';
+import {
+  getSocket,
+  onDonationCreated,
+  onDonationClaimed,
+  onDonationStockUpdated,
+  onDonationCancelled,
+} from '../../../../services/socket';
 import './CustomerMarketplace.css';
 
 const CustomerMarketplace = () => {
@@ -33,6 +40,7 @@ const CustomerMarketplace = () => {
     price: product.unitPrice ?? product.price,
     vendorName: product.donorName,
     listingType: product.listingType,
+    maxQuantity: product.quantity, // restrict quantity based on posted available stock
   });
 
   const showAddedToCartToast = (product) => {
@@ -122,6 +130,66 @@ const CustomerMarketplace = () => {
       () => fetchListings(),
       { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
     );
+  }, [fetchListings]);
+
+  useEffect(() => {
+    getSocket();
+
+    const mergeStockUpdated = (payload) => {
+      const donation = payload?.donation;
+      if (!donation) return;
+      const donationId = donation.id || donation._id || payload?.donationId;
+      if (!donationId) return;
+
+      setListings((prev) => {
+        return prev.map((item) => {
+          if (item.id === donationId) {
+            return {
+              ...item,
+              quantity: donation.quantity,
+              raw: { ...item.raw, quantity: donation.quantity },
+            };
+          }
+          return item;
+        });
+      });
+    };
+
+    const removeById = (payload) => {
+      const id = payload?.donationId;
+      if (!id) return;
+      setListings((prev) => prev.filter((item) => item.id !== id));
+      setSelectedListing((current) => (current?.id === id ? null : current));
+    };
+
+    const mergeCreated = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            fetchListings({
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            });
+          },
+          () => fetchListings(),
+          { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+        );
+      } else {
+        fetchListings();
+      }
+    };
+
+    const unsubCreated = onDonationCreated(mergeCreated);
+    const unsubClaimed = onDonationClaimed(removeById);
+    const unsubStockUpdated = onDonationStockUpdated(mergeStockUpdated);
+    const unsubCancelled = onDonationCancelled(removeById);
+
+    return () => {
+      unsubCreated();
+      unsubClaimed();
+      unsubStockUpdated();
+      unsubCancelled();
+    };
   }, [fetchListings]);
 
   const categories = useMemo(() => {
