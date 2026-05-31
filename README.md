@@ -27,6 +27,7 @@ FoodLoop2.0/
 │   ├── routes/                    # Secure API Routing layers (JWT restricted)
 │   ├── scripts/                   # Seeding, backfilling, and PDF compilation scripts
 │   ├── socket.js                  # Real-time event handling system (Socket.IO)
+│   ├── uploads/                   # Local profile image storage (dev fallback when R2 not configured)
 │   └── knowledge/                 # RAG corpus source files & PDF help manuals
 ├── frontend/                      # React 19 + Vite Frontend SPA application
 │   ├── public/                    # Static assets & map markers
@@ -53,11 +54,11 @@ FoodLoop2.0/
 * **Runtime & Framework**: Node.js, Express.js
 * **Database**: MongoDB (Mongoose Object Modeling)
 * **Real-time Engine**: Socket.IO (Event-driven socket mergers)
-* **Object Store**: Cloudflare R2 (S3-compatible serverless asset storage)
-* **AI Orchestration**: Google Gemini AI (RAG Search, Vision Rejections, Tomorrow Forecasts)
+* **Object Store**: Cloudflare R2 (S3-compatible serverless asset storage) with local disk fallback
+* **AI Orchestration**: Google Gemini AI (RAG Search, Vision Rejections, Tomorrow Forecasts, Document Verification)
 * **Weather Integration**: OpenWeather API (Weather metrics cache)
 * **Operational Reporting**: PDFKit (Programmatic vector PDF compiler)
-* **Email System**: Nodemailer SMTP (OTP signups, transactional logs)
+* **Email System**: Nodemailer SMTP (OTP signups, transactional logs, approval notifications)
 
 ---
 
@@ -69,7 +70,7 @@ Follow these steps to configure your environment and start the development serve
 Ensure you have the following installed on your machine:
 * **Node.js** (v18.x or higher)
 * **MongoDB** (Local Community Edition or MongoDB Atlas cloud instance URI)
-* **Cloudflare R2 Bucket** (For avatar, PDF document, and food photo uploads)
+* **Cloudflare R2 Bucket** *(Optional for local dev — profile images fall back to local disk storage)*
 * **APIs**: Google Gemini API key and OpenWeather API key
 
 ---
@@ -100,7 +101,7 @@ SMTP_SECURE=false
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-google-app-password
 
-# Cloudflare R2 Bucket Credentials
+# Cloudflare R2 Bucket Credentials (optional for local dev)
 R2_ACCOUNT_ID=your_cloudflare_account_id
 R2_ACCESS_KEY_ID=your_r2_access_key_id
 R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
@@ -109,7 +110,7 @@ R2_PUBLIC_BASE_URL=https://pub-yourbucket.r2.dev
 
 # AI & Weather Services
 GEMINI_API_KEY=your_google_gemini_api_key
-GEMINI_MODEL=gemini-3.5-flash                          # Defaults to gemini-3.5-flash
+GEMINI_MODEL=gemini-1.5-flash                          # Defaults to gemini-1.5-flash
 WEATHER_API_KEY=your_openweather_api_key
 ```
 
@@ -197,12 +198,48 @@ Allows commercial suppliers to request weather-integrated food preparation recom
 ### 💬 3. 24/7 Multi-Lingual Help Chatbot
 An internal RAG (Retrieval-Augmented Generation) chatbot. Ingests all project Help manuals, FAQ texts, and localized guidelines to respond instantly in **English**, **Tamil**, or **Sinhala** for immediate, self-managed user onboarding.
 
+### 🧠 4. AI-Powered Document Verification (Admin)
+When an admin reviews a pending user registration, an **"Analyse with AI"** button triggers the Gemini API to:
+- Read and extract text from all submitted documents (business registration, address proof, NIC, driving licence, etc.)
+- Cross-reference the documents against the user's stated details (name, address, business type)
+- Produce a structured **Approve / Reject recommendation** with a written justification
+- Highlight specific discrepancies or missing information
+
+> [!NOTE]
+> The AI recommendation is advisory — admins retain full control over the final approval decision.
+
 ---
 
 ## 🚀 Key Operational Flows
 
 * **Low-Income Monthly Discount System**: Eligible low-income customers receive a 20% discount on up to 20 fresh products per calendar month. The frontend cart applies the discount, and the backend verifies monthly allocations dynamically on upsert to prevent double-spending or rate exploitation.
-* **Driver Logistics Routing & Capacity limits**: Pickups are automatically filtered by vehicle capacity tiers (Bicycle, Scooter, Car, Van). Cougars can simulate active routes using "Demo Simulation", which updates coordinates dynamically via WebSockets, transferring statuses on receivers' tracking panels instantly.
+
+* **Driver Logistics Routing & Capacity Limits**: Pickups are automatically filtered by vehicle capacity tiers (Bicycle, Scooter, Car, Van). Drivers can simulate active routes using "Demo Simulation", which updates coordinates dynamically via WebSockets, transferring statuses on receivers' tracking panels instantly.
+
 * **Admin Auditing & Financial Withdrawals**: System administrators audit platform card inflows and payout requests. Clicking review loads details in a slide drawer, letting admins approve or reject withdrawals before marking them as fully paid.
 
+* **Post-Rejection Re-Approval Notifications**: If a previously rejected user is later approved by an admin, an automated email is dispatched to the user notifying them their account is now active and they can log in.
 
+* **Admin User Management**: Admins can delete any user account from the users management panel. Rows for rejected users display both an **Approve** and a **Delete** button for streamlined remediation workflows.
+
+---
+
+## 👤 Profile Management
+
+All authenticated roles can edit their profile information directly from their dashboard. Changes are persisted to the database immediately.
+
+### Editable Fields Per Role
+
+| Role | Editable Fields |
+|------|----------------|
+| Restaurant / Supermarket / Business | Business name, Business type, Contact number, Address, Email, Profile photo |
+| Individual Supplier | Username, NIC number, Startup name, Startup details, Contact number, Address, Email, Profile photo |
+| Receiver (NGO) | Organization name, Organization type, About us, Contact number, Address, Email, Profile photo |
+| Driver | Full name, Vehicle type, Vehicle number, Contact number, Address, Email, Profile photo |
+
+> [!NOTE]
+> **Single-attribute updates are supported** — users can update just one field (e.g. only their contact number) without submitting the entire form. The backend only applies fields that are explicitly provided in the request.
+
+### Profile Image Storage
+- **Production (R2 configured)**: Profile images are uploaded to Cloudflare R2 and served from the public CDN URL.
+- **Development (R2 not configured)**: Images are saved locally to `backend/uploads/profiles/` and served via the Express static middleware at `/uploads/profiles/*`.
