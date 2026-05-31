@@ -142,7 +142,9 @@ async function creditSuppliersFromCustomerOrder(customerOrder) {
     const donorId = donation.donorId?.toString?.() || String(donation.donorId);
     if (!donorId) continue;
 
-    const lineGross = roundCurrency(Number(item.lineTotal ?? Number(item.unitPrice || 0) * Number(item.quantity || 1)));
+    // Calculate gross based on original full unit price so supplier gets paid in full.
+    // FoodLoop admin/platform absorbs the 20% discount difference.
+    const lineGross = roundCurrency(Number(item.unitPrice || 0) * Number(item.quantity || 1));
     if (lineGross <= 0) continue;
 
     const prev = supplierTotals.get(donorId) || { gross: 0, labels: [] };
