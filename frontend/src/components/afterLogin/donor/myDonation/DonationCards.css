@@ -21,7 +21,7 @@
     display: flex;
     flex: 0 0 auto;
     width: 560px;
-    min-width: 560px;
+    min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
     padding: 20px 20px 24px;

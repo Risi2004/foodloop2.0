@@ -423,13 +423,22 @@
 
 .input__group.half {
     width: 48%;
-
 }
 
 .row {
     display: flex;
     justify-content: space-between;
     width: 100%;
+}
+
+@media (max-width: 600px) {
+    .row {
+        flex-direction: column;
+        gap: 0;
+    }
+    .input__group.half {
+        width: 100%;
+    }
 }
 
 .input__group label {

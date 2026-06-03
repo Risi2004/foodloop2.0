@@ -30,8 +30,8 @@
     bottom: 90px;
     right: 24px;
     z-index: 1001;
-    width: 380px;
-    max-width: calc(100vw - 48px);
+    width: 100%;
+    max-width: min(380px, calc(100vw - 48px));
     height: 520px;
     max-height: calc(100vh - 140px);
     background: #fff;

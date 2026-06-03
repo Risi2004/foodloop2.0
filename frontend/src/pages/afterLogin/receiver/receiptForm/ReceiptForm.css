@@ -340,7 +340,8 @@
     letter-spacing: 1.2px;
     font-weight: 800;
     position: relative;
-    width: 376.2px;
+    max-width: 376.2px;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -354,7 +355,8 @@
     line-height: 28px;
     font-weight: 700;
     position: relative;
-    width: 434px;
+    width: 100%;
+    max-width: 434px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -391,7 +393,8 @@
     align-items: flex-start;
     justify-content: center;
     flex-shrink: 0;
-    width: 333px;
+    width: 100%;
+    max-width: 333px;
     position: relative;
 }
 
@@ -418,7 +421,8 @@
     line-height: 20px;
     font-weight: 700;
     position: relative;
-    width: 333px;
+    width: 100%;
+    max-width: 333px;
     display: flex;
     align-items: center;
     justify-content: flex-start;

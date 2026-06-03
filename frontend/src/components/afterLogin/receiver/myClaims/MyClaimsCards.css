@@ -7,7 +7,9 @@
 
 .donation-card {
     display: flex;
-    width: 424px;
+    width: 100%;
+    max-width: 424px;
+    box-sizing: border-box;
     padding: 10px;
     flex-direction: column;
     justify-content: center;
@@ -345,4 +347,31 @@
 
 ._5-kg-available-span2 {
     font-family: "Inter-Regular", sans-serif;
+}
+
+@media (max-width: 480px) {
+    .donation-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .fed {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .detail {
+        width: 100% !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 4px 0 !important;
+    }
+    
+    .bag-of-fuji-apples {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
 }
