@@ -49,6 +49,7 @@ FoodLoop2.0/
 * **Routing**: React Router DOM (v7)
 * **Styling**: Modern, responsive Custom HSL CSS (No styling framework dependencies)
 * **Interactive Maps**: Leaflet & React Leaflet (OpenStreetMap API)
+* **Progressive Web App (PWA)**: `vite-plugin-pwa` (offline caching, service workers, manifest generation)
 
 ### **Backend Server & Services**
 * **Runtime & Framework**: Node.js, Express.js
@@ -221,6 +222,27 @@ When an admin reviews a pending user registration, an **"Analyse with AI"** butt
 * **Post-Rejection Re-Approval Notifications**: If a previously rejected user is later approved by an admin, an automated email is dispatched to the user notifying them their account is now active and they can log in.
 
 * **Admin User Management**: Admins can delete any user account from the users management panel. Rows for rejected users display both an **Approve** and a **Delete** button for streamlined remediation workflows.
+
+---
+
+## 📱 PWA Support & Mobile Responsiveness
+
+FoodLoop 2.0 is fully optimized as an installable **Progressive Web App (PWA)**, providing a native app experience on both desktop and mobile devices.
+
+### 🌟 PWA Capabilities
+* **Fully Installable:** Users can add FoodLoop directly to their home screens (iOS/Android) or desktops (Windows/macOS) from any compatible browser, bypassing the need for app store downloads.
+* **Offline Functionality:** Powered by a background **Service Worker** (via `vite-plugin-pwa`), essential assets (HTML, CSS, JavaScript, fonts, and key images) are cached locally, allowing the shell of the app to load instantly even without an internet connection.
+* **App Branding & Aesthetics:** Includes custom web app manifests setting brand colors (`#4CAF50`), standalone display mode (removes browser URL bar), and specialized splash screens/launcher icons:
+  * `192x192` and `512x512` launcher and splash screen icons.
+  * `180x180` high-resolution iOS `apple-touch-icon` for Apple device home screens.
+* **Background Updates:** Updates are automatically fetched in the background and applied seamlessly on the next app load (`registerType: 'autoUpdate'`).
+
+### 📱 Responsive Layout Enhancements
+To support PWA installation on a wide variety of mobile displays, the user interface features tailored responsive CSS styling:
+* **Dynamic Wrapping for Cards:** Large layout card containers (such as **My Claims** and **Donation Cards**) dynamically scale down from desktop sizes (e.g., `560px` or `424px`) to fluid percentage-based widths on smaller devices to prevent horizontal scroll overflow.
+* **Form Wrapping & Stacking:** Grid-aligned multi-column form fields (such as first/last name grids on the **Signup Page**) wrap into a single vertical stack below `600px` screen width, preventing input squishing on mobile views.
+* **Mobile-Optimized Profile Editing:** The sidebar navigation and form panels on the Edit Profile screens collapse into a vertical stack below `900px`, allowing quick and clean updates.
+* **Fluid Chatbot UI:** The pop-out AI chatbot panel scales dynamically to fit screen sizes down to `320px` width while retaining comfortable outer margins.
 
 ---
 
