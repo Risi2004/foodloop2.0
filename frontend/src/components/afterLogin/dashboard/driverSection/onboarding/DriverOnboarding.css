@@ -1,0 +1,240 @@
+/* Backdrop/Overlays */
+.onboarding-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    pointer-events: none;
+}
+
+/* Modal wrapper (mobile download recommendation) */
+.onboarding-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 440px;
+    background: #ffffff;
+    border: 1px solid rgba(31, 78, 54, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    z-index: 100000;
+    pointer-events: auto;
+    animation: onboarding-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    font-family: 'Montserrat', sans-serif;
+    color: #1F4E36;
+}
+
+.onboarding-modal__header h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0 0 16px 0;
+    color: #1F4E36;
+    letter-spacing: -0.3px;
+}
+
+.onboarding-modal__body p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+    color: #618972;
+    font-weight: 500;
+}
+
+/* Guides */
+.browser-guide {
+    background: #F6F8F7;
+    border: 1px solid #DBE6E0;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 24px;
+}
+
+.browser-guide h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: #1F4E36;
+}
+
+.browser-guide ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.browser-guide li {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    color: #2E4E3F;
+    font-weight: 600;
+}
+
+.browser-guide li:last-child {
+    margin-bottom: 0;
+}
+
+/* Onboarding Backdrop for Desktop */
+.onboarding-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(16, 34, 28, 0.3); /* Transparent backdrop */
+    pointer-events: auto;
+    z-index: 99997;
+}
+
+/* The Spotlight circle/rectangle */
+.onboarding-spotlight {
+    position: absolute;
+    border-radius: 16px;
+    box-shadow: 0 0 0 99999px rgba(10, 22, 18, 0.75); /* Dark green mask backdrop */
+    z-index: 99998;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    border: 2px solid #A5D6A7;
+}
+
+/* The Floating Tooltip */
+.onboarding-tooltip {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid rgba(31, 78, 54, 0.12);
+    border-radius: 18px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    z-index: 99999;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    color: #2E4E3F;
+    font-family: 'Montserrat', sans-serif;
+    animation: onboarding-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tooltip-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #1F4E36;
+}
+
+.close-tour {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    font-weight: 700;
+    color: #618972;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.close-tour:hover {
+    color: #1F4E36;
+}
+
+.tooltip-body p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #618972;
+    font-weight: 600;
+}
+
+.tooltip-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid #EBF1EE;
+}
+
+.step-indicator {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #73A13F;
+    letter-spacing: 0.5px;
+}
+
+.tooltip-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Onboarding Buttons */
+.onboarding-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+}
+
+.onboarding-btn.primary {
+    background: #1F4E36;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(31, 78, 54, 0.15);
+}
+
+.onboarding-btn.primary:hover {
+    background: #163625;
+    transform: translateY(-1px);
+}
+
+.onboarding-btn.secondary {
+    background: #F6F8F7;
+    color: #1F4E36;
+    border: 1px solid #DBE6E0;
+}
+
+.onboarding-btn.secondary:hover {
+    background: #EBF1EE;
+}
+
+.onboarding-modal__footer .onboarding-btn.primary {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.95rem;
+}
+
+/* Animations */
+@keyframes onboarding-fade-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -46%) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes onboarding-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
