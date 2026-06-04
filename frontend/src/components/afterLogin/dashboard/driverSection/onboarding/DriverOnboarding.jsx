@@ -3,7 +3,7 @@ import './DriverOnboarding.css';
 
 const DESKTOP_STEPS = [
     {
-        target: '.sidebar, .responsive__side__navbar',
+        target: '.navbar, .responsive__navbar',
         title: '🧭 Navigation Panel',
         content: 'Use this panel to manage active deliveries, check your profile, view notifications, or inspect payout logs.',
     },
