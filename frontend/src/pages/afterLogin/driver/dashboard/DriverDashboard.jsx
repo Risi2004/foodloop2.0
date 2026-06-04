@@ -8,7 +8,6 @@ import Map from "../../../../components/afterLogin/dashboard/driverSection/map/D
 import Contact from "../../../../components/beforeLogin/Contact/Contact";
 import StatusBatch from "../../../../components/afterLogin/dashboard/driverSection/driverStatusBatch/DriverStatusBatch";
 import DriverFooter from "../../../../components/afterLogin/dashboard/driverSection/footer/DriverFooter";
-import DriverOnboarding from '../../../../components/afterLogin/dashboard/driverSection/onboarding/DriverOnboarding';
 import './DriverDashboard.css';
 
 function DriverDashboard(){
@@ -22,7 +21,6 @@ function DriverDashboard(){
 
     return (
         <div className='driver__dashboard'>
-            <DriverOnboarding />
             <DriverNavbar />
             <Header />
             <FunctionsSection />

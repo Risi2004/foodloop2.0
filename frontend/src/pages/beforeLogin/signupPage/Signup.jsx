@@ -187,7 +187,7 @@ function SignupPage() {
                     type="tel"
                     id="contactNoDigits"
                     inputMode="numeric"
-                    autoComplete="tel-national"
+                    autoComplete="off"
                     placeholder="771234567"
                     maxLength={9}
                     value={getContactDigits(formData.contactNo)}
@@ -620,7 +620,7 @@ function SignupPage() {
                             <>
                                 <div className="input__group">
                                     <label htmlFor="username">Name</label>
-                                    <input type="text" id="username" placeholder="Eg: John" value={formData.username} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="text" id="username" placeholder="Eg: John" value={formData.username} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.username && <span className="error-message">{errors.username}</span>}
                                 </div>
                                 {roleType === 'individual' && (
@@ -634,6 +634,7 @@ function SignupPage() {
                                                 value={formData.nicNumber}
                                                 onChange={handleInputChange}
                                                 onBlur={handleBlur}
+                                                autoComplete="off"
                                             />
                                             {errors.nicNumber && <span className="error-message">{errors.nicNumber}</span>}
                                             {!showNicDocumentUpload(formData.nicNumber) && formData.nicNumber.trim() && (
@@ -656,7 +657,7 @@ function SignupPage() {
                                         )}
                                         <div className="input__group">
                                             <label htmlFor="businessName">Startup / business name</label>
-                                            <input type="text" id="businessName" placeholder="Eg: John Bites" value={formData.businessName} onChange={handleInputChange} onBlur={handleBlur} />
+                                            <input type="text" id="businessName" placeholder="Eg: John Bites" value={formData.businessName} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                             {errors.businessName && <span className="error-message">{errors.businessName}</span>}
                                         </div>
                                         <div className="input__group">
@@ -668,7 +669,7 @@ function SignupPage() {
                                 )}
                                 <div className="input__group">
                                     <label htmlFor="email">Email</label>
-                                    <input type="email" id="email" placeholder="Eg: JohnDoe@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="email" id="email" placeholder="Eg: JohnDoe@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
@@ -676,7 +677,7 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
-                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.address && <span className="error-message">{errors.address}</span>}
                                 </div>
                             </>
@@ -710,7 +711,7 @@ function SignupPage() {
                                 )}
                                 <div className="input__group">
                                     <label htmlFor="businessName">Business Name</label>
-                                    <input type="text" id="businessName" placeholder="Eg: Green Veggies" value={formData.businessName} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="text" id="businessName" placeholder="Eg: Green Veggies" value={formData.businessName} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.businessName && <span className="error-message">{errors.businessName}</span>}
                                 </div>
                                 <div className="input__group border__group">
@@ -735,7 +736,7 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="email">Email</label>
-                                    <input type="email" id="email" placeholder="Eg: business@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="email" id="email" placeholder="Eg: business@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
@@ -743,7 +744,7 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
-                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.address && <span className="error-message">{errors.address}</span>}
                                 </div>
                             </>
@@ -754,7 +755,7 @@ function SignupPage() {
                                 <div className="row">
                                     <div className="input__group half">
                                         <label htmlFor="receiverName">Receiver Name</label>
-                                        <input type="text" id="receiverName" placeholder="Eg: Hope Shelter" value={formData.receiverName} onChange={handleInputChange} onBlur={handleBlur} />
+                                        <input type="text" id="receiverName" placeholder="Eg: Hope Shelter" value={formData.receiverName} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                         {errors.receiverName && <span className="error-message">{errors.receiverName}</span>}
                                     </div>
                                     <div className="input__group half">
@@ -781,7 +782,7 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="email">Email</label>
-                                    <input type="email" id="email" placeholder="Eg: receiver@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="email" id="email" placeholder="Eg: receiver@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
@@ -789,7 +790,7 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
-                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.address && <span className="error-message">{errors.address}</span>}
                                 </div>
                                 <div className="input__group border__group">
@@ -810,12 +811,12 @@ function SignupPage() {
                                 <div className="row">
                                     <div className="input__group half">
                                         <label htmlFor="driverName">Driver Name</label>
-                                        <input type="text" id="driverName" placeholder="Eg: Alex" value={formData.driverName} onChange={handleInputChange} onBlur={handleBlur} />
+                                        <input type="text" id="driverName" placeholder="Eg: Alex" value={formData.driverName} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                         {errors.driverName && <span className="error-message">{errors.driverName}</span>}
                                     </div>
                                     <div className="input__group half">
                                         <label htmlFor="vehicleNumber">Vehicle number</label>
-                                        <input type="text" id="vehicleNumber" placeholder="Eg: BYD 2344" value={formData.vehicleNumber} onChange={handleInputChange} onBlur={handleBlur} />
+                                        <input type="text" id="vehicleNumber" placeholder="Eg: BYD 2344" value={formData.vehicleNumber} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                         {errors.vehicleNumber && <span className="error-message">{errors.vehicleNumber}</span>}
                                     </div>
                                 </div>
@@ -841,7 +842,7 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="email">Email</label>
-                                    <input type="email" id="email" placeholder="Eg: driver@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="email" id="email" placeholder="Eg: driver@gmail.com" value={formData.email} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
                                 <div className="input__group">
@@ -849,11 +850,31 @@ function SignupPage() {
                                 </div>
                                 <div className="input__group">
                                     <label htmlFor="address">Address</label>
-                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} />
+                                    <input type="text" id="address" placeholder="Eg: Colombo" value={formData.address} onChange={handleInputChange} onBlur={handleBlur} autoComplete="off" />
                                     {errors.address && <span className="error-message">{errors.address}</span>}
                                 </div>
                             </>
                         )}
+
+                        {/* Dummy inputs to capture browser autofill and protect the real Address & Password fields */}
+                        <input
+                            type="text"
+                            name="prevent_autofill_username"
+                            autoComplete="username"
+                            style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+                            tabIndex={-1}
+                            readOnly
+                            aria-hidden="true"
+                        />
+                        <input
+                            type="password"
+                            name="prevent_autofill_password"
+                            autoComplete="new-password"
+                            style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+                            tabIndex={-1}
+                            readOnly
+                            aria-hidden="true"
+                        />
 
                         <div className="row">
                             <div className="input__group half">
@@ -866,6 +887,7 @@ function SignupPage() {
                                         value={formData.password}
                                         onChange={handleInputChange}
                                         onBlur={handleBlur}
+                                        autoComplete="new-password"
                                     />
                                     <span
                                         className="toggle__password"
@@ -900,6 +922,7 @@ function SignupPage() {
                                         value={formData.retypePassword}
                                         onChange={handleInputChange}
                                         onBlur={handleBlur}
+                                        autoComplete="new-password"
                                     />
                                     <span
                                         className="toggle__password"
