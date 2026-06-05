@@ -123,27 +123,27 @@
   text-transform: uppercase;
 }
 
-.action-badge.auth {
+.action-badge.action-badge--auth {
   background: #e0f2fe;
   color: #0369a1;
 }
 
-.action-badge.donation {
+.action-badge.action-badge--donation {
   background: #dcfce7;
   color: #15803d;
 }
 
-.action-badge.delivery {
+.action-badge.action-badge--delivery {
   background: #fef9c3;
   color: #a16207;
 }
 
-.action-badge.admin {
+.action-badge.action-badge--admin {
   background: #f3e8ff;
   color: #7e22ce;
 }
 
-.action-badge.other {
+.action-badge.action-badge--other {
   background: #f1f5f9;
   color: #475569;
 }
@@ -158,27 +158,27 @@
   text-transform: capitalize;
 }
 
-.role-badge.admin {
+.role-badge.role-badge--admin {
   background: #fae8ff;
   color: #86198f;
 }
 
-.role-badge.donor {
+.role-badge.role-badge--donor {
   background: #ecfdf5;
   color: #065f46;
 }
 
-.role-badge.receiver {
+.role-badge.role-badge--receiver {
   background: #eff6ff;
   color: #1e40af;
 }
 
-.role-badge.driver {
+.role-badge.role-badge--driver {
   background: #fffbeb;
   color: #92400e;
 }
 
-.role-badge.system {
+.role-badge.role-badge--system {
   background: #f1f5f9;
   color: #334155;
 }

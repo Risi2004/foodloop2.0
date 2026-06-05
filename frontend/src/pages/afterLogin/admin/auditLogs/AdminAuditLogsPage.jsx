@@ -290,7 +290,7 @@ function AdminAuditLogsPage() {
                             {new Date(log.timestamp).toLocaleString('en-LK', { dateStyle: 'medium', timeStyle: 'short' })}
                           </td>
                           <td style={{ verticalAlign: 'middle' }}>
-                            <span className={`action-badge ${getActionCategory(log.action)}`}>
+                            <span className={`action-badge action-badge--${getActionCategory(log.action)}`}>
                               {log.action || 'UNKNOWN'}
                             </span>
                           </td>
@@ -301,7 +301,7 @@ function AdminAuditLogsPage() {
                             )}
                           </td>
                           <td style={{ verticalAlign: 'middle' }}>
-                            <span className={`role-badge ${getRoleClass(log.userRole)}`}>
+                            <span className={`role-badge role-badge--${getRoleClass(log.userRole)}`}>
                               {log.userRole || 'System'}
                             </span>
                           </td>
