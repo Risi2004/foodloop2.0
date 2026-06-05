@@ -432,7 +432,9 @@ Return your response strictly in valid JSON format with the following keys (no m
     });
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const candidates = [process.env.GEMINI_MODEL || 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const preferredModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+    const fallbackList = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+    const candidates = Array.from(new Set([preferredModel, ...fallbackList]));
     
     let responseText = null;
     let lastErr = null;
