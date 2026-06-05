@@ -31,6 +31,7 @@ const { isIndexAvailable } = require('./services/chatKnowledgeIndex');
 const { isR2Configured } = require('./config/r2');
 const { setIO, attachSocketAuth } = require('./socket');
 const { startRenewalScheduler } = require('./services/supplierSubscriptionRenewalScheduler');
+const { startExpiryScheduler } = require('./services/donationExpiryScheduler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -171,6 +172,7 @@ mongoose
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       startRenewalScheduler();
+      startExpiryScheduler();
       console.log('Socket.IO enabled');
       console.log('CORS allowlist:', allowedOrigins.join(', '));
       console.log(

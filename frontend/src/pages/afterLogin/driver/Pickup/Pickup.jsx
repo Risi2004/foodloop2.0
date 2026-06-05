@@ -294,6 +294,8 @@ function Pickup() {
     let routePath = [];
     if (demoRouteWaypoints.length > 0) {
         routePath = demoRouteWaypoints;
+    } else if (donationStatus === 'assigned' && pickupLocation && currentLocation && dropoffLocation) {
+        routePath = [currentLocation, pickupLocation, dropoffLocation];
     } else if (donationStatus === 'assigned' && pickupLocation && currentLocation) {
         routePath = [currentLocation, pickupLocation];
     } else if (pickupLocation && dropoffLocation) {

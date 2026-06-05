@@ -594,6 +594,9 @@ exports.getAvailablePickups = async (req, res) => {
     for (const donation of donations) {
       if (isDonationExpired(donation.userProvidedExpiryDate)) continue;
 
+      const linkedOrder = await findCustomerOrderForDonation(donation);
+      if (linkedOrder) continue;
+
       const donorDist = calculateDistanceKm(
         lat,
         lng,
@@ -686,9 +689,12 @@ exports.getActiveDeliveries = async (req, res) => {
       .populate('parentListingId')
       .sort({ assignedAt: -1, updatedAt: -1 });
 
-    const donationDeliveries = donations.map((d) =>
-      toDriverActiveDeliveryJSON(d, lat, lng)
-    );
+    const donationDeliveries = [];
+    for (const d of donations) {
+      const linkedOrder = await findCustomerOrderForDonation(d);
+      if (linkedOrder) continue;
+      donationDeliveries.push(toDriverActiveDeliveryJSON(d, lat, lng));
+    }
     const customerOrders = await CustomerOrder.find({
       driverId: req.user._id,
       status: { $in: ACTIVE_CUSTOMER_ORDER_STATUSES },
