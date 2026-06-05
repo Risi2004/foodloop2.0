@@ -162,11 +162,12 @@
   display: flex;
   flex-grow: 1;
   max-width: 420px;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .marketplace-search-bar input {
   flex-grow: 1;
+  min-width: 0;
   padding: 0.7rem 1.1rem;
   border: 1px solid #dbe6e0;
   background: #f9fbfa;
@@ -190,6 +191,7 @@
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
+  flex-shrink: 0;
 }
 
 .marketplace-empty {

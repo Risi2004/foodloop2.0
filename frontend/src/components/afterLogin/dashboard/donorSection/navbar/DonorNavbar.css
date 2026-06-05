@@ -273,7 +273,8 @@
     text-decoration: none;
 }
 
-.responsive__navbar__popup .responsive__navbar__popup__install {
+.responsive__navbar__popup .responsive__navbar__popup__install,
+.navbar__s3__profile__popup .responsive__navbar__popup__install {
     display: block;
     margin: 15px auto;
     width: 150px;
@@ -288,7 +289,8 @@
     transition: all 0.3s ease;
 }
 
-.responsive__navbar__popup .responsive__navbar__popup__install:hover {
+.responsive__navbar__popup .responsive__navbar__popup__install:hover,
+.navbar__s3__profile__popup .responsive__navbar__popup__install:hover {
     background: #73A13F;
     color: white;
 }

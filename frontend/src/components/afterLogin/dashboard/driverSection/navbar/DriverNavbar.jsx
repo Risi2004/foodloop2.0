@@ -168,7 +168,7 @@ function Navbar() {
                         <p onClick={toggleProfile}>X</p>
                         <Link to="/driver/profile" onClick={toggleProfile}>View Profile</Link>
                         {isInstallable && (
-                            <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleProfile(); }}>
+                            <Link to="" className="responsive__navbar__popup__install" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleProfile(); }}>
                                 Install App
                             </Link>
                         )}
