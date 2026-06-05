@@ -98,6 +98,34 @@
     transition: 0.3s;
 }
 
+.navbar__s3 .navbar__install-btn {
+    background: transparent;
+    border: 2px solid #73A13F;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    padding: 15px 25px;
+    transition: all 0.3s ease;
+    backdrop-filter: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px;
+    height: 60px;
+    border-radius: 33px;
+    cursor: pointer;
+    box-sizing: border-box;
+    margin-right: 15px;
+}
+
+.navbar__s3 .navbar__install-btn:hover {
+    background: #73A13F;
+    color: white;
+    transform: scale(1.03);
+    border-color: #73A13F;
+}
+
 
 .navbar__s1,
 .navbar__s2,
@@ -169,6 +197,28 @@
     cursor: pointer;
     padding: 0;
     font-family: inherit;
+}
+
+.responsive__navbar__popup__install {
+    display: block;
+    margin: 15px auto;
+    width: 150px;
+    border-radius: 20px;
+    background: transparent;
+    border: 2px solid #73A13F;
+    color: #1F4E36;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 12px 20px;
+    cursor: pointer;
+    box-sizing: border-box;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.responsive__navbar__popup__install:hover {
+    background: #73A13F;
+    color: white;
 }
 
 .responsive__navbar__popup__login {

@@ -68,12 +68,14 @@ function Navbar({ isLoggedIn: _isLoggedIn }) {
                     <Link to="/">Home</Link>
                     <button type="button" className="navbar__link" onClick={() => scrollToSection('about')}>About Us</button>
                     <button type="button" className="navbar__link" onClick={() => scrollToSection('contact')}>Contact Us</button>
-                    {isInstallable && (
-                        <button type="button" className="navbar__link" onClick={handleInstallApp}>Install App</button>
-                    )}
                 </div>
 
                 <div className="navbar__s3">
+                    {isInstallable && (
+                        <button type="button" className="navbar__install-btn" onClick={handleInstallApp}>
+                            Install App
+                        </button>
+                    )}
                     <Link to="/login">
                         <button>
                             <p>Login</p>
@@ -120,7 +122,7 @@ function Navbar({ isLoggedIn: _isLoggedIn }) {
                         {isInstallable && (
                             <button
                                 type="button"
-                                className="responsive__navbar__popup__link"
+                                className="responsive__navbar__popup__install"
                                 onClick={() => { handleInstallApp(); toggleMenu(); }}
                             >
                                 Install App
