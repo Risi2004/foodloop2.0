@@ -173,12 +173,6 @@
     z-index: 2000;
 }
 
-/* When responsive menu is open, main content gets margin-right so it doesn't sit under popup */
-body.driver-navbar-menu-open .delivery {
-    margin-right: 320px;
-    max-width: calc(100% - 320px);
-    box-sizing: border-box;
-}
 
 .responsive__navbar__popup {
     z-index: 2100;

@@ -82,6 +82,24 @@ function Navbar() {
             setDeletingAccount(false);
         }
     }
+
+    const handleContactClick = () => {
+        if (window.location.pathname === '/receiver/dashboard') {
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const handleMobileContactClick = () => {
+        toggleMenu();
+        if (window.location.pathname === '/receiver/dashboard') {
+            setTimeout(() => {
+                const el = document.getElementById('contact');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+        }
+    };
+
     return (
         <>
             <div className="navbar">
@@ -96,7 +114,7 @@ function Navbar() {
                 <div className="navbar__s2">
                     <Link to="/receiver/dashboard">Home</Link>
                     <Link to="/receiver/about">About Us</Link>
-                    <Link to="/receiver/dashboard#contact">Contact Us</Link>
+                    <Link to="/receiver/dashboard#contact" onClick={handleContactClick}>Contact Us</Link>
                     <Link to="/receiver/find-food">Find Food</Link>
                     <Link to="/receiver/my-claims">My Claims</Link>
                 </div>
@@ -154,7 +172,7 @@ function Navbar() {
                     >
                         <Link to="/receiver/dashboard" onClick={toggleMenu}>Home</Link>
                         <Link to="/receiver/about" onClick={toggleMenu}>About Us</Link>
-                        <Link to="/receiver/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
+                        <Link to="/receiver/dashboard#contact" onClick={handleMobileContactClick}>Contact Us</Link>
                         <Link to="/receiver/find-food" onClick={toggleMenu}>Find Food</Link>
                         <Link to="/receiver/my-claims" onClick={toggleMenu}>My Claims</Link>
                         <Link to="/receiver/profile" onClick={toggleMenu}>View Profile</Link>

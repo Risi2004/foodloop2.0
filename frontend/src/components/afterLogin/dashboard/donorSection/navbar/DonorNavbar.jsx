@@ -117,6 +117,24 @@ function Navbar() {
             setDeletingAccount(false);
         }
     }
+
+    const handleContactClick = () => {
+        if (window.location.pathname === '/supplier/dashboard') {
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const handleMobileContactClick = () => {
+        toggleMenu();
+        if (window.location.pathname === '/supplier/dashboard') {
+            setTimeout(() => {
+                const el = document.getElementById('contact');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+        }
+    };
+
     return (
         <>
             <div className="navbar">
@@ -131,7 +149,7 @@ function Navbar() {
                 <div className="navbar__s2">
                     <Link to="/supplier/dashboard">Home</Link>
                     <Link to="/supplier/about">About Us</Link>
-                    <Link to="/supplier/dashboard#contact">Contact Us</Link>
+                    <Link to="/supplier/dashboard#contact" onClick={handleContactClick}>Contact Us</Link>
                     <Link to="/supplier/my-donation">My Listings</Link>
                     <Link to="/supplier/esg-csr">ESG &amp; CSR</Link>
                     <Link to="/supplier/earnings">Earnings</Link>
@@ -216,7 +234,7 @@ function Navbar() {
                     >
                         <Link to="/supplier/dashboard" onClick={toggleMenu}>Home</Link>
                         <Link to="/supplier/about" onClick={toggleMenu}>About Us</Link>
-                        <Link to="/supplier/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
+                        <Link to="/supplier/dashboard#contact" onClick={handleMobileContactClick}>Contact Us</Link>
                         <Link to="/supplier/my-donation" onClick={toggleMenu}>My Listings</Link>
                         <Link to="/supplier/esg-csr" onClick={toggleMenu}>ESG &amp; CSR</Link>
                         <Link to="/supplier/earnings" onClick={toggleMenu}>Earnings</Link>

@@ -12,6 +12,14 @@ function ReceiverFooter() {
         }
     };
 
+    const handleContactClick = (e) => {
+        if (location.pathname === '/receiver/dashboard') {
+            e.preventDefault();
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <>
             <div className='footer'>
@@ -28,7 +36,7 @@ function ReceiverFooter() {
                     <h1>Quick Links</h1>
                     <Link to="/receiver/dashboard" onClick={handleHomeClick}>Home</Link>
                     <Link to="/receiver/about">About Us</Link>
-                    <Link to="/receiver/dashboard#contact">Contact Us</Link>
+                    <Link to="/receiver/dashboard#contact" onClick={handleContactClick}>Contact Us</Link>
                     <Link to="">Find Food</Link>
                     <Link to="">My Claims</Link>
                 </div>

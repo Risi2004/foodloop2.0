@@ -15,7 +15,15 @@ function DriverDashboard(){
     useEffect(() => {
         if (hash === '#contact') {
             const el = document.getElementById('contact');
-            if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const t1 = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+                const t2 = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 800);
+                return () => {
+                    clearTimeout(t1);
+                    clearTimeout(t2);
+                };
+            }
         }
     }, [hash]);
 

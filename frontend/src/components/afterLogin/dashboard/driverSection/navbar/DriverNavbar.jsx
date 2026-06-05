@@ -89,6 +89,24 @@ function Navbar() {
             setDeletingAccount(false);
         }
     }
+
+    const handleContactClick = () => {
+        if (window.location.pathname === '/driver/dashboard') {
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const handleMobileContactClick = () => {
+        toggleMenu();
+        if (window.location.pathname === '/driver/dashboard') {
+            setTimeout(() => {
+                const el = document.getElementById('contact');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+        }
+    };
+
     return (
         <>
             <div className="navbar">
@@ -103,7 +121,7 @@ function Navbar() {
                 <div className="navbar__s2">
                     <Link to="/driver/dashboard">Home</Link>
                     <Link to="/driver/about">About Us</Link>
-                    <Link to="/driver/dashboard#contact">Contact Us</Link>
+                    <Link to="/driver/dashboard#contact" onClick={handleContactClick}>Contact Us</Link>
                     <Link to="/driver/delivery">Delivery</Link>
                     <Link to="/driver/my-pickups">My Pickups</Link>
                     <Link to="/driver/earnings">Earnings</Link>
@@ -163,7 +181,7 @@ function Navbar() {
                     >
                         <Link to="/driver/dashboard" onClick={toggleMenu}>Home</Link>
                         <Link to="/driver/about" onClick={toggleMenu}>About Us</Link>
-                        <Link to="/driver/dashboard#contact" onClick={toggleMenu}>Contact Us</Link>
+                        <Link to="/driver/dashboard#contact" onClick={handleMobileContactClick}>Contact Us</Link>
                         <Link to="/driver/delivery" onClick={toggleMenu}>Delivery</Link>
                         <Link to="/driver/my-pickups" onClick={toggleMenu}>My Pickups</Link>
                         <Link to="/driver/earnings" onClick={toggleMenu}>Earnings</Link>

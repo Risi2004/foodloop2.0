@@ -12,6 +12,14 @@ function DonorFooter() {
         }
     };
 
+    const handleContactClick = (e) => {
+        if (location.pathname === '/supplier/dashboard' || location.pathname === '/donor/dashboard') {
+            e.preventDefault();
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
             <>
                 <div className='footer'>
@@ -28,7 +36,7 @@ function DonorFooter() {
                         <h1>Quick Links</h1>
                         <Link to="/supplier/dashboard" onClick={handleHomeClick}>Home</Link>
                         <Link to="/supplier/about">About Us</Link>
-                        <Link to="/supplier/dashboard#contact">Contact Us</Link>
+                        <Link to="/supplier/dashboard#contact" onClick={handleContactClick}>Contact Us</Link>
                         <Link to="/supplier/my-donation">My Listings</Link>
                     </div>
                     <div className="footer__s4">

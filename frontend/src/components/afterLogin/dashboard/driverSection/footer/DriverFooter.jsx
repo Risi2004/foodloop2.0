@@ -12,6 +12,14 @@ function DriverFooter() {
         }
     };
 
+    const handleContactClick = (e) => {
+        if (location.pathname === '/driver/dashboard') {
+            e.preventDefault();
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
             <>
                 <div className='footer'>
@@ -28,7 +36,7 @@ function DriverFooter() {
                         <h1>Quick Links</h1>
                         <Link to="/driver/dashboard" onClick={handleHomeClick}>Home</Link>
                         <Link to="/driver/about">About Us</Link>
-                        <Link to="/driver/dashboard#contact">Contact Us</Link>
+                        <Link to="/driver/dashboard#contact" onClick={handleContactClick}>Contact Us</Link>
                         <Link to="/driver/delivery">Delivery</Link>
                         <Link to="/driver/my-pickups">My Pickups</Link>
                     </div>
