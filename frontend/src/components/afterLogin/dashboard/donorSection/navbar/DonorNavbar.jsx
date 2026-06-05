@@ -264,7 +264,7 @@ function Navbar() {
                         <Link to="/supplier/earnings" onClick={toggleMenu}>Earnings</Link>
                         <Link to="/supplier/profile" onClick={toggleMenu}>View Profile</Link>
                         {isInstallable && (
-                            <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleMenu(); }}>
+                            <Link to="" className="responsive__navbar__popup__install" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleMenu(); }}>
                                 Install App
                             </Link>
                         )}

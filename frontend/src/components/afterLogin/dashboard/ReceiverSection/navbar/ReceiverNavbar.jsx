@@ -202,7 +202,7 @@ function Navbar() {
                         <Link to="/receiver/my-claims" onClick={toggleMenu}>My Claims</Link>
                         <Link to="/receiver/profile" onClick={toggleMenu}>View Profile</Link>
                         {isInstallable && (
-                            <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleMenu(); }}>
+                            <Link to="" className="responsive__navbar__popup__install" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleMenu(); }}>
                                 Install App
                             </Link>
                         )}
