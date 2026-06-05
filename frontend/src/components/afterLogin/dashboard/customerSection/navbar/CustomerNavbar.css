@@ -66,3 +66,8 @@
   height: 30px !important;
   box-sizing: border-box;
 }
+
+/* Bring the notification and cart icon closer to the menu icon to avoid overlapping logo text */
+.customer__shell .responsive__navbar__s3 {
+  gap: 12px !important;
+}

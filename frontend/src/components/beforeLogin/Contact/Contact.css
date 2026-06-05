@@ -104,6 +104,11 @@
 
     .contact {
         display: block;
+        margin: 20px 10px;
+    }
+
+    .contact__s2 {
+        padding: 25px 20px;
     }
 
     .contact__s2__sub1 {
