@@ -19,6 +19,25 @@ function CustomerNavbar() {
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isInstallable, setIsInstallable] = useState(!!window.deferredPWAInstallPrompt);
+
+  useEffect(() => {
+    const handleInstallable = () => setIsInstallable(true);
+    window.addEventListener('pwa-installable', handleInstallable);
+    return () => window.removeEventListener('pwa-installable', handleInstallable);
+  }, []);
+
+  const handleInstallApp = async () => {
+    const promptEvent = window.deferredPWAInstallPrompt;
+    if (!promptEvent) return;
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted PWA installation');
+    }
+    window.deferredPWAInstallPrompt = null;
+    setIsInstallable(false);
+  };
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -129,6 +148,11 @@ function CustomerNavbar() {
             <Link to={customerRoutes.profile()} onClick={toggleProfile}>
               View Profile
             </Link>
+            {isInstallable && (
+              <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleProfile(); }}>
+                Install App
+              </Link>
+            )}
             <div className="navbar__popup__action">
               <button type="button" className="navbar__delete-account-btn" onClick={openDeleteModal}>
                 Delete Account
@@ -203,6 +227,11 @@ function CustomerNavbar() {
             <Link to={customerRoutes.profile()} onClick={toggleMenu}>
               View Profile
             </Link>
+            {isInstallable && (
+              <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleMenu(); }}>
+                Install App
+              </Link>
+            )}
             <div className="navbar__popup__action">
               <button type="button" className="navbar__delete-account-btn" onClick={openDeleteModal}>
                 Delete Account

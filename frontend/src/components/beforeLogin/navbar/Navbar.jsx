@@ -6,9 +6,28 @@ import menu from "../../../assets/icons/navbar/menu-bar.svg"
 
 function Navbar({ isLoggedIn: _isLoggedIn }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isInstallable, setIsInstallable] = useState(!!window.deferredPWAInstallPrompt);
     const location = useLocation();
     const navigate = useNavigate();
     const isHome = location.pathname === '/';
+
+    useEffect(() => {
+        const handleInstallable = () => setIsInstallable(true);
+        window.addEventListener('pwa-installable', handleInstallable);
+        return () => window.removeEventListener('pwa-installable', handleInstallable);
+    }, []);
+
+    const handleInstallApp = async () => {
+        const promptEvent = window.deferredPWAInstallPrompt;
+        if (!promptEvent) return;
+        promptEvent.prompt();
+        const { outcome } = await promptEvent.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted PWA installation');
+        }
+        window.deferredPWAInstallPrompt = null;
+        setIsInstallable(false);
+    };
 
     const scrollToSection = (sectionId) => {
         if (isHome) {
@@ -49,6 +68,9 @@ function Navbar({ isLoggedIn: _isLoggedIn }) {
                     <Link to="/">Home</Link>
                     <button type="button" className="navbar__link" onClick={() => scrollToSection('about')}>About Us</button>
                     <button type="button" className="navbar__link" onClick={() => scrollToSection('contact')}>Contact Us</button>
+                    {isInstallable && (
+                        <button type="button" className="navbar__link" onClick={handleInstallApp}>Install App</button>
+                    )}
                 </div>
 
                 <div className="navbar__s3">
@@ -95,6 +117,15 @@ function Navbar({ isLoggedIn: _isLoggedIn }) {
                         >
                             Contact Us
                         </button>
+                        {isInstallable && (
+                            <button
+                                type="button"
+                                className="responsive__navbar__popup__link"
+                                onClick={() => { handleInstallApp(); toggleMenu(); }}
+                            >
+                                Install App
+                            </button>
+                        )}
                         <button
                             className="responsive__navbar__popup__login"
                             onClick={() => navigate('login')}

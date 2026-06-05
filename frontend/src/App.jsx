@@ -216,7 +216,18 @@ function ProtectedRoleRoute({ allowedRoles }) {
 }
 
 function App() {
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      window.deferredPWAInstallPrompt = e;
+      window.dispatchEvent(new Event('pwa-installable'));
+    };
 
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   return (
     <MarketplaceProvider>

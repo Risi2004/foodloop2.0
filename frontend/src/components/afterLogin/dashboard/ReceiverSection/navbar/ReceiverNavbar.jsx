@@ -11,6 +11,26 @@ function Navbar() {
     const navigate = useNavigate();
     const user = getUser();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isInstallable, setIsInstallable] = useState(!!window.deferredPWAInstallPrompt);
+
+    useEffect(() => {
+        const handleInstallable = () => setIsInstallable(true);
+        window.addEventListener('pwa-installable', handleInstallable);
+        return () => window.removeEventListener('pwa-installable', handleInstallable);
+    }, []);
+
+    const handleInstallApp = async () => {
+        const promptEvent = window.deferredPWAInstallPrompt;
+        if (!promptEvent) return;
+        promptEvent.prompt();
+        const { outcome } = await promptEvent.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted PWA installation');
+        }
+        window.deferredPWAInstallPrompt = null;
+        setIsInstallable(false);
+    };
+
     // Get user display name
     const getUserName = () => {
         if (!user) return 'User_Name';
@@ -138,6 +158,11 @@ function Navbar() {
                     <div className="navbar__s3__profile__popup">
                         <p onClick={toggleProfile}>X</p>
                         <Link to="/receiver/profile" onClick={toggleProfile}>View Profile</Link>
+                        {isInstallable && (
+                            <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleProfile(); }}>
+                                Install App
+                            </Link>
+                        )}
                         <div className="navbar__popup__action">
                             <button type="button" className="navbar__delete-account-btn" onClick={openDeleteModal}>
                                 Delete Account
@@ -176,6 +201,11 @@ function Navbar() {
                         <Link to="/receiver/find-food" onClick={toggleMenu}>Find Food</Link>
                         <Link to="/receiver/my-claims" onClick={toggleMenu}>My Claims</Link>
                         <Link to="/receiver/profile" onClick={toggleMenu}>View Profile</Link>
+                        {isInstallable && (
+                            <Link to="" onClick={(e) => { e.preventDefault(); handleInstallApp(); toggleMenu(); }}>
+                                Install App
+                            </Link>
+                        )}
                         <div className="navbar__popup__action">
                             <button
                                 type="button"
