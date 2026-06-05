@@ -3,7 +3,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    z-index: 3;
+    z-index: 1100;
+    position: relative;
 }
 
 .navbar__s1 {
@@ -142,6 +143,7 @@
 .responsive__navbar {
     display: none;
     position: relative;
+    z-index: 1100;
 }
 
 .responsive__navbar__overlay {

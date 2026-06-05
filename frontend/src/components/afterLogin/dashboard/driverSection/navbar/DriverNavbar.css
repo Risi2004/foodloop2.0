@@ -3,7 +3,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    z-index: 100;
+    z-index: 1100;
     position: relative;
 }
 
@@ -162,6 +162,7 @@
 .responsive__navbar {
     display: none;
     position: relative;
+    z-index: 1100;
 }
 
 .responsive__navbar__overlay {
