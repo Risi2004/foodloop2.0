@@ -184,7 +184,9 @@
     width: 75%;
     max-width: 320px;
     box-sizing: border-box;
-    overflow: auto;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -193,6 +195,10 @@
     border-radius: 0;
     background: #fff;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.responsive__navbar__popup::-webkit-scrollbar {
+    display: none;
 }
 
 .responsive__navbar__popup a,

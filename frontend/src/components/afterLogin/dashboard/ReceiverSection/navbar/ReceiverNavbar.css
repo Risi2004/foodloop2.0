@@ -163,14 +163,22 @@
     width: 50%;
     max-width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: stretch;
+    padding-top: 20px;
+    padding-bottom: 20px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.8);
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.responsive__navbar__popup::-webkit-scrollbar {
+    display: none;
 }
 
 .responsive__navbar__popup a,
