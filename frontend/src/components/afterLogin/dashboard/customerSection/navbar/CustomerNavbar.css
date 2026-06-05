@@ -41,10 +41,28 @@
 
 .customer__shell .responsive__navbar {
   border-color: rgba(255, 255, 255, 0.5);
+  background: transparent !important;
+  backdrop-filter: none !important;
 }
 
 .customer__shell .navbar__s1 > a {
   display: flex;
   align-items: center;
   text-decoration: none;
+}
+
+/* Ensure cart and notification bell icons are identical in size on desktop */
+.customer__shell .navbar__s3__img1,
+.customer__shell .navbar__cart-wrap img {
+  width: 34px !important;
+  height: 34px !important;
+  box-sizing: border-box;
+}
+
+/* Ensure cart and notification bell icons are identical in size on mobile */
+.customer__shell .responsive__navbar__s3 img,
+.customer__shell .responsive__navbar .navbar__cart-wrap img {
+  width: 30px !important;
+  height: 30px !important;
+  box-sizing: border-box;
 }

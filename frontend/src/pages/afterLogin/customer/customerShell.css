@@ -1,6 +1,6 @@
 .customer__shell {
   min-height: 100vh;
-  background: #eef4f0;
+  background: linear-gradient(180deg, #1F4E36 0%, #FFFFFF 100%);
   position: relative;
 }
 
@@ -11,8 +11,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 100px;
-  background: linear-gradient(180deg, #1f4e36 0%, #2d6a4a 100%);
+  height: 120px;
+  background: transparent;
   z-index: 0;
   pointer-events: none;
 }
@@ -23,7 +23,7 @@
   z-index: 2;
 }
 
-.customer__shell > *:not(.navbar):not(.responsive__navbar) {
+.customer__shell > *:not(.navbar):not(.responsive__navbar):not(.responsive__navbar__overlay):not(.navbar__delete-modal-overlay) {
   position: relative;
   z-index: 1;
 }

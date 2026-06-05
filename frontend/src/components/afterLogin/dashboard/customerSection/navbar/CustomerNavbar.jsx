@@ -1,9 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import './CustomerNavbar.css';
 import profile from '../../../../../assets/icons/afterLogin/navbar/profile.svg';
 import menu from '../../../../../assets/icons/navbar/menu-bar.svg';
-import cartIcon from '../../../../../assets/icons/afterLogin/customer/Marketplace/Shopping cart (1).svg';
+import cartIcon from '../../../../../assets/icons/afterLogin/customer/Marketplace/Shopping cart green.svg';
 import { clearAuth, getUser } from '../../../../../utils/auth';
 import { deleteAccount } from '../../../../../services/api';
 import NotificationNavLink from '../../../shared/NotificationNavLink';
@@ -12,6 +12,8 @@ import { customerRoutes } from '../../../../../constants/customerRoutes';
 
 function CustomerNavbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isNotificationsPage = location.pathname.endsWith('/notifications');
   const user = getUser();
   const { cart } = useMarketplace();
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -98,14 +100,16 @@ function CustomerNavbar() {
         </div>
 
         <div className="navbar__s3">
-          <Link to={customerRoutes.cart()} className="navbar__cart-wrap" aria-label="Cart">
-            <img src={cartIcon} alt="" />
-            {cartCount > 0 && (
-              <span className="navbar__cart-badge" aria-label={`${cartCount} in cart`}>
-                {cartCount > 99 ? '99+' : cartCount}
-              </span>
-            )}
-          </Link>
+          {!isNotificationsPage && (
+            <Link to={customerRoutes.cart()} className="navbar__cart-wrap" aria-label="Cart">
+              <img src={cartIcon} alt="" />
+              {cartCount > 0 && (
+                <span className="navbar__cart-badge" aria-label={`${cartCount} in cart`}>
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </Link>
+          )}
           <NotificationNavLink to={customerRoutes.notifications()} />
           <div className="navbar__s3__sub" onClick={toggleProfile}>
             <h3>{getUserName()}</h3>
@@ -157,15 +161,17 @@ function CustomerNavbar() {
           <p>Zero Waste. Infinite Impact</p>
         </div>
         <div className="responsive__navbar__s3">
-          <Link to={customerRoutes.cart()} className="navbar__cart-wrap" aria-label="Cart">
-            <img src={cartIcon} alt="" style={{ width: 28, height: 28 }} />
-            {cartCount > 0 && (
-              <span className="navbar__cart-badge" aria-label={`${cartCount} in cart`}>
-                {cartCount > 99 ? '99+' : cartCount}
-              </span>
-            )}
-          </Link>
-          <NotificationNavLink to={customerRoutes.notifications()} imgClassName="" />
+          {!isNotificationsPage && (
+            <Link to={customerRoutes.cart()} className="navbar__cart-wrap" aria-label="Cart">
+              <img src={cartIcon} alt="" className="navbar__s3__img1" />
+              {cartCount > 0 && (
+                <span className="navbar__cart-badge" aria-label={`${cartCount} in cart`}>
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </Link>
+          )}
+          <NotificationNavLink to={customerRoutes.notifications()} imgClassName="navbar__s3__img1" />
           <img src={menu} alt="menu-bar" onClick={toggleMenu} />
         </div>
       </div>

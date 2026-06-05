@@ -7,7 +7,7 @@
 }
 
 .customer-page-hero {
-  margin: 0 -1.5rem 2rem;
+  margin: 0 0 2rem;
   padding: 2rem 1.5rem 2.25rem;
   background: linear-gradient(135deg, #1f4e36 0%, #3d8b5e 55%, #48b47d 100%);
   border-radius: 24px; /* Fully rounded elegant corners */
@@ -22,7 +22,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-bottom: 0.75rem;
+  margin-left: 1rem;
+  margin-bottom: 1.25rem;
   transition: color 0.2s, transform 0.2s;
 }
 
@@ -127,8 +128,8 @@
 .customer-contact-wrap {
   margin-top: 2rem;
   padding: 2rem 1.5rem 0;
-  background: linear-gradient(180deg, #eef4f0 0%, #f6f8f7 100%);
-  border-top: 1px solid #dbe6e0;
+  background: transparent;
+  border-top: none;
 }
 
 .customer-notifications-page .notifications-panel-wrap {

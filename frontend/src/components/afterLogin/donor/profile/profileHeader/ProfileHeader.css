@@ -168,3 +168,45 @@
 .new-donation-btn:hover {
     background: #27ae60;
 }
+
+@media screen and (max-width: 600px) {
+    .profile-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+        width: 100%;
+    }
+
+    .profile-details {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .profile-title-row {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        align-items: center;
+    }
+
+    .profile-name {
+        font-size: 26px;
+        text-align: center;
+    }
+
+    .profile-premium-meta {
+        text-align: center;
+        margin: 6px auto 0;
+    }
+
+    .profile-location-row {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .profile-meta {
+        justify-content: center;
+    }
+}
