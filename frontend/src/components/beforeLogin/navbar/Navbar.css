@@ -113,6 +113,7 @@
 .responsive__navbar {
     display: none;
     position: relative;
+    z-index: 1500;
 }
 
 .responsive__navbar__overlay {
@@ -121,11 +122,11 @@
     background: rgba(0, 0, 0, 0.3);
     display: flex;
     justify-content: flex-end;
-    z-index: 998;
+    z-index: 2000;
 }
 
 .responsive__navbar__popup {
-    z-index: 999;
+    z-index: 2100;
     position: fixed;
     top: 100px;
     right: 0;

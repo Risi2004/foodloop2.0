@@ -3,7 +3,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    z-index: 1100;
+    z-index: 1500;
     position: relative;
 }
 
@@ -136,7 +136,7 @@
 }
 
 .navbar__s3__profile__popup {
-    z-index: 1100;
+    z-index: 2500;
     position: fixed;
     top: 100px;
     right: 20px;
@@ -162,7 +162,7 @@
 .responsive__navbar {
     display: none;
     position: relative;
-    z-index: 1100;
+    z-index: 1500;
 }
 
 .responsive__navbar__overlay {
