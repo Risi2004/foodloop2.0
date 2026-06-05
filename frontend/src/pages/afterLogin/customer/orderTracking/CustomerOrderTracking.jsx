@@ -92,22 +92,44 @@ function CustomerOrderTracking() {
     };
   }, []);
 
-  const { activeOrders, pastOrders, activeClaims, pastClaims } = useMemo(() => {
+  const { activeOrders, pastOrders, filteredClaims, activeClaims, pastClaims } = useMemo(() => {
+    // 1. Get all item IDs that are part of customer orders
+    const customerOrderItemIds = new Set();
+    for (const order of orders) {
+      if (order.orderSummary && Array.isArray(order.orderSummary.items)) {
+        for (const item of order.orderSummary.items) {
+          if (item.id) {
+            customerOrderItemIds.add(item.id);
+          }
+        }
+      }
+    }
+
+    // 2. Filter claims to exclude those that are part of any customer order
+    const claimsWithoutDuplicates = claims.filter((claim) => {
+      const parentId = claim.parentListingId?._id?.toString() || claim.parentListingId?.toString() || '';
+      const claimId = claim._id?.toString() || claim.id?.toString() || '';
+      return !customerOrderItemIds.has(parentId) && !customerOrderItemIds.has(claimId);
+    });
+
     const active = [];
     const past = [];
     for (const order of orders) {
       if (ACTIVE_STATUSES.includes(order.status)) active.push(order);
       else past.push(order);
     }
+
     const activeClaimList = [];
     const pastClaimList = [];
-    for (const claim of claims) {
+    for (const claim of claimsWithoutDuplicates) {
       if (ACTIVE_CLAIM_STATUSES.includes(claim.status)) activeClaimList.push(claim);
       else if (claim.status === 'delivered') pastClaimList.push(claim);
     }
+
     return {
       activeOrders: active,
       pastOrders: past,
+      filteredClaims: claimsWithoutDuplicates,
       activeClaims: activeClaimList,
       pastClaims: pastClaimList,
     };
@@ -132,7 +154,7 @@ function CustomerOrderTracking() {
           </article>
           <article className="tracking-overview-card">
             <span>Total Orders</span>
-            <strong>{orders.length + claims.length}</strong>
+            <strong>{orders.length + filteredClaims.length}</strong>
           </article>
         </section>
 
