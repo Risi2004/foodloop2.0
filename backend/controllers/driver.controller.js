@@ -226,10 +226,20 @@ function getDriverCoords(user, queryLat, queryLng) {
   return { lat: null, lng: null };
 }
 
-function toDriverCustomerOrderJSON(order) {
+function toDriverCustomerOrderJSON(order, linkedDonations = []) {
   const base = typeof order.toPublicJSON === 'function' ? order.toPublicJSON() : order;
   const customer = order.customerId && typeof order.customerId === 'object' ? order.customerId : null;
   const driver = order.driverId && typeof order.driverId === 'object' ? order.driverId : null;
+
+  const firstDonation = Array.isArray(linkedDonations) && linkedDonations.length > 0 ? linkedDonations[0] : null;
+  const donorUser = firstDonation?.donorId && typeof firstDonation.donorId === 'object' ? firstDonation.donorId : null;
+
+  const donorLatitude = firstDonation ? firstDonation.donorLatitude : null;
+  const donorLongitude = firstDonation ? firstDonation.donorLongitude : null;
+  const donorAddress = firstDonation ? (firstDonation.pickupAddress || firstDonation.donorAddress) : '';
+  const donorName = donorUser
+    ? (donorUser.businessName?.trim() || donorUser.username?.trim() || 'Supplier')
+    : 'Supplier';
 
   const mappedStatus = base.status === 'driver_assigned' ? 'assigned' : base.status;
   const items = Array.isArray(base.orderSummary?.items) ? base.orderSummary.items : [];
@@ -245,11 +255,13 @@ function toDriverCustomerOrderJSON(order) {
     orderId: base.orderId,
     itemName: title,
     quantity: totalQty,
-    donorName: 'FoodLoop Customer',
+    donorName,
     receiverName: customer?.username || customer?.email || 'Customer',
     receiverAddress: base.customerAddress || base.orderSummary?.address || '',
     receiverLatitude: base.customerLatitude ?? null,
     receiverLongitude: base.customerLongitude ?? null,
+    donorLatitude: donorLatitude ?? null,
+    donorLongitude: donorLongitude ?? null,
     status: mappedStatus,
     paymentMethod: base.paymentMethod || 'card',
     codAmount: Number(base.codAmount || 0),
@@ -281,9 +293,13 @@ function toDriverCustomerOrderJSON(order) {
         }
       : null,
     donor: {
-      name: 'FoodLoop Customer',
-      address: 'Online customer order',
-      location: null,
+      name: donorName,
+      contactNo: donorUser?.contactNo || null,
+      email: donorUser?.email || null,
+      address: donorAddress || 'Online customer order',
+      location: (donorLatitude != null && donorLongitude != null)
+        ? { latitude: donorLatitude, longitude: donorLongitude }
+        : null,
     },
     receiver: {
       name: customer?.username || 'Customer',
@@ -308,6 +324,13 @@ function toDriverCustomerOrderJSON(order) {
       codAmount: Number(base.codAmount || 0),
       currency: base.currency || 'LKR',
       totalAmount: Number(base.orderSummary?.total || 0),
+      donorLatitude: donorLatitude ?? null,
+      donorLongitude: donorLongitude ?? null,
+      receiverLatitude: base.customerLatitude ?? null,
+      receiverLongitude: base.customerLongitude ?? null,
+      pickupAddress: donorAddress || null,
+      donorAddress: donorAddress || null,
+      receiverAddress: base.customerAddress || base.orderSummary?.address || null,
     },
   };
 }
@@ -328,13 +351,12 @@ async function resolveCustomerOrderImageUrl(order) {
 }
 
 async function buildCustomerOrderTrackingPayload(order) {
-  const payload = toDriverCustomerOrderJSON(order);
+  const linkedDonations = await getDonationsForCustomerOrder(order);
+  const payload = toDriverCustomerOrderJSON(order, linkedDonations);
   const imageUrl = await resolveCustomerOrderImageUrl(order);
   if (payload.donation && imageUrl) {
     payload.donation.imageUrl = imageUrl;
   }
-
-  const linkedDonations = await getDonationsForCustomerOrder(order);
   let driverEarnings = Number(order.orderSummary?.deliveryFee) || 0;
   for (const linked of linkedDonations) {
     const fee = resolveDonationDriverEarnings(linked, 0);
@@ -534,7 +556,8 @@ exports.getAvailablePickups = async (req, res) => {
           filteredByCapacityCount += 1;
           continue;
         }
-        const mapped = toDriverCustomerOrderJSON(order);
+        const linkedDonations = await getDonationsForCustomerOrder(order);
+        const mapped = toDriverCustomerOrderJSON(order, linkedDonations);
         compatibleCustomerOrders.push({
           ...mapped,
           capacity: {
@@ -621,7 +644,7 @@ exports.getAvailablePickups = async (req, res) => {
       if (!driverEarnings) driverEarnings = DRIVER_EARNINGS_LKR;
 
       customerPickups.push({
-        ...toDriverCustomerOrderJSON(order),
+        ...toDriverCustomerOrderJSON(order, linkedDonations),
         earnings: driverEarnings,
         deliveryFee: driverEarnings,
         capacity: {
@@ -673,7 +696,12 @@ exports.getActiveDeliveries = async (req, res) => {
       .populate('customerId', 'username email contactNo')
       .populate('driverId', 'username driverName email contactNo vehicleType vehicleNumber driverLatitude driverLongitude profileImage')
       .sort({ updatedAt: -1 });
-    const customerDeliveries = customerOrders.map((order) => toDriverCustomerOrderJSON(order));
+    const customerDeliveries = await Promise.all(
+      customerOrders.map(async (order) => {
+        const linkedDonations = await getDonationsForCustomerOrder(order);
+        return toDriverCustomerOrderJSON(order, linkedDonations);
+      })
+    );
 
     const driverLocation =
       lat != null && lng != null ? { latitude: lat, longitude: lng } : null;
@@ -757,9 +785,11 @@ exports.acceptPickup = async (req, res) => {
       await syncCustomerOrderToDonationClaims(customerOrder, 'driver_assigned', req.user);
       notifyCustomerOrderUpdated(customerOrder);
 
+      const linkedDonations = await getDonationsForCustomerOrder(customerOrder);
+
       return res.json({
         success: true,
-        donation: toDriverCustomerOrderJSON(customerOrder),
+        donation: toDriverCustomerOrderJSON(customerOrder, linkedDonations),
       });
     }
     if (donation.status !== 'claimed' || donation.driverId) {
@@ -948,10 +978,12 @@ exports.confirmPickup = async (req, res) => {
       await syncCustomerOrderToDonationClaims(customerOrder, 'picked_up', req.user);
       notifyCustomerOrderUpdated(customerOrder);
 
+      const linkedDonations = await getDonationsForCustomerOrder(customerOrder);
+
       return res.json({
         success: true,
         message: 'Pickup confirmed.',
-        tracking: toDriverCustomerOrderJSON(customerOrder),
+        tracking: toDriverCustomerOrderJSON(customerOrder, linkedDonations),
       });
     }
     if (donation.driverId?.toString() !== req.user._id.toString()) {
@@ -1057,10 +1089,12 @@ exports.confirmDelivery = async (req, res) => {
 
       await logActivity(req.user._id, 'DELIVERY_CONFIRM', { id: donationId }, req);
 
+      const linkedDonations = await getDonationsForCustomerOrder(customerOrder);
+
       return res.json({
         success: true,
         message: 'Delivery confirmed.',
-        tracking: toDriverCustomerOrderJSON(customerOrder),
+        tracking: toDriverCustomerOrderJSON(customerOrder, linkedDonations),
       });
     }
     if (donation.driverId?.toString() !== req.user._id.toString()) {

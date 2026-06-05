@@ -32,7 +32,7 @@ async function getDonationsForCustomerOrder(order) {
   return Donation.find({
     receiverId: order.customerId,
     $or: [{ parentListingId: { $in: itemIds } }, { _id: { $in: itemIds } }],
-  });
+  }).populate('donorId', 'username businessName role email contactNo');
 }
 
 module.exports = {
