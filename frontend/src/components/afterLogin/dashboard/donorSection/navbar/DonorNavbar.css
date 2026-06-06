@@ -5,6 +5,7 @@
     padding: 20px;
     z-index: 1500;
     position: relative;
+    gap: 20px;
 }
 
 .navbar__s1 {
@@ -13,15 +14,19 @@
     cursor: pointer;
     border-radius: 100px;
     background: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .navbar__s1 img {
     height: 40px;
     margin-right: 10px;
+    flex-shrink: 0;
 }
 
 .navbar__s1__sub {
     text-align: center;
+    white-space: nowrap;
 }
 
 .navbar__s1__sub__part1 {
@@ -36,29 +41,36 @@
     color: #1F4E36;
     font-weight: bold;
     padding-right: 5px;
+    white-space: nowrap;
 }
 
 .navbar__s2 {
     display: flex;
+    justify-content: center;
+    align-items: center;
     border-radius: 33px;
-    gap: 40px;
+    gap: clamp(10px, 1.5vw, 25px);
     background-color: transparent;
     border: 1px solid;
     border-color: rgba(255, 255, 255, 0.5);
+    padding: 0 25px;
+    box-sizing: border-box;
 }
 
 .navbar__s2 a {
     text-decoration: none;
     font-weight: bold;
     color: white;
-    font-size: 18px;
+    font-size: clamp(14px, 1.1vw, 17px);
+    white-space: nowrap;
 }
 
 .navbar__s3 {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 50px;
+    gap: clamp(15px, 2.5vw, 35px);
+    flex-shrink: 0;
 }
 
 .navbar__notification-wrap {
@@ -214,10 +226,15 @@
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
 }
 
-.navbar__s1,
+.navbar__s1 {
+    height: 60px;
+    padding: 10px 20px 10px 10px;
+    box-sizing: border-box;
+}
+
 .navbar__s2 {
     height: 60px;
-    padding: 15px;
+    box-sizing: border-box;
 }
 
 .responsive__navbar {
