@@ -720,7 +720,15 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                         aria-disabled={!formCanSubmit || isSubmitting}
                         aria-describedby={!formCanSubmit && !isSubmitting ? 'post-donation-disabled-hint' : undefined}
                     >
-                        {isSubmitting ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Donation' : 'Post Donation ▶')}
+                        {isSubmitting ? (
+                            isEditMode ? 'Updating...' : 'Submitting...'
+                        ) : isEditMode ? (
+                            listingType === 'sell' ? 'Update Product' : 'Update Donation'
+                        ) : listingType === 'sell' ? (
+                            'Sell Product ▶'
+                        ) : (
+                            'Post Donation ▶'
+                        )}
                     </button>
                     {!formCanSubmit && !isSubmitting && disabledReasons.length > 0 && (
                         <div
@@ -728,7 +736,9 @@ function DonationForm({ aiPredictions, imageUrl, error, editDonationId, initialD
                             className="disabled-tooltip"
                             role="tooltip"
                         >
-                            <span className="disabled-tooltip-title">Complete these to post:</span>
+                            <span className="disabled-tooltip-title">
+                                {listingType === 'sell' ? 'Complete these to sell:' : 'Complete these to post:'}
+                            </span>
                             <ul className="disabled-tooltip-list">
                                 {disabledReasons.map((reason) => (
                                     <li key={reason}>{reason}</li>
