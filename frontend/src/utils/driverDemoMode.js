@@ -130,7 +130,7 @@ async function resolveDriverStart(leg, tracking, driverLocationState, end) {
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
       });
-      if (isValidCoord(position.lat, position.lng)) {
+      if (isValidCoord(position.lat, position.lng) && position.lat >= 5 && position.lat <= 10 && position.lng >= 79 && position.lng <= 82) {
         start = position;
       }
     } catch {

@@ -215,9 +215,25 @@ function DeliveryConfirmation() {
         };
     }, [donationData, driverLocation, isDemoMode]);
 
+    // Sync driverLocation from donationData driver location when it loads
+    useEffect(() => {
+        if (donationData?.driver?.location?.latitude != null && donationData?.driver?.location?.longitude != null) {
+            setDriverLocation([
+                donationData.driver.location.latitude,
+                donationData.driver.location.longitude
+            ]);
+        }
+    }, [donationData]);
+
     // Start location tracking when component mounts (only if demo mode is off)
     useEffect(() => {
         if (!donationId || isDemoMode) return;
+
+        const locType = localStorage.getItem('driver_location_type');
+        if (locType === 'manual') {
+            console.log('[DeliveryConfirmation] Prioritizing manually selected location, skipping browser GPS watch');
+            return;
+        }
 
         // Start continuous location tracking
         startLocationTracking(async (location, error) => {

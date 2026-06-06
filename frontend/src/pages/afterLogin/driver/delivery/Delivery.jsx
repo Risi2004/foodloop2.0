@@ -269,6 +269,7 @@ function Delivery() {
         setLocationSaveError(null);
         try {
             await handleLocationUpdate(lat, lng);
+            localStorage.setItem('driver_location_type', 'manual');
             setDriverAddress(address?.trim() || 'Location set');
             setShowLocationModal(false);
         } catch (err) {
